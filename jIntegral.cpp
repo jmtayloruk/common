@@ -1,0 +1,34 @@
+/*	jIntegral.cpp
+
+	A few specific implementations for jIntegral.h
+*/
+
+#include "jIntegral.h"
+#include "jComplex.h"
+#include "jCoord.h"
+
+namespace jIntegralPrivate
+{
+	template<> double GetZeroSum<double>(void) { return 0.0; }
+	template<> jComplex GetZeroSum<jComplex>(void) { return 0.0; }
+	template<> coordC3 GetZeroSum<coordC3>(void) { return coordC3(0.0, 0.0, 0.0); }
+
+	bool CompareByAbsolute(double a, double b)
+	{
+		return (fabs(a) < fabs(b));
+	}
+
+	template<> double SumResultList<double>(std::vector<double> &resultList)
+	{
+		double thisResult = 0.0;
+		sort(resultList.begin(), resultList.end(), CompareByAbsolute);
+		for (unsigned int j = 0; j < resultList.size(); j++)
+			thisResult += resultList[j];
+		return thisResult;
+	}
+
+	// This can be implemented for these types (using 2 and 6 sorts respectively), but I'm not going to bother unless I need it
+	template<> jComplex SumResultList<jComplex>(jComplexVector &resultList) { ALWAYS_ASSERT(0); return GetZeroSum<jComplex>(); }
+	template<> coordC3 SumResultList<coordC3>(std::vector<coordC3> &resultList) { ALWAYS_ASSERT(0); return GetZeroSum<coordC3>(); }
+}
+

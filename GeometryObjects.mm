@@ -1,0 +1,88 @@
+//
+//  GeometryObjects.mm
+//  Simple Preview
+//
+//  Created by Jonathan Taylor on 26/03/2012.
+//  Copyright 2012 Durham University. All rights reserved.
+//
+
+#import "GeometryObjects.h"
+#import "jUtils.h"
+
+@implementation JRect
+
++(JRect*)newRectForNSRect:(const NSRect)r
+{
+	return [[JRect alloc] initWithRect:r];
+}
+
+-(id)initWithRect:(const NSRect)r
+{
+	self.ns = r;
+	return self;
+}
+
+-(float)x { return rect.origin.x; }
+-(float)y { return rect.origin.y; }
+-(float)w { return rect.size.width; }
+-(float)h { return rect.size.height; }
+-(const NSRect)ns { return rect; }
+
+-(void)setX:(float)val { rect.origin.x = val; }
+-(void)setY:(float)val { rect.origin.y = val; }
+-(void)setW:(float)val { rect.size.width = val; }
+-(void)setH:(float)val { rect.size.height = val; }
+-(void)setNs:(const NSRect)ns { rect = ns; }
+
+-(int)everything { return 1; }
+
++(NSSet*)keyPathsForValuesAffectingValueForKey:(NSString*)inKey
+{
+	NSSet* set = [super keyPathsForValuesAffectingValueForKey:inKey];
+	if ([inKey isEqualToString:@"ns"])
+		set = [set setByAddingObjectsFromSet:[NSSet setWithObjects:@"x", @"y", @"w", @"h", nil]];
+	else if ([inKey isEqualToString:@"everything"])
+		set = [set setByAddingObjectsFromSet:[NSSet setWithObjects:@"ns", @"x", @"y", @"w", @"h", nil]];
+	else
+		set = [set setByAddingObjectsFromSet:[NSSet setWithObjects:@"ns", nil]];
+	return set;
+}
+
+@end
+
+@implementation JPoint2
+
++(JPoint2*)newPointForNSPoint:(const NSPoint)p
+{
+	return [[JPoint2 alloc] initWithPoint:p];
+}
+
+-(id)initWithPoint:(const NSPoint)p
+{
+	self.ns = p;
+	return self;
+}
+
+-(float)x { return point.x; }
+-(float)y { return point.y; }
+-(const NSPoint)ns { return point; }
+
+-(void)setX:(float)val { point.x = val; }
+-(void)setY:(float)val { point.y = val; }
+-(void)setNs:(const NSPoint)ns { point = ns; }
+
+-(int)everything { return 1; }
+
++(NSSet*)keyPathsForValuesAffectingValueForKey:(NSString*)inKey
+{
+	NSSet* set = [super keyPathsForValuesAffectingValueForKey:inKey];
+	if ([inKey isEqualToString:@"ns"])
+		set = [set setByAddingObjectsFromSet:[NSSet setWithObjects:@"x", @"y", nil]];
+	else if ([inKey isEqualToString:@"everything"])
+		set = [set setByAddingObjectsFromSet:[NSSet setWithObjects:@"ns", @"x", @"y", nil]];
+	else
+		set = [set setByAddingObjectsFromSet:[NSSet setWithObjects:@"ns", nil]];
+	return set;
+}
+
+@end
