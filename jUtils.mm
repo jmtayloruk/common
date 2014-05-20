@@ -7,7 +7,6 @@
 //
 
 #import <Cocoa/Cocoa.h>
-#import "jUtils.h"
 
 NSURL *PathToURL(NSString *path, NSURL *relativeTo)
 {

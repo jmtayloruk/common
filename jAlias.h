@@ -1,5 +1,5 @@
 //
-//  JAlias.h
+//  jAlias.h
 //  Simple Preview
 //
 //  Created by Jonathan Taylor on 07/04/2014.
@@ -16,7 +16,9 @@
 @property (readonly) NSString *filename; // Works even if bookmark is unresolvable
 
 +(id)aliasForPath:(NSString *)path;
++(id)aliasForURL:(NSURL *)url;
 -(id)initForPath:(NSString *)path;
+-(id)initForURL:(NSURL *)url;
 -(BOOL)resolvesSameAs:(JAlias *)other;
 
 @end

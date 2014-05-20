@@ -7,7 +7,6 @@
 //
 
 #import "GeometryObjects.h"
-#import "jUtils.h"
 
 @implementation JRect
 

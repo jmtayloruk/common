@@ -19,8 +19,6 @@
 	#include "jComplex.h"
 #endif
 
-#include "jUtils.h"
-
 // I define pi myself, even on OS X, because the intel compiler picks up a long double version of pi
 // and then warns about loss of precision! (as well as producing problems with operators on complex numbers)
 const double PI = 6.0 * asin(0.5);
