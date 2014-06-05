@@ -11,8 +11,6 @@
 #import "jCocoaImageUtils.h"
 #include "CocoaProgressWindow.h"
 #import "jCocoaMovieBuilder.h"
-#import "jUtils.h"
-#import "JAlias.h"
 
 const int qualityMapping[] = { codecLowQuality, codecNormalQuality, codecHighQuality, codecLosslessQuality, codecLosslessQuality, codecLosslessQuality };
 const int codecMapping[] = { kH264CodecType, kH264CodecType, kH264CodecType, kH264CodecType, kAnimationCodecType, kRawCodecType };
@@ -540,11 +538,11 @@ struct ImageDrawingInfo
 -(void)setCurrentFrameToPSTime:(double)time
 {
 	NSArray *sourceSequence = (timingsFromSequence == 0) ? sequence1 : sequence2;
-	self.currentFrame = MAX(int([sourceSequence indexOfObject:[TimestampedImage dummyTimestampedImageWithPSTime:time]
+	self.currentFrame = (int)MAX(int([sourceSequence indexOfObject:[TimestampedImage dummyTimestampedImageWithPSTime:time]
 												inSortedRange:NSMakeRange(0, sourceSequence.count)
 												options:NSBinarySearchingInsertionIndex
 												usingComparator:psTimestampComparator]) - 1,
-							0);
+							     0);
 }
 
 -(TimestampedImage*)currentFrameObject1
@@ -555,9 +553,9 @@ struct ImageDrawingInfo
 		
 	if (timingsFromSequence == 0)
 	{
-		if ((currentFrame > (int)[sequence1 count]) || (currentFrame < 1))
+		if ((self.currentFrame > (int)[sequence1 count]) || (self.currentFrame < 1))
 			return nil;
-		result = [sequence1 objectAtIndex:currentFrame-1];
+		result = [sequence1 objectAtIndex:self.currentFrame-1];
 	}
 	else
 	{
@@ -614,9 +612,9 @@ struct ImageDrawingInfo
 
 	if (timingsFromSequence == 1)
 	{
-		if ((currentFrame > (int)[sequence2 count]) || (currentFrame < 1))
+		if ((self.currentFrame > (int)[sequence2 count]) || (self.currentFrame < 1))
 			return nil;
-		result = [sequence2 objectAtIndex:currentFrame-1];
+		result = [sequence2 objectAtIndex:self.currentFrame-1];
 	}
 	else
 	{
@@ -1135,9 +1133,9 @@ void MergeBitmaps(NSImage *srcImage, ImageDrawingInfo *offsets)
 -(void)numFramesChangedImplicitly
 {
 	[self willChangeValueForKey:@"numFrames"];
-	self.currentFrame = MIN(currentFrame, self.numFrames);
-	self.startFrame = MIN(startFrame, self.numFrames);
-	self.endFrame = MIN(endFrame, self.numFrames);
+	self.currentFrame = (int)MIN(self.currentFrame, self.numFrames);
+	self.startFrame = (int)MIN(self.startFrame, self.numFrames);
+	self.endFrame = (int)MIN(self.endFrame, self.numFrames);
 	[self didChangeValueForKey:@"numFrames"];
 }
 
@@ -1193,7 +1191,7 @@ void MergeBitmaps(NSImage *srcImage, ImageDrawingInfo *offsets)
 	[[NSWorkspace sharedWorkspace] selectFile:self.currentFrameObject2.path inFileViewerRootedAtPath:nil];
 }
 
-@synthesize currentFrame;
+@synthesize currentFrame = _currentFrame;
 @synthesize startFrame;
 @synthesize includeReverseFrames;
 @synthesize endFrame;

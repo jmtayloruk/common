@@ -1,12 +1,12 @@
 //
-//  JAlias.mm
+//  jAlias.mm
 //  Simple Preview
 //
 //  Created by Jonathan Taylor on 07/04/2014.
 //  Copyright 2014 Durham University. All rights reserved.
 //
 
-#import "JAlias.h"
+#import "jAlias.h"
 
 @interface JAlias()
 	@property (readwrite, copy) NSData *bookmark;
@@ -21,10 +21,20 @@
 
 -(id)initForPath:(NSString *)path
 {
+	return [self initForURL:[NSURL fileURLWithPath:path]];
+}
+
++(id)aliasForURL:(NSURL *)url
+{
+	return [[[JAlias alloc] initForURL:url] autorelease];
+}
+
+-(id)initForURL:(NSURL *)url
+{
 	if (!(self = [super init]))
 		return nil;
 	NSError *err;
-	self.bookmark = [[NSURL fileURLWithPath:path] bookmarkDataWithOptions:0 includingResourceValuesForKeys:nil relativeToURL:nil error:&err];
+	self.bookmark = [url bookmarkDataWithOptions:0 includingResourceValuesForKeys:nil relativeToURL:nil error:&err];
 	return self;
 }
 

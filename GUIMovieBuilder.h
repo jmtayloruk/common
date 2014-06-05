@@ -59,7 +59,7 @@ typedef std::map<int, FrameInfo> FIM;
 
 @interface GUIMovieBuilder : JWindowController
 {
-	int currentFrame, startFrame, endFrame;
+	int _currentFrame, startFrame, endFrame;
 	int framerateToUse;
 	bool hasSecondSequence, includeReverseFrames, maskEnabled, sequence2IsAdjacent, showCrosshairs;
 	bool flipSequence1H, flipSequence1V, flipSequence2H, flipSequence2V, syncFramesOnly1, syncFramesOnly2;
