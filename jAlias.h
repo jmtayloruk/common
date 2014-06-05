@@ -13,6 +13,7 @@
 	NSData *_bookmark;
 }
 @property (readonly) NSString *path;
+@property (readonly) NSURL *url;
 @property (readonly) NSString *filename; // Works even if bookmark is unresolvable
 
 +(id)aliasForPath:(NSString *)path;

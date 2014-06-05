@@ -59,6 +59,14 @@
 	return [url path];
 }
 
+-(NSURL *)url
+{
+	BOOL stale;
+	NSError *error;
+	NSURL *url = [NSURL URLByResolvingBookmarkData:self.bookmark options:NSURLBookmarkResolutionWithoutUI relativeToURL:nil bookmarkDataIsStale:&stale error:&error];
+	return url;
+}
+
 -(NSString *)filename
 {
 	// Works even if bookmark is unresolvable
