@@ -93,6 +93,7 @@ typedef std::map<int, FrameInfo> FIM;
 -(IBAction)setMaskFromMarkedRect:(id)sender;
 -(IBAction)accept:(id)sender;
 -(IBAction)cancel:(id)sender;
+-(IBAction)deleteExcludedFrames:(id)sender;
 -(void)createFileAtPath:(NSString*)path;
 -(NSImage *)currentFrameImage;
 -(void)setScaledBitmapContext:(NSBitmapImageRep *)theBitmap;

@@ -535,6 +535,110 @@ struct ImageDrawingInfo
 	self.endFrame = self.currentFrame;
 }
 
+-(IBAction)deleteExcludedFrames:(id)sender
+{
+	/*	This action will delete all image files (and associated plists) that fall outside the range
+		that the user has selected. This is a big step to take, so we move to the Trash rather
+		than deleting outright	*/
+		
+	// Work out which files we may be going to trash
+	NSString *parentDir = nil;
+	NSMutableArray *filesToDelete = [[NSMutableArray alloc] init];
+	NSString *rangeString = nil;
+	if (self.startFrame > 1)
+	{
+		rangeString = [SWF:@"%d-%d", 1, self.startFrame-1];
+		for (int frameNumber = 1; frameNumber < self.startFrame; frameNumber++)
+		{
+			TimestampedImage *tsi = [sequence1 objectAtIndex:frameNumber - 1];
+			NSString *thisParentDir = [tsi.link.path stringByDeletingLastPathComponent];
+			if (parentDir == nil)
+				parentDir = thisParentDir;
+			else
+				ALWAYS_ASSERT([parentDir isEqualToString:thisParentDir]);
+			[filesToDelete addObject:tsi.link.path];
+		}
+	}
+	if (self.endFrame < self.numFrames)
+	{
+		if (rangeString != nil)
+			rangeString = [rangeString stringByAppendingString:@" and "];
+		else
+			rangeString = @"";
+		rangeString = [rangeString stringByAppendingString:[SWF:@"%d-%d", self.endFrame+1, self.numFrames]];
+		for (int frameNumber = self.endFrame + 1; frameNumber <= self.numFrames; frameNumber++)
+		{
+			TimestampedImage *tsi = [sequence1 objectAtIndex:frameNumber - 1];
+			NSString *thisParentDir = [tsi.link.path stringByDeletingLastPathComponent];
+			if (parentDir == nil)
+				parentDir = thisParentDir;
+			else
+				ALWAYS_ASSERT([parentDir isEqualToString:thisParentDir]);
+			[filesToDelete addObject:tsi.link.path];
+		}
+	}
+	if (parentDir == nil)
+	{
+		[spimApp alertWithText:@"No frames are currently outside the start/end range. Nothing will be deleted."
+				andExplanation:@"This button will delete any files outside the range \"Start\" to \"End\". Since that range currently covers all the files in the directory, nothing will be deleted."];
+		return;
+	}
+		
+	// Warn the user before continuing	
+	NSAlert *alert = [NSAlert alertWithMessageText:[SWF:@"Are you sure you want to delete frames %@?", rangeString]
+								defaultButton:@"Cancel"
+								alternateButton:@"Delete"
+								otherButton:nil
+								informativeTextWithFormat:[SWF:@"Frames %@ are outside the range \"Start\" to \"End\" and will be moved to the Trash. "
+														       @"This will lead to them being permanently deleted if you go ahead with this.", rangeString]];
+	NSInteger result = [alert runModal];
+	if (result == NSAlertDefaultReturn)	// Cancel
+		return;
+
+	// Remove the files from our working list
+	sequence1 = [[NSMutableArray arrayWithArray:[sequence1 subarrayWithRange:NSMakeRange(self.startFrame-1, MIN(self.endFrame - self.startFrame + 1, int(sequence1.count - self.startFrame+1)))]] retain];
+	self.startFrame = 1;
+	self.endFrame = sequence1.count;
+	[self numFramesChangedImplicitly];
+	
+	// Create a temporary directory to move the unwanted files into
+	NSString *intermediateDir = [parentDir stringByAppendingPathExtension:@"deleted"];
+	NSError *err = nil;
+	bool ok = [[NSFileManager defaultManager] createDirectoryAtPath:intermediateDir
+								withIntermediateDirectories:FALSE
+								attributes:nil
+								error:&err];
+	if (!ok)
+		goto fail;
+	
+	// Move the unwanted files into that directory
+	for (int i = 0; i < (int)filesToDelete.count; i++)
+	{
+		NSString *filePath = [filesToDelete objectAtIndex:i];
+		NSString *plistPath = [[filePath stringByDeletingPathExtension] stringByAppendingPathExtension:@"plist"];
+		ok = [[NSFileManager defaultManager] moveItemAtPath:filePath
+												toPath:[intermediateDir stringByAppendingPathComponent:[filePath lastPathComponent]]
+												error:&err];
+		if (!ok)
+			goto fail;
+		// Also want to delete the accompanying plist, but if that fails then never mind - maybe it doesn't exist
+		[[NSFileManager defaultManager] moveItemAtPath:plistPath toPath:[intermediateDir stringByAppendingPathComponent:[plistPath lastPathComponent]] error:&err];
+	}
+	
+	// Now move directory to trash
+	[[NSWorkspace sharedWorkspace] performFileOperation:NSWorkspaceRecycleOperation 
+								   source:[intermediateDir stringByDeletingLastPathComponent]
+								   destination:@"" 
+								   files:[NSArray arrayWithObject:[intermediateDir lastPathComponent]]
+								   tag:nil];
+	return;
+	
+  fail:
+	// If we get here then an error has occurred
+	[spimApp alertWithText:@"An error occurred while deleting the files. They have probably not been moved to the trash."
+				andExplanation:[SWF:@"Error: %@", err.localizedDescription]];
+}
+
 -(void)setCurrentFrameToPSTime:(double)time
 {
 	NSArray *sourceSequence = (timingsFromSequence == 0) ? sequence1 : sequence2;
