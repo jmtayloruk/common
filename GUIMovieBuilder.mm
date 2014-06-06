@@ -424,7 +424,7 @@ struct ImageDrawingInfo
 			NSAutoreleasePool * pool = [[NSAutoreleasePool alloc] init];
 			// MISSING IMAGES: tolerate missing source images, which mean the generic crop rect in maskedFrameRect may be inappropriate
 			NSRect thisCropRect = NSIntersectionRect(maskedFrameRect, NSMakeRect(0, 0, currentFrameImage.size.width, currentFrameImage.size.height));
-			builder->AddFrame(currentFrameImage, &maskedFrameRect);
+			builder->AddFrame(currentFrameImage, &thisCropRect);
 
 			dispatch_sync(dispatch_get_main_queue(),
 			^{
@@ -452,7 +452,7 @@ struct ImageDrawingInfo
 				NSAutoreleasePool * pool = [[NSAutoreleasePool alloc] init];
 				// MISSING IMAGES: tolerate missing source images, which mean the generic crop rect in maskedFrameRect may be inappropriate
 				NSRect thisCropRect = NSIntersectionRect(maskedFrameRect, NSMakeRect(0, 0, currentFrameImage.size.width, currentFrameImage.size.height));
-				builder->AddFrame(currentFrameImage, &maskedFrameRect);
+				builder->AddFrame(currentFrameImage, &thisCropRect);
 
 				dispatch_sync(dispatch_get_main_queue(),
 				^{

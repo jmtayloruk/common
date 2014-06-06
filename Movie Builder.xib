@@ -1020,7 +1020,7 @@
 						</object>
 						<object class="NSButton" id="355884893">
 							<reference key="NSNextResponder" ref="1006"/>
-							<int key="NSvFlags">289</int>
+							<int key="NSvFlags">292</int>
 							<string key="NSFrame">{{282, 62}, {79, 32}}</string>
 							<reference key="NSSuperview" ref="1006"/>
 							<bool key="NSEnabled">YES</bool>
@@ -4685,7 +4685,7 @@
 							<string key="candidateClassName">NSView</string>
 						</object>
 					</object>
-					<object class="IBClassDescriptionSource" key="sourceIdentifier">
+					<object class="IBClassDescriptionSource" key="sourceIdentifier" id="364347413">
 						<string key="majorKey">IBProjectSource</string>
 						<string key="minorKey">CameraFrameView.h</string>
 					</object>
@@ -4756,7 +4756,7 @@
 							<string key="candidateClassName">NSPathControl</string>
 						</object>
 					</dictionary>
-					<object class="IBClassDescriptionSource" key="sourceIdentifier" id="377423940">
+					<object class="IBClassDescriptionSource" key="sourceIdentifier">
 						<string key="majorKey">IBProjectSource</string>
 						<string key="minorKey">common/GUIMovieBuilder.h</string>
 					</object>
@@ -4783,7 +4783,7 @@
 							<string key="candidateClassName">GUIMovieBuilder</string>
 						</object>
 					</object>
-					<reference key="sourceIdentifier" ref="377423940"/>
+					<reference key="sourceIdentifier" ref="364347413"/>
 				</object>
 			</array>
 			<array class="NSMutableArray" key="referencedPartialClassDescriptionsV3.2+">
@@ -5370,7 +5370,7 @@
 		<int key="IBDocument.localizationMode">0</int>
 		<string key="IBDocument.TargetRuntimeIdentifier">IBCocoaFramework</string>
 		<bool key="IBDocument.PluginDeclaredDependenciesTrackSystemTargetVersion">YES</bool>
-		<string key="IBDocument.LastKnownRelativeProjectPath">../Spim GUI/Simple Preview.xcodeproj</string>
+		<string key="IBDocument.LastKnownRelativeProjectPath">../Spim Interface.xcodeproj</string>
 		<int key="IBDocument.defaultPropertyAccessControl">3</int>
 		<dictionary class="NSMutableDictionary" key="IBDocument.LastKnownImageSizes">
 			<string key="NSMenuCheckmark">{9, 8}</string>

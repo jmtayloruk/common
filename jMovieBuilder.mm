@@ -1,12 +1,13 @@
 #include "jMovieBuilder.cpp"
 
-CVPixelBufferRef FastImageFromNSImage(const NSImage *image)
+CVPixelBufferRef FastImageFromNSImage(const NSImage *image, const _NSRect cropRect)
 {
     CVPixelBufferRef buffer = NULL;
 	
     // config
-    size_t width = (size_t)[image size].width;
-    size_t height = (size_t)[image size].height;
+	NSRect actualCropRect = NSIntersectionRect(cropRect, NSMakeRect(0, 0, image.size.width, image.size.height));
+    size_t width = (size_t)actualCropRect.size.width;
+    size_t height = (size_t)actualCropRect.size.height;
     size_t bitsPerComponent = 8; // *not* CGImageGetBitsPerComponent(image);
     CGColorSpaceRef cs = CGColorSpaceCreateWithName(kCGColorSpaceGenericRGB);
     CGBitmapInfo bi = kCGImageAlphaNoneSkipFirst; // *not* CGImageGetBitmapInfo(image);
@@ -32,7 +33,7 @@ CVPixelBufferRef FastImageFromNSImage(const NSImage *image)
     NSGraphicsContext *nsctxt = [NSGraphicsContext graphicsContextWithGraphicsPort:ctxt flipped:NO];
     [NSGraphicsContext saveGraphicsState];
     [NSGraphicsContext setCurrentContext:nsctxt];
-    [image drawAtPoint:NSZeroPoint fromRect:NSZeroRect operation:NSCompositeCopy fraction:1.0];
+    [image drawAtPoint:NSZeroPoint fromRect:cropRect operation:NSCompositeCopy fraction:1.0];
     
 	[NSGraphicsContext restoreGraphicsState];
 	
@@ -44,7 +45,7 @@ CVPixelBufferRef FastImageFromNSImage(const NSImage *image)
 
 void JBetterMovieBuilder::AddFrame(const NSImage *frameImage, const _NSRect *cropRect, double gain)
 {
-	CVPixelBufferRef pixelBuffer = FastImageFromNSImage(frameImage);
+	CVPixelBufferRef pixelBuffer = FastImageFromNSImage(frameImage, *cropRect);
 	
 	// Feed the frame to the compression session and then release the CVBuffer
 	OSStatus err = ICMCompressionSessionEncodeFrame(compressionSession, pixelBuffer,

@@ -47,13 +47,6 @@ enum
 typedef NSComparisonResult (^timestampComparatorType)(TimestampedImage *, TimestampedImage *);
 typedef NSComparisonResult (^psTimestampComparatorType)(TimestampedImage *, TimestampedImage *);
 
-@interface MovieFrameView : CameraFrameView
-{
-	IBOutlet GUIMovieBuilder *movieBuilder;
-}
--(void)frameNeedsRedraw;
-@end
-
 #include <map>
 typedef std::map<int, FrameInfo> FIM;
 
