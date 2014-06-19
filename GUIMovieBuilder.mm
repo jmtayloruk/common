@@ -589,8 +589,8 @@ struct ImageDrawingInfo
 								defaultButton:@"Cancel"
 								alternateButton:@"Delete"
 								otherButton:nil
-								informativeTextWithFormat:[SWF:@"Frames %@ are outside the range \"Start\" to \"End\" and will be moved to the Trash. "
-														       @"This will lead to them being permanently deleted if you go ahead with this.", rangeString]];
+								informativeTextWithFormat:@"Frames %@ are outside the range \"Start\" to \"End\" and will be moved to the Trash. "
+														       @"This will lead to them being permanently deleted if you go ahead with this.", rangeString];
 	NSInteger result = [alert runModal];
 	if (result == NSAlertDefaultReturn)	// Cancel
 		return;
