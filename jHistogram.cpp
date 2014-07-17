@@ -54,18 +54,8 @@ void jHistogram::SetHistogramParams(double fbs, double bw, int numBins, bool res
 	numMissed = 0;
 	histogram = std::vector<int>(numBins);
 	firstBinStart = fbs;
+    fbsInt = fbs;
 	binWidth = bw;
-}
-
-void jHistogram::AddDatapoint(double val)
-{
-	int bin = int((val - firstBinStart) / binWidth);
-	if (includeOutliers)
-		bin = LIMIT(bin, 0, int(histogram.size()-1));
-	if ((bin < 0) || (bin >= int(histogram.size())))
-		numMissed++;
-	else
-		histogram[bin]++;
 }
 
 double jHistogram::MaxVal(void) const
