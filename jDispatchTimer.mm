@@ -177,7 +177,7 @@
 			the callback is called or when it is cancelled. Just to be safe I have included
 			this code though. Note however that since I am not sure why we would ever get here,
 			I am relucant to call dispatch_release as well...	*/
-		printf("%p delloc apparently without cancelling %p\n", self, timerSource);
+		printf("%p dealloc apparently without cancelling %p\n", self, timerSource);
 		CHECK(0);
 		dispatch_source_cancel(timerSource);
 	}

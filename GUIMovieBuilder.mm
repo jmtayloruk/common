@@ -543,7 +543,7 @@ struct ImageDrawingInfo
 		
 	// Work out which files we may be going to trash
 	NSString *parentDir = nil;
-	NSMutableArray *filesToDelete = [[NSMutableArray alloc] init];
+	NSMutableArray *filesToDelete = [[[NSMutableArray alloc] init] autorelease];
 	NSString *rangeString = nil;
 	if (self.startFrame > 1)
 	{
