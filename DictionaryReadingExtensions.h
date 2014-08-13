@@ -18,6 +18,7 @@
 -(double)getOptionalDoubleForKey:(NSString *)key defaultVal:(double)def;
 -(int)getOptionalIntForKey:(NSString *)key defaultVal:(int)def;
 -(bool)getOptionalBoolForKey:(NSString *)key defaultVal:(bool)def;
+-(NSString*)getRequiredStringForKey:(NSString *)key;
 
 @end
 
