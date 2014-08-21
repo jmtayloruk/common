@@ -8,7 +8,7 @@
 
 #import "DictionaryReadingExtensions.h"
 
-@implementation NSDictionary (CompulsoryKeyReading)
+@implementation NSDictionary (KeyReading)
 
 -(NSNumber *)getRequiredNumberForKey:(NSString *)key
 {
@@ -31,6 +31,19 @@
 -(int)getRequiredIntForKey:(NSString *)key
 {
     return [self getRequiredNumberForKey:key].intValue;
+}
+
+-(bool)getRequiredBoolForKey:(NSString *)key
+{
+    return [self getRequiredNumberForKey:key].boolValue;
+}
+
+-(NSString *)getRequiredStringForKey:(NSString *)key
+{
+	ALWAYS_ASSERT([self isKindOfClass:[NSDictionary class]]);
+	NSString *str = [self objectForKey:key];
+	ALWAYS_ASSERT([str isKindOfClass:[NSString class]]);
+	return str;
 }
 
 -(double)getRequiredDoubleForKey:(NSString *)key
