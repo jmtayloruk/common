@@ -75,12 +75,4 @@
 	return num.boolValue;
 }
 
--(NSString*)getRequiredStringForKey:(NSString *)key
-{
-	ALWAYS_ASSERT([self isKindOfClass:[NSDictionary class]]);
-	NSString *str = [self objectForKey:key];
-	ALWAYS_ASSERT([str isKindOfClass:[NSString class]]);
-	return str;
-}
-
 @end
