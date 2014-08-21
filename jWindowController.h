@@ -12,5 +12,8 @@ extern NSMutableSet *activeWindowControllers;
 extern NSString *WindowControllerListChanged;
 
 @interface JWindowController : NSWindowController <NSWindowDelegate>
-
+{
+    int _windowControllerListChanged_dummyProperty;
+}
+@property (readonly) int windowControllerListChanged_dummyProperty;
 @end
