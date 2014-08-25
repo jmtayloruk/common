@@ -38,6 +38,11 @@
     return [self getRequiredNumberForKey:key].boolValue;
 }
 
+-(double)getRequiredDoubleForKey:(NSString *)key
+{
+    return [self getRequiredNumberForKey:key].doubleValue;
+}
+
 -(NSString *)getRequiredStringForKey:(NSString *)key
 {
 	ALWAYS_ASSERT([self isKindOfClass:[NSDictionary class]]);
@@ -46,33 +51,50 @@
 	return str;
 }
 
--(double)getRequiredDoubleForKey:(NSString *)key
+-(NSArray *)getRequiredArrayForKey:(NSString *)key ofLength:(int)length
 {
-    return [self getRequiredNumberForKey:key].doubleValue;
+	ALWAYS_ASSERT([self isKindOfClass:[NSDictionary class]]);
+	NSArray *arr = [self objectForKey:key];
+	ALWAYS_ASSERT([arr isKindOfClass:[NSArray class]]);
+	ALWAYS_ASSERT(arr.count == (NSUInteger)length);
+	return arr;
+}
+
+-(NSDictionary *)getRequiredDictionaryForKey:(NSString *)key
+{
+	ALWAYS_ASSERT([self isKindOfClass:[NSDictionary class]]);
+	NSDictionary *dict = [self objectForKey:key];
+	ALWAYS_ASSERT([dict isKindOfClass:[NSDictionary class]]);
+	return dict;
 }
 
 -(double)getOptionalDoubleForKey:(NSString *)key defaultVal:(double)def
 {
-    NSNumber *num = [self getOptionalNumberForKey:key defaultVal:nil];
-    if (num == nil)
-        return def;
+    NSNumber *num = [self getOptionalNumberForKey:key defaultVal:[NSNumber numberWithDouble:def]];
 	return num.doubleValue;
 }
 
 -(int)getOptionalIntForKey:(NSString *)key defaultVal:(int)def
 {
-    NSNumber *num = [self getOptionalNumberForKey:key defaultVal:nil];
-    if (num == nil)
-        return def;
+    NSNumber *num = [self getOptionalNumberForKey:key defaultVal:[NSNumber numberWithInt:def]];
 	return num.intValue;
 }
 
 -(bool)getOptionalBoolForKey:(NSString *)key defaultVal:(bool)def
 {
-    NSNumber *num = [self getOptionalNumberForKey:key defaultVal:nil];
-    if (num == nil)
-        return def;
+    NSNumber *num = [self getOptionalNumberForKey:key defaultVal:[NSNumber numberWithBool:def]];
 	return num.boolValue;
 }
+
+-(NSString *)getOptionalStringForKey:(NSString *)key defaultVal:(NSString *)def
+{
+	ALWAYS_ASSERT([self isKindOfClass:[NSDictionary class]]);
+    NSString *str = [self objectForKey:key];
+    if (str == nil)
+        return def;
+	ALWAYS_ASSERT([str isKindOfClass:[NSString class]]);
+	return str;
+}
+
 
 @end

@@ -12,14 +12,18 @@
 @interface NSDictionary (KeyReading)
 
 -(NSNumber *)getRequiredNumberForKey:(NSString *)key;
--(NSNumber *)getOptionalNumberForKey:(NSString *)key defaultVal:(NSNumber *)def;
 -(int)getRequiredIntForKey:(NSString *)key;
 -(bool)getRequiredBoolForKey:(NSString *)key;
--(NSString *)getRequiredStringForKey:(NSString *)key;
 -(double)getRequiredDoubleForKey:(NSString *)key;
--(double)getOptionalDoubleForKey:(NSString *)key defaultVal:(double)def;
+-(NSString *)getRequiredStringForKey:(NSString *)key;
+-(NSArray *)getRequiredArrayForKey:(NSString *)key ofLength:(int)length;
+-(NSDictionary *)getRequiredDictionaryForKey:(NSString *)key;
+
+-(NSNumber *)getOptionalNumberForKey:(NSString *)key defaultVal:(NSNumber *)def;
 -(int)getOptionalIntForKey:(NSString *)key defaultVal:(int)def;
 -(bool)getOptionalBoolForKey:(NSString *)key defaultVal:(bool)def;
+-(double)getOptionalDoubleForKey:(NSString *)key defaultVal:(double)def;
+-(NSString *)getOptionalStringForKey:(NSString *)key defaultVal:(NSString *)def;
 
 @end
 
