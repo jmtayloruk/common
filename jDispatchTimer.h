@@ -13,6 +13,7 @@
 	dispatch_source_t	timerSource;
 	uint64_t			interval, repeatInterval;
 	bool				firedOneShot;
+    double             _oneoffTimeDue;  // I have not implemented this for repeating timers just because it would be a little more complicated, and I haven't needed that feature
 }
 
 +(id)oneShotTimerOnQueue:(dispatch_queue_t)queue afterInterval:(double)dt withHandler:(dispatch_block_t)handler;
@@ -23,5 +24,7 @@
 -(void)cancel;
 -(void)restartOneShotTimer;
 -(void)adjustNextInterval:(double)newInterval;
+
+@property (readonly) double oneoffTimeDue;
 
 @end

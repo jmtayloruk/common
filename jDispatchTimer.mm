@@ -8,11 +8,16 @@
 
 #import "JDispatchTimer.h"
 
+@interface JDispatchTimer()
+    @property (readwrite) double oneoffTimeDue;
+@end
+
 @implementation JDispatchTimer
 
 -(void)startTimer		// private
 {
 //	printf("Start timer %p, source %p with %lld %lld\n", self, timerSource, interval, repeatInterval);
+    self.oneoffTimeDue = GetTime() + interval * 1e-9;
 	dispatch_source_set_timer(timerSource, dispatch_time(DISPATCH_TIME_NOW, interval), repeatInterval, 0);
 }
 
@@ -185,5 +190,7 @@
 	[super dealloc];
 //	printf("Done dealloc timer %p\n", self);
 }
+
+@synthesize oneoffTimeDue = _oneoffTimeDue;
 
 @end
