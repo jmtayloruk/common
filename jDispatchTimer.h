@@ -23,6 +23,7 @@
 -(void)restart;
 -(void)cancel;
 -(void)restartOneShotTimer;
+-(void)fireOneShotTimerNow;
 -(void)adjustNextInterval:(double)newInterval;
 
 @property (readonly) double oneoffTimeDue;

@@ -21,6 +21,13 @@
 	dispatch_source_set_timer(timerSource, dispatch_time(DISPATCH_TIME_NOW, interval), repeatInterval, 0);
 }
 
+-(void)fireOneShotTimerNow
+{
+    CHECK(repeatInterval == DISPATCH_TIME_FOREVER);     // I have only implemented this for one-shot timers
+    self.oneoffTimeDue = GetTime();
+	dispatch_source_set_timer(timerSource, dispatch_time(DISPATCH_TIME_NOW, 0.0), repeatInterval, 0);
+}
+
 #if 0
 -(id)retain
 {
