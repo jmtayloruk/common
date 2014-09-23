@@ -181,7 +181,7 @@ struct ImageDrawingInfo
 	int destRowBytes = argbBitmap.bytesPerRow;
 	if ((srcBytesPerPixel == 3) || (srcBytesPerPixel == 4))
 		channelMaskToUse = kRedChannel | kGreenChannel | kBlueChannel;
-	
+    
 	if (srcData != nil)
 	{
 		dispatch_apply(height, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0),
@@ -219,6 +219,13 @@ struct ImageDrawingInfo
 						vals[1] = src[x*srcBytesPerPixel + 1];
 						vals[2] = src[x*srcBytesPerPixel + 2];
 					}
+                    else if (srcBytesPerPixel == 8)
+                    {
+						/*	ImageMagick sometimes generates 16 bits/channel PNGs, so we handle them too	*/
+						vals[0] = src[x*srcBytesPerPixel + 0];
+						vals[1] = src[x*srcBytesPerPixel + 2];
+						vals[2] = src[x*srcBytesPerPixel + 4];
+                    }
 					else if (srcBytesPerPixel == 2)
 					{
 						vals[0] = vals[1] = vals[2] = src[x*srcBytesPerPixel + 0] / 256.0 + src[x*srcBytesPerPixel + 1];
