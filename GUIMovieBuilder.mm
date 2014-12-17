@@ -378,22 +378,13 @@ struct ImageDrawingInfo
 	maskedFrameRect = MultiplyRect(maskedFrameRect, upscalingFactor);
 	
 	OSStatus err;
-#if 1
 	BoundsRect movieBuilderRect(0, 0, (int)maskedFrameRect.size.width, (int)maskedFrameRect.size.height);
 	Handle outputMovieDataRef = NULL;
 	OSType outputMovieDataRefType;
 	err = QTNewDataReferenceFromCFURL((CFURLRef)outputMovieURL, 0, &outputMovieDataRef, &outputMovieDataRefType);
 	ALWAYS_ASSERT_NOERR(err);
 	
-	const int qualityMapping[] = { codecLowQuality, codecNormalQuality, codecHighQuality, codecLosslessQuality, codecLosslessQuality, codecLosslessQuality };
-	const int codecMapping[] = { kH264CodecType, kH264CodecType, kH264CodecType, kH264CodecType, kAnimationCodecType, kRawCodecType };
 	JBetterMovieBuilder *builder = new JBetterMovieBuilder(codecMapping[self.encodingQuality], outputMovieDataRef, outputMovieDataRefType, movieBuilderRect, framerateToUse, &err, qualityMapping[self.encodingQuality]);
-#else
-	const int qualityMapping[] = { 0.2, 0.5, 0.7, 0.9, 1.0, 1.0, 1.0 };
-	//**** need to use outputMovieURL...
-	JModernMovieBuilder *builder = new JModernMovieBuilder("temp_file.mov", maskedFrameRect.size, framerateToUse, &err, qualityMapping[self.encodingQuality]);
-	
-#endif
 	if (err != noErr)
 	{
 		NSAlert *alert = [[[NSAlert alloc] init] autorelease];
@@ -736,20 +727,16 @@ struct ImageDrawingInfo
 								inSortedRange:NSMakeRange(0, [sequence2 count])
 								options:NSBinarySearchingInsertionIndex
 								usingComparator:timestampComparator];
-		printf("Looking for match with timestamp %lf\n", obj1.timestamp);
-		printf("Got index %d as insertion point, timestamp %lf\n", index, [[sequence2 objectAtIndex:index] timestamp]);
 		// [n.b. this next code branch was merged in from a different version. I think it is ok, but
 		//  if any problems encountered, that may explain it!]
+        // Note range check on index == count here, BEFORE we attempt to access objectAtIndex:index !
 		if ((index == (int)sequence2.count) || (timestampComparator(obj1, [sequence2 objectAtIndex:index]) != 0))
 		{
 			// e.g. if insertion point for obj1 would be before the first frame in current sequence, we should not be showing anything at all.
 			// The "if" conditions here ensure that if obj1 and obj2 have exactly the same timestamp then
 			// we return the precisely matching pair
 			index--;		
-			printf("Special case: decrement\n");
 		}
-		printf("Decrement\n");
-		//index--;
 		
 		// We now have what may be the correct index. However we should refine this
 		// based on the precise PS time we actually fire the trigger
@@ -790,7 +777,10 @@ struct ImageDrawingInfo
 		if (index < 0)
 			result = nil;
 		else
+        {
+            ALWAYS_ASSERT(index < (int)sequence2.count);
 			result = [sequence2 objectAtIndex:index];
+        }
 	}
 	return [[result retain] autorelease];
 }
@@ -860,7 +850,7 @@ void MergeBitmaps(NSImage *srcImage, ImageDrawingInfo *offsets)
 	
 	[srcImage drawInRect:destRect
 					fromRect:NSMakeRect(0, 0, sw, sh)
-					operation:NSCompositeCopy
+					operation:NSCompositePlusLighter
 					fraction:1.0];
 	
 	// Temporary code still needs testing and making to work for different scalings etc.
@@ -994,7 +984,7 @@ void MergeBitmaps(NSImage *srcImage, ImageDrawingInfo *offsets)
 		MergeBitmaps(obj1.image, &offsets1);
 		if (bitmap2 != nil)
 		{
-			useOffsets = ((self.offsetForSequence == 0) && (self.hasSecondSequence));
+			useOffsets = ((self.offsetForSequence == 1) && (self.hasSecondSequence));
 			ImageDrawingInfo offsets2 = { useOffsets ? self.offsetX : 0, useOffsets ? self.offsetY : 0, useOffsets ? offsetImageScale : 1, flipSequence2H, flipSequence2V, showCrosshairsOverride2, crosshairs };
 			MergeBitmaps(obj2.image, &offsets2);
 		}
