@@ -39,7 +39,7 @@
 				<int key="NSWindowStyleMask">1</int>
 				<int key="NSWindowBacking">2</int>
 				<string key="NSWindowRect">{{196, 404}, {298, 106}}</string>
-				<int key="NSWTFlags">544736256</int>
+				<int key="NSWTFlags">1618478080</int>
 				<string key="NSWindowTitle"/>
 				<string key="NSWindowClass">NSWindow</string>
 				<nil key="NSViewClass"/>
