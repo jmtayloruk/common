@@ -23,14 +23,14 @@ NSRect MultiplyRect(const NSRect a, double n)
 NSComparisonResult DiffToNSComparisonResult(int i) { return MAX(MIN(i, 1), -1); }
 NSComparisonResult DiffToNSComparisonResult(double i) { return (i < 0) ? -1 : ((i > 0) ? 1 : 0); }
 
-timestampComparatorType timestampComparator = ^(TimestampedImage *objA, TimestampedImage *objB)
+computerTimestampComparatorType timestampComparator = ^(TimestampedImage *objA, TimestampedImage *objB)
 {
-	return DiffToNSComparisonResult(objA.timestamp - objB.timestamp);
+	return DiffToNSComparisonResult(objA.computerTimestamp - objB.computerTimestamp);
 };
 
-psTimestampComparatorType psTimestampComparator = ^(TimestampedImage *objA, TimestampedImage *objB)
+cameraTimestampComparatorType cameraTimestampComparator = ^(TimestampedImage *objA, TimestampedImage *objB)
 {
-	return DiffToNSComparisonResult(objA.psTimestamp - objB.psTimestamp);
+	return DiffToNSComparisonResult(objA.cameraTimestamp - objB.cameraTimestamp);
 };
 
 dispatch_queue_t movieExportQueue = dispatch_queue_create("movie export queue", NULL);
@@ -47,33 +47,36 @@ struct ImageDrawingInfo
 
 @implementation TimestampedImage
 
-+(id)timestampedImageFromFile:(NSString *)path forSequence:(int)inSequence parent:(GUIMovieBuilder*)inParent
++(id)timestampedImageFromFile:(NSString *)path forSequence:(ImageSequenceForChannel*)inSequence
 {
-	return [[[TimestampedImage alloc] initFromFile:path forSequence:inSequence parent:inParent] autorelease];
+	return [[[TimestampedImage alloc] initFromFile:path forSequence:inSequence] autorelease];
 }
 
-+(id)dummyTimestampedImageWithPSTime:(double)time
++(id)dummyTimestampedImageWithCameraTime:(double)time
 {
-	TimestampedImage *result = [[[TimestampedImage alloc] initFromFile:nil  forSequence:1 parent:nil] autorelease];
-	result.psTimestamp = time;
+	// This is NOT a complete object, and will crash if many methods are called.
+	// It is intended for use in timestamp comparisons.
+	TimestampedImage *result = [[[TimestampedImage alloc] initFromFile:nil forSequence:nil] autorelease];
+	result.cameraTimestamp = time;
 	return result;
 }
 
--(id)initFromFile:(NSString *)path forSequence:(int)inSequence parent:(GUIMovieBuilder*)inParent
+-(id)initFromFile:(NSString *)path forSequence:(ImageSequenceForChannel*)inSequence
 {
 	if (!(self = [super init]))
 		return nil;
 	
-	/*	We mustn't allocate the image because we are liable to run out of memory
-		For the moment I load every time [self image] is called, and rely on OS disk cache
-		to keep things reasonably efficient. I could consider using NSCache instead,
-		but this works ok for now, for what is not really a priority feature of the program	*/
-	NSError *err;
-	self.link = [JAlias aliasForPath:path];
 	sequence = inSequence;
-	image = nil;
-	parent = inParent;
 	
+	if (path == nil)
+		return self;	// We are just allocating a dummy object without a genuine image file backing it
+	
+	/*	We mustn't allocate the image because we are liable to run out of memory
+	 For the moment I load every time [self image] is called, and rely on OS disk cache
+	 to keep things reasonably efficient. I could consider using NSCache instead,
+	 but this works ok for now, for what is not really a priority feature of the program	*/
+	self.link = [JAlias aliasForPath:path];
+
 	// Identify the XML filename
 	NSString *xmlPath = MetadataPathFromImagePath(path);
 	if (xmlPath != nil)
@@ -87,22 +90,22 @@ struct ImageDrawingInfo
 		NSMutableDictionary *metadata = [NSMutableDictionary dictionaryWithContentsOfFile:xmlPath];
 		id timestampObj = [metadata objectForKey:@"timestamp"];
 		if (timestampObj != nil)
-			self.psTimestamp = [timestampObj doubleValue];
+			self.cameraTimestamp = [timestampObj doubleValue];
 	
 		self.frameNumber = [[metadata objectForKey:@"frame_number"] intValue];
 
 		self.metadata = metadata;
 		id timeReceived = [metadata objectForKey:@"time_received"];
 		if (timeReceived != nil)
-			self.timestamp = [timeReceived doubleValue];
+			self.computerTimestamp = [timeReceived doubleValue];
 		
 		// Probably means this is the QI camera, which doesn't give us timestamps for some reason (bug reported to QI...)
-		if (self.timestamp == 0.0)
-			self.timestamp = [[metadata objectForKey:@"time_processing_started"] doubleValue];
+		if (self.computerTimestamp == 0.0)
+			self.computerTimestamp = [[metadata objectForKey:@"time_processing_started"] doubleValue];
 
 		// We record timebase_start_uptime to get a universally consistent timestamp
 		double timebase_start = [[metadata objectForKey:@"timebase_start_uptime"] doubleValue];
-		self.timestamp += timebase_start;
+		self.computerTimestamp += timebase_start;
 	}
 
 	return self;
@@ -110,7 +113,6 @@ struct ImageDrawingInfo
 
 -(void)dealloc
 {	
-	[image release];
 	self.link = nil;
 	self.metadata = nil;
 	[super dealloc];
@@ -136,20 +138,13 @@ struct ImageDrawingInfo
 			printf("Retry succeeded\n");
 	}
 	
-//	printf("Loading file %s\n", self.path.UTF8String);
-	int width = 1, height = 1;
-	if ((imageFromDisk == nil) && (!parent.warnedMissingFile))
-	{
-		[spimApp alertWithText:[SWF:@"Image file %@ not found", self.link.filename]
-					andExplanation:@"The file or a directory containing it may have been moved (will not warn again). Please choose the source data again. It could alternatively be that the file is not in a supported image format."];
-		parent.warnedMissingFile = true;
-	}
+	// Check for missing files. This could happen if the file is deleted out from underneath us.
+	// If that is the case, we return nil and the caller can warn the user if the wish
+	if (imageFromDisk == nil)
+		return nil;
 	
-	if (imageFromDisk != nil)
-	{
-		width = int(imageFromDisk.size.width);
-		height = int(imageFromDisk.size.height);
-	}
+	int width = int(imageFromDisk.size.width);
+	int height = int(imageFromDisk.size.height);
 	
 	/*	Having loaded the raw image we now need to convert it into an ARGB image with any scaling,
 		colouring etc applied as specified by the user. We need to do this by hand, but it makes
@@ -168,10 +163,11 @@ struct ImageDrawingInfo
 										bitsPerPixel:0];
 		
 	const int channelMasks[] = { kRedChannel | kGreenChannel | kBlueChannel, kRedChannel, kGreenChannel, kBlueChannel };
-	int channelMaskToUse = channelMasks[(sequence == 1) ? parent.sequence1Colour : parent.sequence2Colour];
-	float exposure = (sequence == 1) ? parent.sequence1Exposure : parent.sequence2Exposure;
-	bool flipH = (sequence == 1) ? parent.flipSequence1H : parent.flipSequence2H;
-	bool flipV = (sequence == 1) ? parent.flipSequence1V : parent.flipSequence2V;
+	ALWAYS_ASSERT((sequence.colour >= 0) && (sequence.colour < 4));
+	int channelMaskToUse = channelMasks[sequence.colour];
+	float exposure = sequence.exposure;
+	bool flipH = sequence.flipH;
+	bool flipV = sequence.flipV;
 
 	NSBitmapImageRep *srcBitmap = RawBitmapFromImage(imageFromDisk);
 	int srcBytesPerPixel = srcBitmap.bitsPerPixel / 8;
@@ -256,8 +252,16 @@ struct ImageDrawingInfo
 	return [result autorelease];
 }
 
-@synthesize timestamp = _timestamp;
-@synthesize psTimestamp = _psTimestamp;
+-(bool)isBrightfield
+{
+	// We want to know if this is a brightfield channel. For now all we can do is look at the model_string property,
+	// but TODO: I would like to copy across the channel information from the configuration plist into the image metadata
+	NSString *model = [self.metadata objectForKey:@"model_string"];
+	return ([model hasPrefix:@"Allied Vision"]);
+}
+
+@synthesize computerTimestamp = _computerTimestamp;
+@synthesize cameraTimestamp = _cameraTimestamp;
 -(NSString *)path
 {
 	return self.link.path;
@@ -271,6 +275,434 @@ struct ImageDrawingInfo
 {
 	return [self.path lastPathComponent];
 }
+
+@end
+
+@implementation ImageSequenceForChannel
+
+-(id)initForParent:(GUIMovieBuilder*)inParent;
+{
+	if (!(self = [super init]))
+		return nil;
+
+	parent = inParent;
+	_colour = 0;
+	_scale = 1.0;
+	_exposure = 1.0;
+	_overrideFrameIndex = -1;
+	_sourceFolderURL = nil;
+	interestedInCrosshairsInformation = true;
+	self.crosshairs = [JPoint2 pointWithNSPoint:NSMakePoint(-1, -1)];
+	self.offset = [JPoint2 pointWithNSPoint:NSMakePoint(0, 0)];
+	timestampedImages = [[NSMutableArray alloc] init];
+	[self addObserver:self forKeyPath:@"syncFramesOnly" options:0 context:NULL];
+	[self addObserver:self forKeyPath:@"displayImageMayNeedChanging" options:0 context:NULL];
+	
+	return self;
+}
+
+-(void)dealloc
+{
+	[self removeObserver:self forKeyPath:@"syncFramesOnly"];
+	[self removeObserver:self forKeyPath:@"displayImageMayNeedChanging"];
+	self.sourceFolderURL = nil;
+	self.crosshairs = nil;
+	self.offset = nil;
+	[timestampedImages release];
+	[super dealloc];
+}
+
++(NSSet*)keyPathsForValuesAffectingValueForKey:(NSString*)inKey
+{
+	NSSet* set = [super keyPathsForValuesAffectingValueForKey:inKey];
+	// Many of the properties affect how the current image should be displayed.
+	if ([inKey isEqualTo:@"displayImageMayNeedChanging"])
+	{
+		// All these variables could affect the appearance of the image
+		// It is not possible to directly implement a one-to-many relationship when listing key paths here
+		// In other words, the parent can't explicitly watch for a property change from *any* entry in parent.sequences
+		// It's also frustrating that (apparently) NSArrayController is not fully KVO compliant so the parent can't watch
+		// selection.property (which would be enough for our purposes). Instead we need to have each sequence watch for its
+		// own changes (here), and inform the parent
+		set = [set setByAddingObjectsFromSet:[NSSet setWithObjects:
+											  @"sourceFolderURL",
+											  @"flipH", @"flipV",
+											  @"syncFramesOnly", @"colour",
+											  @"exposure", @"scale",
+											  @"offset.everything",
+											  @"showCrosshairs", @"crosshairs.everything",
+											  nil]];
+	}
+	if ([inKey isEqualTo:@"filenameString"])
+	{
+		// We want to know if the source filename changes.
+		// In some ways it would be more logical to monitor if currentFrameObject changed,
+		// but at the time of writing that is not treated as a property (it's called from the parent
+		// and queries the parent to know what the current frame is!), so monitoring parent.currentFrame
+		// is the best we can do at present.
+		set = [set setByAddingObjectsFromSet:[NSSet setWithObjects:
+											  @"sourceFolderURL",
+											  @"parent.currentFrame",
+											  nil]];
+	}
+	return set;
+}
+
+-(void)observeValueForKeyPath:(NSString *)keyPath
+					 ofObject:(id)object
+					   change:(NSDictionary *)change
+					  context:(void *)context
+{
+	if ([keyPath isEqualTo:@"syncFramesOnly"])
+	{
+		if (self.sourceFolderURL != nil)
+			[self populateSequenceArrayFromURL:self.sourceFolderURL syncOnly:self.syncFramesOnly];
+	}
+	else if ([keyPath isEqualTo:@"displayImageMayNeedChanging"])
+		parent.displayImageMayNeedChanging++;
+	else
+		[super observeValueForKeyPath:keyPath ofObject:object change:change context:context];
+}
+
+-(NSURL*)sourceFolderURL
+{
+	return [[_sourceFolderURL retain] autorelease];
+}
+
+-(void)setSourceFolderURL:(NSURL*)url
+{
+	if (url == nil)
+	{
+		if (_sourceFolderURL != nil)
+			[_sourceFolderURL release];
+		_sourceFolderURL = nil;
+		return;
+	}
+	_sourceFolderURL = [url copy];
+	[self populateSequenceArrayFromURL:url syncOnly:self.syncFramesOnly];
+	
+	// Attempt to load sync information from the prosilica camera for this image set
+	// If we find it then we will use it to improve the decision of which
+	// fluorescence image belongs with which brightfield image.
+	FILE *inFile = fopen([url URLByAppendingPathComponent:@"sync_log.txt"].path.UTF8String, "r");
+	if (inFile == NULL)
+		return;
+	while (1)
+	{
+		FrameInfo info;
+		int frameNumber, integerCycle, inSync;
+		double timestamp, pixelValueSum;
+		int numRead = fscanf(inFile, "SYNC\t%*f\t%d\t%lf\t%lf\t%lf\t"
+							 "%lf\t%lf\t%lf\t%lf\t"
+							 "%lf\t%lf\t%lf\t%lf\t"
+							 "%d\t%d\t%lf\t%lf\t%d\n",
+							 &frameNumber, &info.referencePos, &info.phase, &info.deltaPhase,
+							 &info.timestampCopy, &info.psAnticipatedTime, &info.psUsedTriggerTime, &info.psTimeTriggerWasProgrammed,
+							 &info.macTimeReceived, &info.macTimeProcessingStarted, &info.macTimeProcessingEnded, &info.macTriggerSentTime,
+							 &integerCycle, &info.bestScorePos, &pixelValueSum, &info.alternativePeriodCalculation, &inSync);
+		
+		
+		if (numRead != 17)
+			break;
+		frameInfoMap[frameNumber] = info;
+	};
+	
+	fclose(inFile);
+}
+
+-(void)populateSequenceArrayFromURL:(NSURL*)url syncOnly:(bool)syncOnly
+{
+	ALWAYS_ASSERT(IsDirectory(url));		// Control should enforce this
+	// TODO: IsDirectory call can fail if we computationally request a particular URL, which doesn't exist.
+	// I should think about whether I should handle that better...?
+	
+	NSString *theString = [url path];
+	[timestampedImages removeAllObjects];
+	ForEveryImageFileInDirectory(theString, ^(NSString *thePath)
+	 {
+		 TimestampedImage *obj = [TimestampedImage timestampedImageFromFile:thePath forSequence:self];
+		 
+		 if ((!syncOnly) || ([[obj.metadata objectForKey:@"in_sync"] boolValue]))
+		 {
+			 [timestampedImages addObject:obj];
+			 // Read the crosshairs coordinates and inform the parent accordingly
+			 // It's up to the parent to decide what to do with this information
+			 // (the crosshairs coords may already be known)
+			 NSPoint thisCrosshairs = NSPointFromString((NSString*)[obj.metadata objectForKey:@"crosshairs"]);
+			 NSRect thisCropRect = NSRectFromString((NSString*)[obj.metadata objectForKey:@"crop_rect"]);
+			 if ((thisCrosshairs.x != 0) || (thisCrosshairs.y != 0))
+			 {
+				 if (interestedInCrosshairsInformation)
+				 {
+					 // Note that the code used to expect a negative value for the crosshairs y coord
+					 // This is now fixed, but old video datasets will have a negative value, and this
+					 // will need to be altered by hand when generating videos from the data...
+					 self.crosshairs = [JPoint2 pointWithNSPoint:NSMakePoint(thisCrosshairs.x - thisCropRect.origin.x, thisCrosshairs.y - thisCropRect.origin.y)];
+					 interestedInCrosshairsInformation = false;
+				 }
+			 }
+		 }
+	 });
+	
+	// Frames need sorting by timestamp - normally we are ok but
+	// the ordering won't be right if there was a wrap of frame number
+	[timestampedImages sortUsingComparator:timestampComparator];
+
+	[parent sequenceChanged:self];
+}
+
+-(bool)infoForFrameNumber:(int)f into:(FrameInfo *)fi
+{
+	// First identify the TimestampedImage record for this frame number
+	FIM::iterator it = frameInfoMap.find(f);
+	if (it != frameInfoMap.end())
+	{
+		*fi = (*it).second;
+		return true;
+	}
+	else
+		return false;
+}
+
+-(TimestampedImage*)currentFrameObject
+{
+	TimestampedImage *result;
+	if (timestampedImages.count == 0)
+		return nil;
+	
+	if (self.overrideFrameIndex != -1)
+	{
+		CHECK((self.overrideFrameIndex >= 0) && (self.overrideFrameIndex < self.count));
+		result = [timestampedImages objectAtIndex:self.overrideFrameIndex];
+	}
+	else if (parent.sequenceToUseForTimings == self)
+	{
+		if ((parent.currentFrame > (int)timestampedImages.count) || (parent.currentFrame < 1))
+			return nil;
+		result = [timestampedImages objectAtIndex:parent.currentFrame-1];
+	}
+	else
+	{
+		// Note that to avoid recursions it is essential that we know that we are NOT sequenceToUseForTimings
+		// when we call currentFrameObjectToUseForTimings
+		// I'm adding another assert right here just to be clear about that.
+		ALWAYS_ASSERT(parent.sequenceToUseForTimings != self);
+		TimestampedImage *timingObject = parent.currentFrameObjectToUseForTimings;
+		if (timingObject == nil)
+			return nil;
+		int index = [timestampedImages indexOfObject:timingObject
+									   inSortedRange:NSMakeRange(0, timestampedImages.count)
+											 options:NSBinarySearchingInsertionIndex
+									 usingComparator:timestampComparator];
+        // Note range check on index == count here, BEFORE we attempt to access objectAtIndex:index !
+		if ((index == (int)timestampedImages.count) || (timestampComparator(timingObject, [timestampedImages objectAtIndex:index]) != 0))
+		{
+			// e.g. if insertion point for obj1 would be before the first frame in current sequence, we should not be showing anything at all.
+			// The "if" conditions here ensure that if the prsesent object and the one from the sequence being used for timings
+			// have exactly the same timestamp then we return the precisely matching pair
+			index--;
+		}
+		
+#if 0
+		/*	TODO: this code needs updating.
+			It is intended to use information logged from prosilica camera during sync analysis
+			in order to refine which QI frame belongs with which PS frame.
+			In the new world order I need to decide how I am going to know when to make use of
+			that information for lining up sequences. I need to be able to identify whether the
+			current frame was a slave frame triggered from synchronization 
+			(i.e. ideally tell that it is NOT cascaded...
+		     [but what about frames cascaded from frames that were themselves triggered by sync!?]). 
+			If it is a slave frame then I should execute the subsequent code. 
+			However the code also assumes that the PS camera that generated the log is also being used
+			as the one controlling the timings for the MovieBuilder. I should ideally check that too!	*/
+
+		// We now have what may be the correct index. However we should refine this
+		// based on the precise PS time we actually fire the trigger
+		bool recentlyFired = false;
+		for (int i = timingObject.frameNumber - 20; i <= timingObject.frameNumber; i++)
+		{
+			FrameInfo info;
+			bool ok = [self infoForFrameNumber:i into:&info];
+			if (ok)
+			{
+				if (info.psUsedTriggerTime != -1)
+				{
+					if (info.psUsedTriggerTime <= self.timepointMS * 1e-3)
+					{
+						//					printf("Trigger fire time %lf has recently passed (current timepoint %lf)\n", info.psUsedTriggerTime, self.timepointMS*1e-3);
+						recentlyFired = true;
+						break;
+					}
+				}
+			}
+		}
+		
+		if (recentlyFired)
+		{
+			printf("recently fired\n");
+			// We have very recently fired a trigger.
+			// Checking if frame index+1 has a timestamp very slightly into the future
+			// If so, use it
+			if (index < int(sequence2.count) - 1)
+			{
+				TimestampedImage *next = [sequence2 objectAtIndex:index+1];
+				double nextTS = next.timestamp;
+				if (fabs(obj1.timestamp - nextTS) < 1e-1)
+					index++;
+			}
+		}
+#endif
+		
+		if (index < 0)
+			result = nil;
+		else
+        {
+            ALWAYS_ASSERT(index < (int)timestampedImages.count);
+			result = [timestampedImages objectAtIndex:index];
+        }
+	}
+	return [[result retain] autorelease];
+}
+
+-(TimestampedImage*)timestampedImageAtIndex:(NSUInteger)index
+{
+	ALWAYS_ASSERT(index < timestampedImages.count);
+	TimestampedImage *result = [timestampedImages objectAtIndex:index];
+	ALWAYS_ASSERT([result isKindOfClass:[TimestampedImage class]]);
+	return result;
+}
+
+-(int)frameForCameraTimestamp:(double)time
+{
+	return (int)MAX(int([timestampedImages indexOfObject:[TimestampedImage dummyTimestampedImageWithCameraTime:time]
+										   inSortedRange:NSMakeRange(0, timestampedImages.count)
+										 		 options:NSBinarySearchingInsertionIndex
+										 usingComparator:cameraTimestampComparator]) - 1,
+					0);
+}
+
+-(NSRect)destRectForDrawingImage:(NSImage *)srcImage
+{
+	// Returns the rectangle where our current settings indicate that the frame will be drawn
+	// We draw the centre of it at (offsetX,offsetY)
+	// Note that we shouldn't need to have srcImage passed in. However at present we don't do a good
+	// job of caching the images in TimestampedImage, so better to pass it in here than to have to
+	// load it afresh just to see what size it is!
+	float destX = self.offset.x;
+	float destY = self.offset.y;
+	float sw = srcImage.size.width * self.scale;
+	float sh = srcImage.size.height * self.scale;
+	
+	// Certain layout behaviours require special-case handling here
+	__block ImageSequenceForChannel *prevSeq = nil;
+	__block NSRect rectForPrev = NSMakeRect(0, 0, 0, 0);
+	if (parent.layoutBehaviour == kLayoutAllAdjacent)
+	{
+		// Each sequence offsets itself according to the position of the one preceding it
+		// (this code needs care to avoid recursion in the call to destRectForDrawingImage!)
+		for (ImageSequenceForChannel *seq in parent.sequences)
+		{
+			if (seq == self)
+				break;
+			prevSeq = seq;
+			rectForPrev = [seq destRectForDrawingImage:seq.currentFrameObject.image];
+		}
+	}
+	else if ((parent.layoutBehaviour == kLayoutBrightfieldAdjacent) && (self.currentFrameObject.isBrightfield))
+	{
+		// If this is a brightfield sequence then offset it relative to the bounding rect of all the non-brightfield frames
+		for (ImageSequenceForChannel *seq in parent.sequences)
+		{
+			if (!seq.currentFrameObject.isBrightfield)
+			{
+				prevSeq = seq;
+				rectForPrev = NSUnionRect(rectForPrev, [seq destRectForDrawingImage:seq.currentFrameObject.image]);
+			}
+		}
+	}
+	if (prevSeq != nil)
+		destX += rectForPrev.origin.x + rectForPrev.size.width + sw/2.0;
+
+	NSRect result = NSMakeRect(destX - sw/2.0, destY - sh/2.0, sw, sh);
+	return result;
+}
+
+-(void)drawIntoCurrentDrawingContext
+{
+	if (self.currentFrameObject == nil)
+		return;
+	NSImage *srcImage = self.currentFrameObject.image;
+	if (srcImage == nil)
+	{
+		// We should be displaying a frame, but we do not have an actual image for it
+		// That probably means the file on disk has been moved - warn the user if we haven't
+		// already done so
+		if (!_warnedMissingFile)
+		{
+			[spimApp alertWithText:[SWF:@"Image file %@ not found", self.currentFrameObject.link.filename]
+					andExplanation:@"The file or a directory containing it may have been moved (will not warn again). Please choose the source data again. It could alternatively be that the file is not in a supported image format."];
+			_warnedMissingFile = true;
+		}
+		return;
+	}
+	
+	// Draw srcBitmap into mergedBitmap.
+	NSRect destRect = [self destRectForDrawingImage:srcImage];
+	[srcImage drawInRect:destRect
+				fromRect:NSMakeRect(0, 0, srcImage.size.width, srcImage.size.height)
+			   operation:NSCompositePlusLighter
+				fraction:1.0];
+	
+	if (self.showCrosshairs)
+	{
+		[[NSColor redColor] set];
+		NSBezierPath *path = [NSBezierPath bezierPath];
+		// TODO: should decide how to handle image flipping wrt crosshairs. If flipped then should flip crosshairs too,
+		// but also need to make sure it behaves consistently wrt crosshairs drawn on live image when image is flipped/unflipped/
+		[path moveToPoint:NSMakePoint(destRect.origin.x + self.crosshairs.x * self.scale, destRect.origin.y + (self.crosshairs.y - 10) * self.scale)];
+		[path lineToPoint:NSMakePoint(destRect.origin.x + self.crosshairs.x * self.scale, destRect.origin.y + (self.crosshairs.y + 10) * self.scale)];
+		[path moveToPoint:NSMakePoint(destRect.origin.x + (self.crosshairs.x - 10) * self.scale, destRect.origin.y + self.crosshairs.y * self.scale)];
+		[path lineToPoint:NSMakePoint(destRect.origin.x + (self.crosshairs.x + 10) * self.scale, destRect.origin.y + self.crosshairs.y * self.scale)];
+		[path stroke];
+	}
+}
+
+-(NSString *)filenameString
+{
+	if (self.currentFrameObject != nil)
+		return self.currentFrameObject.fileNameNoPath;
+	return nil;
+}
+
+-(NSString*)popupMenuString
+{
+	// This is rather unsatisfactory - we need to know our own index in the sequence array
+	// in order to know what to call ourselves. Should probably either make the string
+	// more descriptive or somehow redesign this code in a more elegant way...
+	return [SWF:@"%d", [parent.sequences indexOfObject:self]];
+}
+
+-(int/*remaining count*/)excludeOutsideRangeFrom:(int)firstIndex to:(int)lastIndex
+{
+	NSRange rangeToKeep = NSMakeRange(firstIndex, MIN(lastIndex - firstIndex + 1, int(timestampedImages.count - firstIndex)));
+	timestampedImages = [[NSMutableArray arrayWithArray:[timestampedImages subarrayWithRange:rangeToKeep]] retain];
+	return timestampedImages.count;
+}
+
+-(int)count { return timestampedImages.count; }
+@synthesize flipH = _flipH;
+@synthesize flipV = _flipV;
+@synthesize syncFramesOnly = _syncFramesOnly;
+@synthesize colour = _colour;
+@synthesize crosshairs = _crosshairs;
+@synthesize showCrosshairs = _showCrosshairs;
+@synthesize offset = _offset;
+@synthesize scale = _scale;
+@synthesize exposure = _exposure;
+@synthesize sourceFolderURL = _sourceFolderURL;
+@synthesize overrideFrameIndex = _overrideFrameIndex;
+-(bool)displayImageMayNeedChanging { return true; }
+-(void)setDisplayImageMayNeedChanging:(bool)val { /* We do not do anything, but KVO will spot that this has been set, and so our observer will be called */ }
 
 @end
 
@@ -301,34 +733,22 @@ struct ImageDrawingInfo
 
 -(id)initAndRunBackgroundSession:(NSString*)nibName
 {
-	printf("Using nib %s\n", nibName.UTF8String);
 	if (!(self = [self initWithWindowNibName:nibName]))
 		return nil;
 	
-	currentFrameImage = nil;	
+	_currentFrameImage = nil;
 	self.currentFrame = 1;
-	self.hasSecondSequence = false;
 	self.startFrame = 1;
 	self.endFrame = 1;
 	self.framerateToUse = 30;
-	self.sequence1Colour = 0;
-	self.sequence2Colour = 0;
-	self.sequence1Exposure = 1.;
-	self.sequence2Exposure = 1.;
-	self.timingsFromSequence = 0;
-	self.offsetForSequence = 0;
+	self.sequenceToUseForTimings = nil;
 	self.encodingQuality = 3;
+	self.mask = [JRect rectWithNSRect:NSMakeRect(0, 0, 0, 0)];
 	
-	offset = NSMakePoint(0, 0);
-	self.offsetImageScale = 1.0;
-	sequence1URL = nil;
-	sequence2URL = nil;
-	sequence1 = [[NSMutableArray alloc] init];
-	sequence2 = [[NSMutableArray alloc] init];
+	self.sequences = [[NSMutableArray new] autorelease];
 	
-	[self addObserver:self forKeyPath:@"syncFramesOnly1" options:0 context:NULL];	
-	[self addObserver:self forKeyPath:@"syncFramesOnly2" options:0 context:NULL];	
-	[self addObserver:self forKeyPath:@"displayImageMayNeedChanging" options:0 context:NULL];	
+	[self addObserver:self forKeyPath:@"mask.everything" options:0 context:NULL];
+	[self addObserver:self forKeyPath:@"displayImageMayNeedChanging" options:0 context:NULL];
 	
 	[frameView setImageScaling:NSImageScaleProportionallyUpOrDown];
 	[self window];
@@ -344,12 +764,11 @@ struct ImageDrawingInfo
 -(void)dealloc
 {
 //	printf("Dealloc MovieBuilder\n");
-	[self removeObserver:self forKeyPath:@"syncFramesOnly1"];
-	[self removeObserver:self forKeyPath:@"syncFramesOnly2"];
+	[self removeObserver:self forKeyPath:@"mask.everything"];
 	[self removeObserver:self forKeyPath:@"displayImageMayNeedChanging"];
-	[currentFrameImage release];
-	[sequence1 release];
-	[sequence2 release];
+	[_currentFrameImage release];
+	[_sequenceArrayController removeObjects:self.sequenceArrayController.arrangedObjects];
+	self.sequences = nil;
 	[super dealloc];
 }
 
@@ -367,9 +786,14 @@ struct ImageDrawingInfo
 	int savedCurrentFrame = self.currentFrame;
 	self.currentFrame = firstFrame;
 
-	NSRect maskedFrameRect = NSMakeRect(0, 0, self.frameSize.width, self.frameSize.height);
-	if (maskEnabled)
-		maskedFrameRect = NSIntersectionRect(maskedFrameRect, mask);
+	// The rectangles we use for building the actual movie (and masking it)
+	// are defined with the origin in one corner of the image.
+	// This is in contrast with the origin in the centre that we use for the display on screen
+	// Hence from this point onwards we need to make an adjustment.
+	NSRect maskedFrameRect = self.frameRect;
+	maskedFrameRect.origin = NSMakePoint(0, 0);
+	if (self.maskEnabled)
+		maskedFrameRect = NSIntersectionRect(maskedFrameRect, self.mask.ns);
 	if ((maskedFrameRect.size.width < 1) || (maskedFrameRect.size.height < 1))
 	{
 		[spimApp alertWithText:@"With the current mask settings no part of the frame is visible" andExplanation:@"No movie has been generated"];
@@ -384,7 +808,7 @@ struct ImageDrawingInfo
 	err = QTNewDataReferenceFromCFURL((CFURLRef)outputMovieURL, 0, &outputMovieDataRef, &outputMovieDataRefType);
 	ALWAYS_ASSERT_NOERR(err);
 	
-	JBetterMovieBuilder *builder = new JBetterMovieBuilder(codecMapping[self.encodingQuality], outputMovieDataRef, outputMovieDataRefType, movieBuilderRect, framerateToUse, &err, qualityMapping[self.encodingQuality]);
+	JBetterMovieBuilder *builder = new JBetterMovieBuilder(codecMapping[self.encodingQuality], outputMovieDataRef, outputMovieDataRefType, movieBuilderRect, self.framerateToUse, &err, qualityMapping[self.encodingQuality]);
 	if (err != noErr)
 	{
 		NSAlert *alert = [[[NSAlert alloc] init] autorelease];
@@ -400,12 +824,18 @@ struct ImageDrawingInfo
 	}
 
 	CocoaProgressWindow *progress;
+	bool externalObject = false;
 	if (self.useExternalProgressObject)
+	{
+		externalObject = true;
 		progress = [self.useExternalProgressObject retain];
+	}
 	else
-		progress = [[CocoaProgressWindow alloc] initForItems:(lastFrame - firstFrame + 1) * (includeReverseFrames ? 2 : 1)
+	{
+		progress = [[CocoaProgressWindow alloc] initForItems:(lastFrame - firstFrame + 1) * (self.includeReverseFrames ? 2 : 1)
 																	withTitle:@"Exporting Movie..." 
 																	sheetOnWindow:[self window]];
+	}
 	
 	// Do the movie building work on a separate thread to allow other windows to receive events etc.
 	// We can run this code async without any concurrency problems within the current class because
@@ -421,8 +851,8 @@ struct ImageDrawingInfo
 				or reduce the frequency with which it is updated	*/
 			NSAutoreleasePool * pool = [[NSAutoreleasePool alloc] init];
 			// MISSING IMAGES: tolerate missing source images, which mean the generic crop rect in maskedFrameRect may be inappropriate
-			NSRect thisCropRect = NSIntersectionRect(maskedFrameRect, NSMakeRect(0, 0, currentFrameImage.size.width, currentFrameImage.size.height));
-			builder->AddFrame(currentFrameImage, &thisCropRect);
+			NSRect thisCropRect = NSIntersectionRect(maskedFrameRect, NSMakeRect(0, 0, _currentFrameImage.size.width, _currentFrameImage.size.height));
+			builder->AddFrame(_currentFrameImage, &thisCropRect);
 
 			dispatch_sync(dispatch_get_main_queue(),
 			^{
@@ -449,8 +879,8 @@ struct ImageDrawingInfo
 			{
 				NSAutoreleasePool * pool = [[NSAutoreleasePool alloc] init];
 				// MISSING IMAGES: tolerate missing source images, which mean the generic crop rect in maskedFrameRect may be inappropriate
-				NSRect thisCropRect = NSIntersectionRect(maskedFrameRect, NSMakeRect(0, 0, currentFrameImage.size.width, currentFrameImage.size.height));
-				builder->AddFrame(currentFrameImage, &thisCropRect);
+				NSRect thisCropRect = NSIntersectionRect(maskedFrameRect, NSMakeRect(0, 0, _currentFrameImage.size.width, _currentFrameImage.size.height));
+				builder->AddFrame(_currentFrameImage, &thisCropRect);
 
 				dispatch_sync(dispatch_get_main_queue(),
 				^{
@@ -471,9 +901,14 @@ struct ImageDrawingInfo
 
 		dispatch_async(dispatch_get_main_queue(),
 		^{
-			// TODO ****** actually closing this is a problem if other code has retained the progress bar
-			// Needs fixing (see discussion on cocoa-dev...)
-			[progress closeSheetAndRelease];
+			if (externalObject)
+				[progress release];
+			else
+			{
+				// TODO ****** actually closing this is a problem if other code has retained the progress bar
+				// Needs fixing (see discussion on cocoa-dev...)
+				[progress closeSheetAndRelease];
+			}
 
 			// I prefer not to close the moviebuilder window when export is finished,
 			// it's often convenient to keep the settings for the next export
@@ -523,6 +958,101 @@ struct ImageDrawingInfo
 	[super close];
 }
 
+#if 0
+// TODO: temporary code (see comment in addSequence)
+-(void)pathControl:(NSPathControl*)pathControl willPopUpMenu:(NSMenu*)menu
+{
+	if (simulatingPathControlClick)
+	{
+//		[menu performActionForItemAtIndex:0];
+		SEL action = [menu itemAtIndex:0].action;
+		id target = [menu itemAtIndex:0].target;
+//		dispatch_async(dispatch_get_main_queue(), ^{ [menu performActionForItemAtIndex:0]; });NSMenuItem
+		[JDispatchTimer newOneShotTimerOnQueue:dispatch_get_main_queue()
+								 afterInterval:0.3
+								   withHandler:^{
+									   [menu cancelTracking];
+								   }];
+		[JDispatchTimer newOneShotTimerOnQueue:dispatch_get_main_queue()
+										 afterInterval:0.5
+										   withHandler:^{
+											   [target performSelector:action withObject:nil];
+										   }];
+	}
+}
+#endif
+
+-(void)pathControl:(NSPathControl *)pathControl willDisplayOpenPanel:(NSOpenPanel *)panel
+{
+	panel.title = @"Choose image folder...";
+	panel.message = @"Choose folder containing images for this channel.";
+	panel.prompt = @"Choose";
+}
+
+-(IBAction)addSequence:(id)sender
+{
+	
+#if 0
+	ImageSequenceForChannel *seq = [self addSequenceUsingURL:nil];
+
+	// TODO: Work in progress. This does not currently work, I'm hoping for an answer from cocoa-dev...
+	// Although I can bring up the Open window, it does not get populated with anything, for some reason
+	
+	// When adding a new sequence we immediately prompt the user to select a folder to use for image files
+	// I am pretty confident this is always the first step the user should take, and this saves clicks and
+	// saves confusion over why nothing (much) has apparently happened!
+	simulatingPathControlClick = true;
+	[folderSelectPopup performClick:self];
+	simulatingPathControlClick = false;
+#elif 1
+	NSOpenPanel *panel = [NSOpenPanel openPanel];
+	panel.allowsMultipleSelection = FALSE;
+	panel.canChooseDirectories = TRUE;
+	panel.canChooseFiles = FALSE;
+	panel.title = @"Choose image folder...";
+	panel.message = @"Choose folder containing images for this channel.";
+	panel.prompt = @"Choose";
+	
+	[panel beginWithCompletionHandler:^(NSInteger result)
+	 {
+		 NSURL *url = nil;
+		 if ((result == NSFileHandlingPanelOKButton) && (panel.filenames.count == 1))
+		 {
+			 url = [NSURL fileURLWithPath:[panel.filenames objectAtIndex:0]];
+			 [self addSequenceUsingURL:url];
+		 }
+	 }];
+
+#else
+	ImageSequenceForChannel *seq = [self addSequenceUsingURL:nil];
+#endif
+}
+
+-(IBAction)removeCurrentSequence:(id)sender
+{
+	// TODO: should probably warn user before deleting?
+	if (self.sequenceArrayController.selectedObjects.count > 0)
+		[_sequenceArrayController removeObjects:self.sequenceArrayController.selectedObjects];
+}
+
+-(ImageSequenceForChannel *)addSequenceUsingURL:(NSURL*)url
+{
+	CHECK(url != nil);
+	ImageSequenceForChannel *seq = [[[ImageSequenceForChannel alloc] initForParent:self] autorelease];
+	[self.sequenceArrayController addObject:seq];
+	seq.sourceFolderURL = url;
+	return seq;
+}
+
+-(void)sequenceChanged:(ImageSequenceForChannel*)sequence
+{
+	// The contents of a sequence have changed (probably a new URL was set)
+
+	// If we don't currently have any sequences, use this one for timings
+	if (self.sequenceToUseForTimings == nil)
+		self.sequenceToUseForTimings = sequence;
+}
+
 -(IBAction)setStartFrameToCurrentFrame:(id)sender
 {
 	self.startFrame = self.currentFrame;
@@ -543,12 +1073,19 @@ struct ImageDrawingInfo
 	NSString *parentDir = nil;
 	NSMutableArray *filesToDelete = [[[NSMutableArray alloc] init] autorelease];
 	NSString *rangeString = nil;
+	
+	// TODO: currently we only trash for sequence 1. Need to update this to trash for all sequences
+	// This pointer is a temporary workaround to make the existing code work with variable numbers of image sequences,
+	// but the implementation needs more thought and updating (bug #75)
+	if (self.sequences.count == 0)
+		return;
+	ImageSequenceForChannel *sequence1 = [self.sequences objectAtIndex:0];
 	if (self.startFrame > 1)
 	{
 		rangeString = [SWF:@"%d-%d", 1, self.startFrame-1];
 		for (int frameNumber = 1; frameNumber < self.startFrame; frameNumber++)
 		{
-			TimestampedImage *tsi = [sequence1 objectAtIndex:frameNumber - 1];
+			TimestampedImage *tsi = [sequence1 timestampedImageAtIndex:frameNumber - 1];
 			NSString *thisParentDir = [tsi.link.path stringByDeletingLastPathComponent];
 			if (parentDir == nil)
 				parentDir = thisParentDir;
@@ -566,7 +1103,7 @@ struct ImageDrawingInfo
 		rangeString = [rangeString stringByAppendingString:[SWF:@"%d-%d", self.endFrame+1, self.numFrames]];
 		for (int frameNumber = self.endFrame + 1; frameNumber <= self.numFrames; frameNumber++)
 		{
-			TimestampedImage *tsi = [sequence1 objectAtIndex:frameNumber - 1];
+			TimestampedImage *tsi = [sequence1 timestampedImageAtIndex:frameNumber - 1];
 			NSString *thisParentDir = [tsi.link.path stringByDeletingLastPathComponent];
 			if (parentDir == nil)
 				parentDir = thisParentDir;
@@ -594,10 +1131,15 @@ struct ImageDrawingInfo
 		return;
 
 	// Remove the files from our working list
-	sequence1 = [[NSMutableArray arrayWithArray:[sequence1 subarrayWithRange:NSMakeRange(self.startFrame-1, MIN(self.endFrame - self.startFrame + 1, int(sequence1.count - self.startFrame+1)))]] retain];
+	CHECK(self.startFrame >= 1);
+	CHECK(self.endFrame >= 1);
+	int remainingCount = [sequence1 excludeOutsideRangeFrom:self.startFrame-1 to:self.endFrame-1];		// -1 because startFrame and endFrame are 1-based indexes
+	// Update the current, start and end frame numbers now we have removed some frames from the sequence
+	self.currentFrame -= self.startFrame - 1;
 	self.startFrame = 1;
-	self.endFrame = sequence1.count;
-	[self numFramesChangedImplicitly];
+	self.endFrame = remainingCount;
+	// Although we should now have updated the frame positions, for safety we call this function too
+	[self limitCurStartEndFrames];
 	
 	// Create a temporary directory to move the unwanted files into
 	NSString *intermediateDir = [parentDir stringByAppendingPathExtension:@"deleted"];
@@ -637,66 +1179,21 @@ struct ImageDrawingInfo
 				andExplanation:[SWF:@"Error: %@", err.localizedDescription]];
 }
 
--(void)setCurrentFrameToPSTime:(double)time
+-(void)setCurrentFrameToCameraTimestamp:(double)time
 {
-	NSArray *sourceSequence = (timingsFromSequence == 0) ? sequence1 : sequence2;
-	self.currentFrame = (int)MAX(int([sourceSequence indexOfObject:[TimestampedImage dummyTimestampedImageWithPSTime:time]
-												inSortedRange:NSMakeRange(0, sourceSequence.count)
-												options:NSBinarySearchingInsertionIndex
-												usingComparator:psTimestampComparator]) - 1,
-							     0);
-}
-
--(TimestampedImage*)currentFrameObject1
-{
-	TimestampedImage *result;
-	if ((sequence1 == nil) || ([sequence1 count] == 0))
-		return nil;
-		
-	if (timingsFromSequence == 0)
-	{
-		if ((self.currentFrame > (int)[sequence1 count]) || (self.currentFrame < 1))
-			return nil;
-		result = [sequence1 objectAtIndex:self.currentFrame-1];
-	}
-	else
-	{
-		TimestampedImage *obj2 = [self currentFrameObject2];
-		if (obj2 == nil)
-			return nil;
-		int index = [sequence1 indexOfObject:obj2
-								inSortedRange:NSMakeRange(0, [sequence1 count])
-								options:NSBinarySearchingInsertionIndex
-								usingComparator:timestampComparator];
-		index--;		// e.g. if insertion point for obj2 would be before the first frame in current sequence, we should not be showing anything at all.
-		if (index < 0)
-			result = nil;
-		else
-			result = [sequence1 objectAtIndex:index];
-	}
-	return [[result retain] autorelease];
-}
-
--(bool)infoForFrameNumber:(int)f into:(FrameInfo *)fi
-{
-	// First identify the TimestampedImage record for this frame number
-	FIM::iterator it = frameInfoMap.find(f);
-	if (it != frameInfoMap.end())
-	{
-		*fi = (*it).second;
-		return true;
-	}
-	else
-		return false;
+	// This function sets the current frame to the specified time.
+	// It looks for the specified time in whichever sequence is currently designated as the one to use for timings
+	ImageSequenceForChannel *sourceSequence = self.sequenceToUseForTimings;
+	self.currentFrame = [sourceSequence frameForCameraTimestamp:time];
 }
 
 -(double)timepointMS
 {
 	// Will be overridden by TimelineAnimationBuilder
-	TimestampedImage *obj1 = [self currentFrameObject1];
-	if (obj1 == nil)
+	TimestampedImage *frame = self.currentFrameObjectToUseForTimings;
+	if (frame == nil)
 		return 0;
-	return obj1.psTimestamp * 1e3;
+	return frame.cameraTimestamp * 1e3;
 }
 
 -(void)setTimepointMS:(double)val
@@ -706,118 +1203,26 @@ struct ImageDrawingInfo
 	CHECK(0);
 }
 
--(TimestampedImage*)currentFrameObject2
+-(NSRect)frameRect
 {
-	TimestampedImage *result;
-	if ((!hasSecondSequence) || (sequence2 == nil) || ([sequence2 count] == 0))
-		return nil;
-
-	if (timingsFromSequence == 1)
+	// Return the rectangle that bounds the complete image we are going to draw for this frame
+	// This is just the union of all the individual image rectangles
+	// TODO: this is an example of an inefficiency, where we read the 'image' property of the
+	// timestamped image (in this case just because we need to know where it will be drawn)
+	// Since image is not cached, that is very inefficient. Needs improvement.
+	if (self.sequences.count == 0)
+		return NSMakeRect(0, 0, 1, 1);
+	NSRect result = NSMakeRect(0, 0, 0, 0);
+	for (ImageSequenceForChannel *seq in self.sequences)
 	{
-		if ((self.currentFrame > (int)[sequence2 count]) || (self.currentFrame < 1))
-			return nil;
-		result = [sequence2 objectAtIndex:self.currentFrame-1];
+		if (seq.count == 0)
+			continue;
+		NSImage *firstImageInSequence = [seq timestampedImageAtIndex:0].image;
+		NSRect destRect = [seq destRectForDrawingImage:firstImageInSequence];
+		result = NSUnionRect(result, destRect);
 	}
-	else
-	{
-		TimestampedImage *obj1 = [self currentFrameObject1];
-		if (obj1 == nil)
-			return nil;
-		int index = [sequence2 indexOfObject:obj1 
-								inSortedRange:NSMakeRange(0, [sequence2 count])
-								options:NSBinarySearchingInsertionIndex
-								usingComparator:timestampComparator];
-		// [n.b. this next code branch was merged in from a different version. I think it is ok, but
-		//  if any problems encountered, that may explain it!]
-        // Note range check on index == count here, BEFORE we attempt to access objectAtIndex:index !
-		if ((index == (int)sequence2.count) || (timestampComparator(obj1, [sequence2 objectAtIndex:index]) != 0))
-		{
-			// e.g. if insertion point for obj1 would be before the first frame in current sequence, we should not be showing anything at all.
-			// The "if" conditions here ensure that if obj1 and obj2 have exactly the same timestamp then
-			// we return the precisely matching pair
-			index--;		
-		}
-		
-		// We now have what may be the correct index. However we should refine this
-		// based on the precise PS time we actually fire the trigger
-		bool recentlyFired = false;
-		for (int i = obj1.frameNumber - 20; i <= obj1.frameNumber; i++)
-		{
-			FrameInfo info;
-			bool ok = [self infoForFrameNumber:i into:&info];
-			if (ok)
-			{
-				if (info.psUsedTriggerTime != -1)
-				{
-					if (info.psUsedTriggerTime <= self.timepointMS * 1e-3)
-					{
-	//					printf("Trigger fire time %lf has recently passed (current timepoint %lf)\n", info.psUsedTriggerTime, self.timepointMS*1e-3);
-						recentlyFired = true;
-						break;
-					}
-				}
-			}
-		}
-		
-		if (recentlyFired)
-		{
-			printf("recently fired\n");
-			// We have very recently fired a trigger.
-			// Checking if frame index+1 has a timestamp very slightly into the future
-			// If so, use it
-			if (index < int(sequence2.count) - 1)
-			{
-				TimestampedImage *next = [sequence2 objectAtIndex:index+1];
-				double nextTS = next.timestamp;
-				if (fabs(obj1.timestamp - nextTS) < 1e-1)
-					index++;
-			}
-		}
-		
-		if (index < 0)
-			result = nil;
-		else
-        {
-            ALWAYS_ASSERT(index < (int)sequence2.count);
-			result = [sequence2 objectAtIndex:index];
-        }
-	}
-	return [[result retain] autorelease];
+	return NSMakeRect(floor(result.origin.x), floor(result.origin.y), ceil(result.size.width), ceil(result.size.height));
 }
-
--(NSSize)frameSize
-{
-	// TODO: this next code is very inefficient. We explicitly access currentFrameObject.image and query its dimensions.
-	// However to avoid keeping masses of data around unnecessarily, currentFrameObject does NOT cache its image!
-	// Thus just querying the frame size results in an additional read-from-disk of the entire image!
-	// If this situation is improved on somehow, this could potentially double the rate of frame processing here.
-	if (self.currentFrameObject1 == nil)
-		return NSMakeSize(0, 0);
-		
-	NSSize s;
-	if (sequence2IsAdjacent)
-	{
-		float image1Scale = (self.offsetForSequence == 0) ? self.offsetImageScale : 1;
-		float image2Scale = (self.offsetForSequence == 1) ? self.offsetImageScale : 1;
-		NSImage *image1 = self.currentFrameObject1.image;
-		NSImage *image2 = self.currentFrameObject2.image;
-		int width = (int)(image1.size.width * image1Scale + image2.size.width * image2Scale);
-		int height = (int)MAX(image1.size.height * image1Scale, image2.size.height * image2Scale);
-		s = NSMakeSize(width, height);
-	}
-	else if ((!hasSecondSequence) || (offsetForSequence == 1) || (self.currentFrameObject2 == nil))
-	{
-		NSImage *temp = self.currentFrameObject1.image;
-		s = temp.size;
-	}
-	else
-		s = [self.currentFrameObject2.image size];
-		
-	return NSMakeSize(ceil(s.width), ceil(s.height));
-}
-
-// Temporary hack used for fading movie in and out
-static double gMultiplier = 1.0;
 
 float PoissonNoise(float initialVal, float quantVal)
 {
@@ -838,41 +1243,12 @@ float PoissonNoise(float initialVal, float quantVal)
     return (k - 1) * quantVal;
 }
 
-void MergeBitmaps(NSImage *srcImage, ImageDrawingInfo *offsets)
-{
-	// Draw srcBitmap into mergedBitmap.
-	// We draw the centre of it at (offsetX,offsetY) relative to the centre of the destination bitmap
-	float destX = offsets->offsetX;
-	float destY = offsets->offsetY;
-	float sw = srcImage.size.width;
-	float sh = srcImage.size.height;
-	NSRect destRect = NSMakeRect(destX - sw / 2.0 * offsets->imageScaling, destY - sh / 2.0 * offsets->imageScaling, sw * offsets->imageScaling, sh * offsets->imageScaling);
-	
-	[srcImage drawInRect:destRect
-					fromRect:NSMakeRect(0, 0, sw, sh)
-					operation:NSCompositePlusLighter
-					fraction:1.0];
-	
-	// Temporary code still needs testing and making to work for different scalings etc.
-	if (offsets->showCrosshairs)
-	{
-		[[NSColor redColor] set];
-		NSBezierPath *path = [NSBezierPath bezierPath];
-		[path moveToPoint:NSMakePoint(destRect.origin.x + offsets->crosshairs.x * offsets->imageScaling, destRect.origin.y + (offsets->crosshairs.y - 10) * offsets->imageScaling)];
-		[path lineToPoint:NSMakePoint(destRect.origin.x + offsets->crosshairs.x * offsets->imageScaling, destRect.origin.y + (offsets->crosshairs.y + 10) * offsets->imageScaling)];
-		[path moveToPoint:NSMakePoint(destRect.origin.x + (offsets->crosshairs.x - 10) * offsets->imageScaling, destRect.origin.y + offsets->crosshairs.y * offsets->imageScaling)];
-		[path lineToPoint:NSMakePoint(destRect.origin.x + (offsets->crosshairs.x + 10) * offsets->imageScaling, destRect.origin.y + offsets->crosshairs.y * offsets->imageScaling)];
-		[path stroke];
-	}
-}
-
-
 -(NSImage *)currentFrameImage
 {
-	return currentFrameImage;
+	return _currentFrameImage;
 }
 
--(void)setScaledBitmapContext:(NSBitmapImageRep *)theBitmap
+-(void)setScaledBitmapContext:(NSBitmapImageRep *)theBitmap withOrigin:(NSPoint)origin
 {
 	[NSGraphicsContext saveGraphicsState];
 	NSGraphicsContext *newContext = [NSGraphicsContext graphicsContextWithBitmapImageRep:theBitmap];
@@ -880,7 +1256,7 @@ void MergeBitmaps(NSImage *srcImage, ImageDrawingInfo *offsets)
 
 	NSAffineTransform *transform1 = [NSAffineTransform transform];
 	NSAffineTransform *transform2 = [NSAffineTransform transform];
-	[transform1 translateXBy:theBitmap.size.width/2 yBy:theBitmap.size.height/2];
+	[transform1 translateXBy:-origin.x yBy:-origin.y];
 	[transform1 concat];
 	[transform2 scaleBy:upscalingFactor];
 	[transform2 concat];
@@ -888,50 +1264,24 @@ void MergeBitmaps(NSImage *srcImage, ImageDrawingInfo *offsets)
 
 -(NSBitmapImageRep *)newRenderedFrameBitmap
 {
-	TimestampedImage *obj1 = [self currentFrameObject1];
-	TimestampedImage *obj2 = [self currentFrameObject2];
-//	printf("obj1 timestamp %lf\n", obj1.timestamp);
-//	printf("obj2 timestamp %lf\n", obj2.timestamp);
-	if (obj1 == nil)
+	bool foundAtLeastOneFrame = false;
+	for (ImageSequenceForChannel *thisChannel in self.sequences)
+	{
+		ALWAYS_ASSERT([thisChannel isKindOfClass:[ImageSequenceForChannel class]]);
+		if (thisChannel.currentFrameObject != nil)
+			foundAtLeastOneFrame = true;
+	}
+	if (!foundAtLeastOneFrame)
 		return nil;
 
-	bool showCrosshairsOverride = showCrosshairs;
-	bool suppressSequence2 = false;
-	if (0)
-	{
-		// Temporary code to fade specific frames in and out
-		int distance;
-		if (obj1.frameNumber <= 6824)
-			distance = abs(6824 - obj1.frameNumber);
-		else if (obj1.frameNumber <= 19500)
-			distance = 0;
-		else
-		{
-			distance = abs(obj1.frameNumber - 19500);
-			showCrosshairsOverride = false;
-			suppressSequence2 = true;
-		}
-		if (obj1.frameNumber >= 6820)
-			showCrosshairsOverride = false;
-		gMultiplier = LIMIT(double(distance) / 20.0, 0.0, 1.0);
-	}
-	bool showCrosshairsOverride2 = showCrosshairsOverride;
-	if (0)
-	{
-		if (obj1.frameNumber > 6705)
-			showCrosshairsOverride = false;
-	}
-	NSBitmapImageRep *bitmap1 = RawBitmapFromImage(obj1.image);
-	NSBitmapImageRep *bitmap2 = (obj2 == nil) ? nil : RawBitmapFromImage(obj2.image);
-	NSSize thisSize = self.frameSize;
-	int width = (int)thisSize.width;
-	int height = (int)thisSize.height;
-
-	if ((bitmap1 == nil) && (bitmap2 == nil))
-	{
-		// MISSING IMAGES: more code to cope with corrupt/missing image files, because I'd rather not actually hit assertions and crash the program
-		width = height = 1;
-	}
+	// thisRect gives the bounds of the rectangle into which stuff will be drawn
+	// That may have a negative origin. Our bitmap needs to have the same dimensions as this rectangle,
+	// but we need to handle the origin appropriately
+	NSRect thisRect = self.frameRect;
+	// Determine the width and height of the overall image
+	// MISSING IMAGES: more code to cope with corrupt/missing image files, because I'd rather not actually hit assertions and crash the program if the image would have zero size
+	int width = (int)MAX(thisRect.size.width, 1.0f);
+	int height = (int)MAX(thisRect.size.height, 1.0f);
 
 	NSBitmapImageRep *combinedBitmap = [[NSBitmapImageRep alloc]
 											initWithBitmapDataPlanes:NULL		// Bitmap allocates and releases the necessary memory for us
@@ -945,51 +1295,12 @@ void MergeBitmaps(NSImage *srcImage, ImageDrawingInfo *offsets)
 											bytesPerRow:0
 											bitsPerPixel:0];
 
-	[self setScaledBitmapContext:combinedBitmap];
+	[self setScaledBitmapContext:combinedBitmap withOrigin:thisRect.origin];
 
-	if (sequence2IsAdjacent)
-	{
-		float image1Scale = (self.offsetForSequence == 0) ? self.offsetImageScale : 1;
-		float image2Scale = (self.offsetForSequence == 1) ? self.offsetImageScale : 1;
+	// Iterate over each sequence, rendering it according to the offsets, scale etc specified for that channel
+	for (ImageSequenceForChannel *thisChannel in self.sequences)
+		[thisChannel drawIntoCurrentDrawingContext];
 
-		// I am not really merging anything here, but I'd rather reuse the same code
-		ImageDrawingInfo offsets1 = { -width/2 + obj1.image.size.width*image1Scale/2.0, 0, image1Scale, flipSequence1H, flipSequence1V, showCrosshairsOverride, crosshairs };
-		if (self.offsetForSequence == 0)
-		{
-			offsets1.offsetX += self.offsetX;
-			offsets1.offsetY += self.offsetY;
-		}
-		// Special code (not exposed in GUI) used to perform additional tweaks for
-		// programmatic generation of very specific videos for publication
-		offsets1.offsetX += additionalProgrammaticOffset1.x;
-		offsets1.offsetY += additionalProgrammaticOffset1.y;
-			
-		MergeBitmaps(obj1.image, &offsets1);
-		if ((bitmap2 != nil) && (!suppressSequence2))
-		{
-			ImageDrawingInfo offsets2 = { width/2 - obj2.image.size.width*image2Scale/2.0, 0, image2Scale, flipSequence2H, flipSequence2V, showCrosshairsOverride2, crosshairs };
-			if (self.offsetForSequence == 1)
-			{
-				offsets2.offsetX += self.offsetX;
-				offsets2.offsetY += self.offsetY;
-			}
-			MergeBitmaps(obj2.image, &offsets2);
-		}
-	}
-	else
-	{
-		// Merge the two bitmaps together to create my image.
-		bool useOffsets = ((self.offsetForSequence == 0) && (self.hasSecondSequence));
-		ImageDrawingInfo offsets1 = { useOffsets ? self.offsetX : 0, useOffsets ? self.offsetY : 0, useOffsets ? offsetImageScale : 1, flipSequence1H, flipSequence1V, showCrosshairsOverride, crosshairs };
-		MergeBitmaps(obj1.image, &offsets1);
-		if (bitmap2 != nil)
-		{
-			useOffsets = ((self.offsetForSequence == 1) && (self.hasSecondSequence));
-			ImageDrawingInfo offsets2 = { useOffsets ? self.offsetX : 0, useOffsets ? self.offsetY : 0, useOffsets ? offsetImageScale : 1, flipSequence2H, flipSequence2V, showCrosshairsOverride2, crosshairs };
-			MergeBitmaps(obj2.image, &offsets2);
-		}
-	}
-	
 	[NSGraphicsContext restoreGraphicsState];
 	
 	return combinedBitmap;
@@ -1001,16 +1312,15 @@ void MergeBitmaps(NSImage *srcImage, ImageDrawingInfo *offsets)
 	// I do actually want to do this even if we later hit some problem -
 	// currentFrameImage is actually *stale*, so we don't want just to 
 	// keep displaying it in the event of a problem.
-	[currentFrameImage release];
-	currentFrameImage = nil;
+	[_currentFrameImage release];
+	_currentFrameImage = nil;
 
 	/*	Also, we have to create an autorelease pool here because depending on implementation
 		we may be passed an autoreleased image. We may run out of memory if we don't keep
-		draining the autorelease pool!	*/
+		draining the autorelease pool as we go!	*/
 	NSAutoreleasePool * pool = [[NSAutoreleasePool alloc] init];
 
 	NSBitmapImageRep *currentFrameBitmap = [self newRenderedFrameBitmap];
-	
 	NSImage *image = [[NSImage alloc] initWithSize:[currentFrameBitmap size]];
 	[image addRepresentation:currentFrameBitmap];
 
@@ -1038,114 +1348,15 @@ void MergeBitmaps(NSImage *srcImage, ImageDrawingInfo *offsets)
 #endif
 
 	[currentFrameBitmap release];
-	
-	currentFrameImage = image;
+	_currentFrameImage = image;
 	
 	[pool drain];
 }
 
--(void)setSequenceArray:(int)whichSequence toURL:(NSURL*)url syncOnly:(bool)syncOnly
-{
-	ALWAYS_ASSERT(IsDirectory(url));		// Control should enforce this
-	NSString *theString = [url path];
-
-	NSMutableArray *sequence = (whichSequence == 1) ? sequence1 : sequence2;
-	[sequence removeAllObjects];
-
-	ForEveryImageFileInDirectory(theString, ^(NSString *thePath)
-	{
-		TimestampedImage *obj = [TimestampedImage timestampedImageFromFile:thePath forSequence:whichSequence parent:self];
-		
-		if ((!syncOnly) || ([[obj.metadata objectForKey:@"in_sync"] boolValue]))
-			[sequence addObject:obj];
-		if (!haveSetCrosshairs)
-		{
-			NSPoint thisCrosshairs = NSPointFromString((NSString*)[obj.metadata objectForKey:@"crosshairs"]);
-			NSRect thisCropRect = NSRectFromString((NSString*)[obj.metadata objectForKey:@"crop_rect"]);
-			if ((thisCrosshairs.x != 0) || (thisCrosshairs.y != 0))
-			{
-				[self willChangeValueForKey:@"crosshairsX"];
-				[self willChangeValueForKey:@"crosshairsY"];
-				// Note that the code used to expect a negative value for the crosshairs y coord
-				// This is now fixed, but old video datasets will have a negative value, and this
-				// will need to be altered by hand when generating videos from the data...
-				crosshairs = NSMakePoint(thisCrosshairs.x - thisCropRect.origin.x, thisCrosshairs.y - thisCropRect.origin.y); 
-				haveSetCrosshairs = true;
-				[self didChangeValueForKey:@"crosshairsX"];
-				[self didChangeValueForKey:@"crosshairsY"];
-			}			
-		}
-	});
-
-	// Frames need sorting by timestamp - normally we are ok but
-	// the ordering won't be right if there was a wrap of frame number
-	[sequence sortUsingComparator:timestampComparator];
-	
-	// If the frame number and limits are set to zero, update them now we have some real frames
-	// Don't do that if the user has already set them though (that would be annoying!)
-	if (self.currentFrame == 0)
-		self.currentFrame = 1;
-	if (self.startFrame == 0)
-		self.startFrame = 1;
-	if (self.endFrame == 0)
-		self.endFrame = self.numFrames;
-	self.warnedMissingFile = false;		// Reset warnings
-	
-	// The following may not have any effect if this sequence isn't the one the timings are taken from
-	[self numFramesChangedImplicitly];
-}
-
--(void)setSequence1URL:(NSURL *)url
-{
-	[sequence1URL release];
-	sequence1URL = [url copy];
-	[self setSequenceArray:1 toURL:sequence1URL syncOnly:self.syncFramesOnly1];
-
-	// Attempt to load sync information for this image set
-	// If we find it then we will use it to improve the decision of which
-	// fluorescence image belongs with which brightfield image.
-	FILE *inFile = fopen([url URLByAppendingPathComponent:@"sync_log.txt"].path.UTF8String, "r");
-	if (inFile == NULL)
-		return;
-	
-	while (1)
-	{
-		FrameInfo info;
-		int frameNumber, integerCycle, inSync;
-		double timestamp, pixelValueSum;
-		int numRead = fscanf(inFile, "SYNC\t%*f\t%d\t%lf\t%lf\t%lf\t"
-								"%lf\t%lf\t%lf\t%lf\t"
-								"%lf\t%lf\t%lf\t%lf\t"
-								"%d\t%d\t%lf\t%lf\t%d\n",
-								&frameNumber, &info.referencePos, &info.phase, &info.deltaPhase,
-								&info.timestampCopy, &info.psAnticipatedTime, &info.psUsedTriggerTime, &info.psTimeTriggerWasProgrammed,
-								&info.macTimeReceived, &info.macTimeProcessingStarted, &info.macTimeProcessingEnded, &info.macTriggerSentTime,
-								&integerCycle, &info.bestScorePos, &pixelValueSum, &info.alternativePeriodCalculation, &inSync);
-								
-
-		if (numRead != 17)
-			break;
-		frameInfoMap[frameNumber] = info;
-	};
-
-	fclose(inFile);
-}
-
--(void)setSequence2URL:(NSURL *)url
-{
-	[sequence2URL release];
-	sequence2URL = [url copy];
-	[self setSequenceArray:2 toURL:sequence2URL syncOnly:self.syncFramesOnly2];
-}
-
 -(int)numFrames
 {
-	if (timingsFromSequence == 0)
-		return [sequence1 count];
-	else
-		return [sequence2 count];
+	return self.sequenceToUseForTimings.count;
 }
-
 
 +(NSSet*)keyPathsForValuesAffectingValueForKey:(NSString*)inKey
 {
@@ -1154,18 +1365,19 @@ void MergeBitmaps(NSImage *srcImage, ImageDrawingInfo *offsets)
 	// There are various properties that depend directly on which image is displayed,
 	// and we also have a special property which can be monitored for changes whenever the
 	// current image may need altering.
-	if (StringIsInList(inKey, @"imageTooltip", @"timestampString", @"filename1String", @"filename2String",
-								@"revealFile1InFinderEnabled", @"revealFile1InFinderEnabled", @"displayImageMayNeedChanging", nil))
+	if (StringIsInList(inKey, @"imageTooltip", @"timestampString", @"displayImageMayNeedChanging", nil))
 	{
+		// All these variables could affect the appearance of the image
+		// Note that the individual channel sequences also watch for changes to themselves, which will be
+		// communicated to us by them changing "displayImageMayNeedChanging".
 		set = [set setByAddingObjectsFromSet:[NSSet setWithObjects:
-												@"currentFrame", @"hasSecondSequence", @"sequence2IsAdjacent",
-												@"flipSequence1H", @"flipSequence1V", @"flipSequence2H", @"flipSequence2V",
-												@"syncFramesOnly1", @"syncFramesOnly2", @"sequence1Colour", @"sequence2Colour",
-												@"sequence1Exposure", @"sequence2Exposure", @"timingsFromSequence", @"offsetForSequence",
-												@"offsetX", @"offsetY", @"showCrosshairs", @"crosshairsX", @"crosshairsY",
-												@"maskX", @"maskY", @"maskW", @"maskH", @"maskEnabled",
-												@"offsetImageScale", @"sequence1URL", @"sequence2URL",
+												@"currentFrame", @"sequences", @"sequenceToUseForTimings",
+												@"maskEnabled", @"mask.everything", @"layoutBehaviour",
 												nil]];
+	}
+	if ([inKey isEqualTo:@"numFrames"])
+	{
+		set = [set setByAddingObject:@"sequenceToUseForTimings"];
 	}
 	return set;
 }
@@ -1175,150 +1387,110 @@ void MergeBitmaps(NSImage *srcImage, ImageDrawingInfo *offsets)
 				change:(NSDictionary *)change
 				context:(void *)context
 {
-	if ([keyPath isEqualTo:@"syncFramesOnly1"])
-	{
-		if (sequence1URL != nil)
-			[self setSequence1URL:self.sequence1URL];		// Force reload
-	}
-	else if ([keyPath isEqualTo:@"syncFramesOnly2"])
-	{
-		if (sequence2URL != nil)
-			[self setSequence2URL:self.sequence2URL];		// Force reload
-	}
-	else if ([keyPath isEqualTo:@"displayImageMayNeedChanging"])
+	if ([keyPath isEqualTo:@"displayImageMayNeedChanging"])
 	{
 		[self updateCurrentFrameImage];
 		[frameView frameNeedsRedraw];
+	}
+	else if ([keyPath isEqualTo:@"mask.everything"])
+	{
+		// If our mask changes, then the box shown in the frame view should also be updated to reflect this
+		frameView.boxRectInImageCoords = MultiplyRect(self.mask.ns, upscalingFactor);
 	}
 	else
 		[super observeValueForKeyPath:keyPath ofObject:object change:change context:context];
 }
 
--(float)offsetX { return offset.x; }
--(void)setOffsetX:(float)x { offset.x = x; }
--(float)offsetY { return offset.y; }
--(void)setOffsetY:(float)y { offset.y = y; }
--(float)crosshairsX { return crosshairs.x; }
--(void)setCrosshairsX:(float)x { crosshairs.x = x; }
--(float)crosshairsY { return crosshairs.y; }
--(void)setCrosshairsY:(float)y { crosshairs.y = y; }
-
--(float)maskX { return mask.origin.x; }
--(void)setMaskX:(float)x { mask.origin.x = x; frameView.boxRectInImageUnits = MultiplyRect(mask, upscalingFactor); }
--(float)maskY { return mask.origin.y; }
--(void)setMaskY:(float)y { mask.origin.y = y; frameView.boxRectInImageUnits = MultiplyRect(mask, upscalingFactor); }
--(float)maskW { return mask.size.width; }
--(void)setMaskW:(float)w { mask.size.width = w; frameView.boxRectInImageUnits = MultiplyRect(mask, upscalingFactor); }
--(float)maskH { return mask.size.height; }
--(void)setMaskH:(float)h { mask.size.height = h; frameView.boxRectInImageUnits = MultiplyRect(mask, upscalingFactor); }
-
 -(IBAction)setMaskFromMarkedRect:(id)sender
 {
-	mask = MultiplyRect(frameView.boxRectInImageUnits, 1.0 / upscalingFactor);
-	if ((mask.size.width == 0) &&
-		(mask.size.height == 0))
+	self.mask = [JRect rectWithNSRect:MultiplyRect(frameView.boxRectInImageCoords, 1.0 / upscalingFactor)];
+	if ((self.mask.w == 0) &&
+		(self.mask.h == 0))
 	{
 		// Empty mask. Set mask rect to entire image
 		NSSize imageSize = frameView.image.size;
-		mask = NSMakeRect(0, 0, imageSize.width, imageSize.height);
+		self.mask = [JRect rectWithNSRect:NSMakeRect(0, 0, imageSize.width, imageSize.height)];
 	}
 	UpdateKeys(self, @"maskX", @"maskY", @"maskW", @"maskH", nil);
 }
 
--(void)setTimingsFromSequence:(int)seq
+-(void)limitCurStartEndFrames
 {
-	timingsFromSequence = seq;
-	[self numFramesChangedImplicitly];
-}
-
--(void)numFramesChangedImplicitly
-{
-	[self willChangeValueForKey:@"numFrames"];
 	self.currentFrame = (int)MIN(self.currentFrame, self.numFrames);
 	self.startFrame = (int)MIN(self.startFrame, self.numFrames);
 	self.endFrame = (int)MIN(self.endFrame, self.numFrames);
-	[self didChangeValueForKey:@"numFrames"];
-}
-
--(NSString *)filename1String
-{
-	if (self.currentFrameObject1 != nil)
-		return self.currentFrameObject1.fileNameNoPath;
-	return nil;
-}
-
--(NSString *)filename2String
-{
-	if (self.currentFrameObject2 != nil)
-		return self.currentFrameObject2.fileNameNoPath;
-	return nil;
 }
 
 -(NSString *)timestampString
 {
-	if (timingsFromSequence == 0)
-	{
-		if (self.currentFrameObject1 != nil)
-			return [SWF:@"%.3lf s", self.currentFrameObject1.timestamp];
-	}
-	else
-	{
-		if (self.currentFrameObject2 != nil)
-			return [SWF:@"%.3lf s", self.currentFrameObject2.timestamp];
-	}
+	if (self.sequenceToUseForTimings.currentFrameObject != nil)
+		return [SWF:@"%.3lf s", self.sequenceToUseForTimings.currentFrameObject.computerTimestamp];
 	return @"";
 }
 
 -(NSString *)imageTooltip
 {
-	NSString *firstString = @"", *secondString = @"";
-	if (self.currentFrameObject1 != nil)
-		firstString = [SWF:@"File %@  timestamp %.3lf", self.currentFrameObject1.fileNameNoPath, self.currentFrameObject1.timestamp];
-	if (self.currentFrameObject2 != nil)
-		secondString = [SWF:@"\nFile %@  timestamp %.3lf", self.currentFrameObject2.fileNameNoPath, self.currentFrameObject2.timestamp];
-	return [SWF:@"%@%@", firstString, secondString];
+	NSString *theString = @"";
+	for (ImageSequenceForChannel *thisChannel in self.sequences)
+	{
+		if (thisChannel.currentFrameObject != nil)
+		{
+			if (theString.length > 0)
+				theString = [theString stringByAppendingString:@"\n"];
+			theString = [theString stringByAppendingString:[SWF:@"File %@  timestamp %.3lf",
+															thisChannel.currentFrameObject.fileNameNoPath,
+															thisChannel.currentFrameObject.computerTimestamp]];
+		}
+	}
+	return theString;
 }
 
--(BOOL)revealFile1InFinderEnabled { return self.currentFrameObject1 != nil; }
--(BOOL)revealFile2InFinderEnabled { return self.currentFrameObject2 != nil; }
-
--(IBAction)revealFile1InFinder:(id)sender
+-(IBAction)revealFilesInFinder:(id)sender
 {
-	[[NSWorkspace sharedWorkspace] selectFile:self.currentFrameObject1.path inFileViewerRootedAtPath:nil];
+	for (ImageSequenceForChannel *thisChannel in self.sequences)
+		[[NSWorkspace sharedWorkspace] selectFile:thisChannel.currentFrameObject.path inFileViewerRootedAtPath:nil];
 }
 
--(IBAction)revealFile2InFinder:(id)sender
+@synthesize sequences = _sequences;
+-(ImageSequenceForChannel *)sequence:(NSUInteger)i
 {
-	[[NSWorkspace sharedWorkspace] selectFile:self.currentFrameObject2.path inFileViewerRootedAtPath:nil];
+	if (i >= self.sequences.count) return nil;
+	ImageSequenceForChannel *result = [self.sequences objectAtIndex:i];
+	ALWAYS_ASSERT([result isKindOfClass:[ImageSequenceForChannel class]]);
+	return result;
 }
-
 @synthesize currentFrame = _currentFrame;
-@synthesize startFrame;
-@synthesize includeReverseFrames;
-@synthesize endFrame;
-@synthesize framerateToUse;
-@synthesize hasSecondSequence;
-@synthesize sequence2IsAdjacent;
-@synthesize flipSequence1H;
-@synthesize flipSequence1V;
-@synthesize flipSequence2H;
-@synthesize flipSequence2V;
-@synthesize syncFramesOnly1;
-@synthesize syncFramesOnly2;
-@synthesize sequence1Colour;
-@synthesize sequence2Colour;
-@synthesize sequence1Exposure;
-@synthesize sequence2Exposure;
-@synthesize timingsFromSequence;
-@synthesize encodingQuality;
-@synthesize offsetForSequence;
-@synthesize offsetImageScale;
-@synthesize sequence1URL;
-@synthesize sequence2URL;
-@synthesize warnedMissingFile = _warnedMissingFile;
+@synthesize startFrame = _startFrame;
+@synthesize includeReverseFrames = _includeReverseFrames;
+@synthesize endFrame = _endFrame;
+@synthesize framerateToUse = _framerateToUse;
+@synthesize layoutBehaviour = _layoutBehaviour;
+@synthesize encodingQuality = _encodingQuality;
 @synthesize useExternalProgressObject = _useExternalProgressObject;
-@synthesize showCrosshairs;
-@synthesize maskEnabled;
+@synthesize maskEnabled = _maskEnabled;
+@synthesize mask = _mask;
+@synthesize sequenceArrayController = _sequenceArrayController;
 -(bool)displayImageMayNeedChanging { return true; }
+-(void)setDisplayImageMayNeedChanging:(bool)val { /* We do not do anything, but KVO will spot that this has been set, and so our observer will be called */ }
+
+-(void)setSequenceToUseForTimings:(ImageSequenceForChannel *)seq
+{
+	[_sequenceToUseForTimings release];
+	_sequenceToUseForTimings = [[MAZeroingWeakRef alloc] initWithTarget:seq];
+	
+	// If the frame number and limits are set to zero, update them now we have some real frames
+	// Don't do that if the user has already set them though (that would be annoying!)
+	if (self.currentFrame == 0)
+		self.currentFrame = 1;
+	if (self.startFrame == 0)
+		self.startFrame = 1;
+	if (self.endFrame == 0)
+		self.endFrame = self.numFrames;
+
+	[self limitCurStartEndFrames];
+}
+-(ImageSequenceForChannel *)sequenceToUseForTimings { return _sequenceToUseForTimings.target; }
+
+-(TimestampedImage *)currentFrameObjectToUseForTimings { return self.sequenceToUseForTimings.currentFrameObject; }
 
 @end

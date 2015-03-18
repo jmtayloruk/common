@@ -52,7 +52,7 @@ NSInteger frameSortOrder(id string1, id string2, void *)
 
 bool IsImageFile(NSString *theFilename)
 {
-	return ([theFilename hasSuffix:@".tif"] || [theFilename hasSuffix:@".tiff"] || [theFilename hasSuffix:@".bmp"] || [theFilename hasSuffix:@".png"] || [theFilename hasSuffix:@".jpg"] || [theFilename hasSuffix:@".jpeg"]);
+	return ([theFilename hasSuffix:@".tif"] || [theFilename hasSuffix:@".tiff"] || [theFilename hasSuffix:@".bmp"] || [theFilename hasSuffix:@".png"] || [theFilename hasSuffix:@".jpg"] || [theFilename hasSuffix:@".jpeg"] || [theFilename hasSuffix:@".eps"]);
 }
 
 NSArray *ListImageFilesInDirectory(NSString *dir)

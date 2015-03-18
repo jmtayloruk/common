@@ -12,7 +12,7 @@
 	NSRect rect;
 }
 
-+(JRect*)newRectForNSRect:(const NSRect)r;
++(JRect*)rectWithNSRect:(const NSRect)r;
 -(id)initWithRect:(const NSRect)r;
 
 @property (readwrite) float x;
@@ -29,7 +29,7 @@
 	NSPoint point;
 }
 
-+(JPoint2*)newPointForNSPoint:(const NSPoint)r;
++(JPoint2*)pointWithNSPoint:(const NSPoint)r;
 -(id)initWithPoint:(const NSPoint)r;
 
 @property (readwrite) float x;

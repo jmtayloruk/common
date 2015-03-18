@@ -10,9 +10,9 @@
 
 @implementation JRect
 
-+(JRect*)newRectForNSRect:(const NSRect)r
++(JRect*)rectWithNSRect:(const NSRect)r
 {
-	return [[JRect alloc] initWithRect:r];
+	return [[[JRect alloc] initWithRect:r] autorelease];
 }
 
 -(id)initWithRect:(const NSRect)r
@@ -51,9 +51,9 @@
 
 @implementation JPoint2
 
-+(JPoint2*)newPointForNSPoint:(const NSPoint)p
++(JPoint2*)pointWithNSPoint:(const NSPoint)p
 {
-	return [[JPoint2 alloc] initWithPoint:p];
+	return [[[JPoint2 alloc] initWithPoint:p] autorelease];
 }
 
 -(id)initWithPoint:(const NSPoint)p
