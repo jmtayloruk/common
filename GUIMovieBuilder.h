@@ -56,7 +56,7 @@ typedef std::map<int, FrameInfo> FIM;
 	JPoint2 *_offset, *_crosshairs;
 	float _scale, _exposure;
 	bool _showCrosshairs;
-	bool interestedInCrosshairsInformation;
+	bool interestedInCrosshairsInformation, interestedInGainInformation;
 	
 	NSMutableArray *timestampedImages;
 	FIM frameInfoMap;

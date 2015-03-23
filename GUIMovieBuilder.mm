@@ -292,6 +292,7 @@ struct ImageDrawingInfo
 	_overrideFrameIndex = -1;
 	_sourceFolderURL = nil;
 	interestedInCrosshairsInformation = true;
+	interestedInGainInformation = true;
 	self.crosshairs = [JPoint2 pointWithNSPoint:NSMakePoint(-1, -1)];
 	self.offset = [JPoint2 pointWithNSPoint:NSMakePoint(0, 0)];
 	timestampedImages = [[NSMutableArray alloc] init];
@@ -442,7 +443,13 @@ struct ImageDrawingInfo
 				 }
 			 }
 		 }
-	 });
+
+		 if (interestedInGainInformation && ([obj.metadata objectForKey:@"exposure_on_screen"] != nil))
+		 {
+			 self.exposure = [[obj.metadata objectForKey:@"exposure_on_screen"] floatValue];
+			 interestedInGainInformation = false;
+		 }
+	});
 	
 	// Frames need sorting by timestamp - normally we are ok but
 	// the ordering won't be right if there was a wrap of frame number
