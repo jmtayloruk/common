@@ -21,6 +21,11 @@
 	return self;
 }
 
+-(JRect*)roundedToIntegers
+{
+    return [JRect rectWithNSRect:NSMakeRect(round(rect.origin.x), round(rect.origin.y), round(rect.size.width), round(rect.size.height))];
+}
+
 -(float)x { return rect.origin.x; }
 -(float)y { return rect.origin.y; }
 -(float)w { return rect.size.width; }

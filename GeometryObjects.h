@@ -14,6 +14,7 @@
 
 +(JRect*)rectWithNSRect:(const NSRect)r;
 -(id)initWithRect:(const NSRect)r;
+-(JRect*)roundedToIntegers;
 
 @property (readwrite) float x;
 @property (readwrite) float y;
