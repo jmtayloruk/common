@@ -965,30 +965,6 @@ struct ImageDrawingInfo
 	[super close];
 }
 
-#if 0
-// TODO: temporary code (see comment in addSequence)
--(void)pathControl:(NSPathControl*)pathControl willPopUpMenu:(NSMenu*)menu
-{
-	if (simulatingPathControlClick)
-	{
-//		[menu performActionForItemAtIndex:0];
-		SEL action = [menu itemAtIndex:0].action;
-		id target = [menu itemAtIndex:0].target;
-//		dispatch_async(dispatch_get_main_queue(), ^{ [menu performActionForItemAtIndex:0]; });NSMenuItem
-		[JDispatchTimer newOneShotTimerOnQueue:dispatch_get_main_queue()
-								 afterInterval:0.3
-								   withHandler:^{
-									   [menu cancelTracking];
-								   }];
-		[JDispatchTimer newOneShotTimerOnQueue:dispatch_get_main_queue()
-										 afterInterval:0.5
-										   withHandler:^{
-											   [target performSelector:action withObject:nil];
-										   }];
-	}
-}
-#endif
-
 -(void)pathControl:(NSPathControl *)pathControl willDisplayOpenPanel:(NSOpenPanel *)panel
 {
 	panel.title = @"Choose image folder...";
@@ -998,20 +974,10 @@ struct ImageDrawingInfo
 
 -(IBAction)addSequence:(id)sender
 {
-	
-#if 0
-	ImageSequenceForChannel *seq = [self addSequenceUsingURL:nil];
-
-	// TODO: Work in progress. This does not currently work, I'm hoping for an answer from cocoa-dev...
-	// Although I can bring up the Open window, it does not get populated with anything, for some reason
-	
-	// When adding a new sequence we immediately prompt the user to select a folder to use for image files
-	// I am pretty confident this is always the first step the user should take, and this saves clicks and
-	// saves confusion over why nothing (much) has apparently happened!
-	simulatingPathControlClick = true;
-	[folderSelectPopup performClick:self];
-	simulatingPathControlClick = false;
-#elif 1
+    /*  This code allows us to manually bring up an Open panel for the user to select a folder containing an image sequence
+        Unfortunately discussion on cocoa-dev seems to confirm that it is not possible to hook into the same code that
+        launches a similar window when the path control "Choose..." option is selected by the user. Hence the need to
+        also have the delegate hook function (above) to customize that version of the dialog    */
 	NSOpenPanel *panel = [NSOpenPanel openPanel];
 	panel.allowsMultipleSelection = FALSE;
 	panel.canChooseDirectories = TRUE;
@@ -1020,19 +986,17 @@ struct ImageDrawingInfo
 	panel.message = @"Choose folder containing images for this channel.";
 	panel.prompt = @"Choose";
 	
-	[panel beginWithCompletionHandler:^(NSInteger result)
-	 {
-		 NSURL *url = nil;
-		 if ((result == NSFileHandlingPanelOKButton) && (panel.filenames.count == 1))
-		 {
-			 url = [NSURL fileURLWithPath:[panel.filenames objectAtIndex:0]];
-			 [self addSequenceUsingURL:url];
-		 }
-	 }];
-
-#else
-	ImageSequenceForChannel *seq = [self addSequenceUsingURL:nil];
-#endif
+    // Run this as a modal dialog, for maximum consistency with the Choose option in the path control popup.
+    // Note that if we run it as a non-modal dialog (as opposed to a sheet) then the user could conceivably
+    // select the Choose option while this initial dialog is still showing. Cue major confusion!
+    // Particularly since there could be multiple MovieBuilders open, I think we either must run as modal or
+    // we must run as a modal sheet on the window - a non-modal dialog really isn't an option.
+    NSInteger result = [panel runModal];
+    if ((result == NSFileHandlingPanelOKButton) && (panel.filenames.count == 1))
+    {
+        NSURL *url = [NSURL fileURLWithPath:[panel.filenames objectAtIndex:0]];
+        [self addSequenceUsingURL:url];
+    }
 }
 
 -(IBAction)removeCurrentSequence:(id)sender
@@ -1418,7 +1382,10 @@ float PoissonNoise(float initialVal, float quantVal)
 		NSSize imageSize = frameView.image.size;
 		self.mask = [JRect rectWithNSRect:NSMakeRect(0, 0, imageSize.width, imageSize.height)];
 	}
-	UpdateKeys(self, @"maskX", @"maskY", @"maskW", @"maskH", nil);
+    // If we want to disable GUI actions to call this function when maskEnabled is not currently set,
+    // then that's fair enough, but if this function IS called then we should take that as our cue
+    // to set the flag.
+    self.maskEnabled = true;
 }
 
 -(void)limitCurStartEndFrames
