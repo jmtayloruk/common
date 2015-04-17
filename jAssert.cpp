@@ -1,6 +1,8 @@
 /*
  *	jAssert.h
  *
+ *  Copyright 2011-2015 Jonathan Taylor. All rights reserved.
+ *
  *  Code to handle assertions
  */
 

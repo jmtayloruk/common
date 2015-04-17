@@ -1,9 +1,9 @@
 //
 //  DictionaryReadingExtensions.h
-//  Spim Interface
 //
-//  Created by Jonathan Taylor on 20/06/2014.
+//	Copyright 2014-2015 Jonathan Taylor. All rights reserved.
 //
+//	Extensions to NSDictionary for easy and typesafe access to key values
 //
 
 #ifndef Spim_Interface_DictionaryReadingExtensions_h

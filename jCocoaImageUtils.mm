@@ -1,3 +1,12 @@
+/*
+ *  jCocoaImageUtils.mm
+ *
+ *  Copyright 2011-2015 Jonathan Taylor. All rights reserved.
+ *
+ *	Utility functions for working with images under Cocoa
+ *
+ */
+
 #import <Cocoa/Cocoa.h>
 #include "jAssert.h"
 #import "jCocoaImageUtils.h"
@@ -9,6 +18,10 @@
 
 NSBitmapImageRep *RawBitmapFromImage(const NSImage *image)
 {
+	// Returns an NSBitmapImageRep from the NSImage that is passed in.
+	// This isn't intended to handle all possible scenarios, but will do the best it can,
+	// and assert if things don't make sense.
+	// In practice most images I work with seem to contain one and only one bitmap image.
 	if (!CHECK(image != nil))
 		return nil;
 		
@@ -47,27 +60,20 @@ NSBitmapImageRep *RawBitmapFromImage(const NSImage *image)
 
 NSImage *AllocNSImageFromFile(const char *path)
 {
+	// Not sure if I use this for anything any more, but it was intended to allow C code
+	// to load an image file into an NSImage (which the C code could treat as an opaque pointer)
 	return [[NSImage alloc] initWithContentsOfFile:[SWF:@"%s", path]];
 }
 
-#if 0
-void GetNaturalBoundsForImageFile(const char *path, Rect *outBounds)
-{
-	NSImage *image = [[NSImage alloc] initWithContentsOfFile:[SWF:@"%s", path]];
-	NSBitmapImageRep *rep = RawBitmapFromImage(image);
-	SetRect(outBounds, 0, 0, rep.pixelsWide, rep.pixelsHigh);
-	[image release];
-}
-#endif
-
 void ReleaseNSImage(NSImage *image)
 {
-//	printf("Releasing - will be %d\n", image.retainCount-1);
+	// Allows C code to release an NSImage
 	[image release];
 }
 
 void BrightenNSImage(NSImage *image, int factor)
 {
+	// Almost certainly obsolete code, doing a quick-and-dirty brightening operation on an NSImage
 	if (factor == 1)
 		return;
 		
@@ -81,123 +87,12 @@ void BrightenNSImage(NSImage *image, int factor)
 	[image unlockFocus];
 }
 
-#if CARBON
-void CopyNSImageToGWorld(const NSImage *image, GWorldPtr gWorldPtr, const NSRect *inCropRect, double gain)
-{
-    PixMapHandle 	pixMapHandle;
-    Ptr 		pixBaseAddr;
-
-	NSRect noCropRect = NSMakeRect(0, 0, image.size.width, image.size.height);
-	NSRect cropRect;
-	if (inCropRect != nil)
-		cropRect = *inCropRect;
-	else
-		cropRect = noCropRect;
-
-    // Lock the pixels
-    pixMapHandle = GetGWorldPixMap(gWorldPtr);
-    LockPixels (pixMapHandle);
-    pixBaseAddr = GetPixBaseAddr(pixMapHandle);
-	Rect gWorldRect;
-	GetPortBounds(gWorldPtr, &gWorldRect);
-	int gWorldWidth = gWorldRect.right - gWorldRect.left;
-	int gWorldHeight = gWorldRect.bottom - gWorldRect.top;
-
-	/*	Note that the call to bitmapData allocates memory that may need a custom autorelease pool
-		to ensure it is released before memory fills up. Unfortunately we can't do that here, because
-		it will only be released when the *PARENT IMAGE* is released. It is therefore up to the caller
-		to create a pool as and when required.		*/
-
-	NSBitmapImageRep *bitmapRep = RawBitmapFromImage(image);
-	unsigned char * bitMapDataPtr = [bitmapRep bitmapData];
-
-	if ((bitMapDataPtr != nil) && (pixBaseAddr != nil))
-	{
-		int i,j;
-		int pixmapRowBytes = GetPixRowBytes(pixMapHandle);
-		float coordFlippedYOrigin = image.size.height - cropRect.origin.y - cropRect.size.height;
-		ALWAYS_ASSERT(cropRect.origin.x >= 0);
-		ALWAYS_ASSERT(coordFlippedYOrigin >= 0);
-		// MISSING IMAGES: tolerate crop rects (and implicitly source images) that don't match
-		// the dimensions of the target gWorld. This shouldn't normally happen, though		
-		CHECK((int)cropRect.size.width == gWorldWidth);
-		CHECK((int)cropRect.size.height == gWorldHeight);
-		cropRect.size.width = MIN(cropRect.size.width, gWorldWidth);
-		cropRect.size.height = MIN(cropRect.size.height, gWorldHeight);
-
-		for (i = 0; i < gWorldHeight; i++)
-		{
-			unsigned char *dst = (unsigned char *)pixBaseAddr + i * pixmapRowBytes;
-			
-			unsigned char *charSrc = bitMapDataPtr 
-										+ int(i + coordFlippedYOrigin) * bitmapRep.bytesPerRow
-										+ int(cropRect.origin.x) * (bitmapRep.bitsPerPixel / 8);
-			unsigned short *shortSrc = (unsigned short *)charSrc;
-			if (bitmapRep.bitsPerPixel == 8)
-			{
-				ALWAYS_ASSERT(bitmapRep.samplesPerPixel == 1);
-				for (j = 0; j < gWorldWidth; j++)
-				{
-					unsigned char val = *charSrc++;
-					*dst++ = 0;		// Alpha
-					*dst++ = val;	// Red component
-					*dst++ = val;	// Green component
-					*dst++ = val;	// Blue component           
-				}
-			}
-			else if (bitmapRep.bitsPerPixel == 16)
-			{
-				ALWAYS_ASSERT(bitmapRep.samplesPerPixel == 1);
-				for (j = 0; j < gWorldWidth; j++)
-				{
-					unsigned int val = (unsigned int)((*shortSrc++) * gain / 255);
-					val = MIN(val, (unsigned int)255);
-//							ALWAYS_ASSERT(val < 256);
-					*dst++ = 0;		// Alpha
-					*dst++ = val;	// Red component
-					*dst++ = val;	// Green component
-					*dst++ = val;	// Blue component           
-				}
-			}
-			else if ((bitmapRep.bitsPerPixel == 24) || (bitmapRep.bitsPerPixel == 32))
-			{
-//				printf("spp %d\n", bitmapRep.samplesPerPixel);
-				ALWAYS_ASSERT((bitmapRep.samplesPerPixel == 3) || (bitmapRep.samplesPerPixel == 4));
-				ALWAYS_ASSERT(bitmapRep.numberOfPlanes == 1);
-				int spp = bitmapRep.samplesPerPixel;
-
-				for (j = 0; j < gWorldWidth; j++)
-				{
-					*dst++ = 0;	// Alpha
-#if 1
-					*dst++ = charSrc[0];	// Red component
-					*dst++ = charSrc[1];	// Green component
-					*dst++ = charSrc[2];	// Blue component      
-#else
-					// Convert to B&W
-					unsigned char val = (unsigned char)((charSrc[0] + charSrc[1] + charSrc[2]) / 3.0);
-					*dst++ = val;
-					*dst++ = val;
-					*dst++ = val;
-#endif
-					charSrc += spp;
-				}
-			}
-			else
-			{
-				printf("Unknown bpp (%d) spp (%d)\n", bitmapRep.bitsPerPixel, bitmapRep.samplesPerPixel);
-				ALWAYS_ASSERT(0);					
-			}
-		}
-	}
-
-    UnlockPixels(pixMapHandle);
-}
-#endif
-
 NSPoint ImageViewCoordToImageCoord(const NSPoint &thePoint, const NSImageView *theView)
 {
-	// Note that we have to allow for whitespace due to aspect ratio mismatches
+	/*	Converts from a point in an NSImageView (e.g. a mouse click) to the equivalent pixel coord
+		in the image that is being shown in the view.
+		This makes (hopefully reasonable!) assumptions about how the NSImageView draws the NSImage.
+		Note that we have to allow for whitespace due to aspect ratio mismatches	*/
 	float imageAspectRatio = theView.image.size.width / theView.image.size.height;
 	float scaleFactor;
 	NSPoint viewOrigin;
@@ -222,7 +117,10 @@ NSPoint ImageViewCoordToImageCoord(const NSPoint &thePoint, const NSImageView *t
 
 NSPoint ImageCoordToImageViewCoord(const NSPoint &thePoint, const NSImageView *theView)
 {
-	// Note that we have to allow for whitespace due to aspect ratio mismatches
+	/*	Converts from a pixel coord in an image to a screen coordinate in an NSImageView
+		that is displaying the image.
+		This makes (hopefully reasonable!) assumptions about how the NSImageView draws the NSImage.
+		Note that we have to allow for whitespace due to aspect ratio mismatches	*/
 	float imageAspectRatio = theView.image.size.width / theView.image.size.height;
 	float scaleFactor;
 	NSPoint viewOrigin;

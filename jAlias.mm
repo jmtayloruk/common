@@ -1,9 +1,11 @@
 //
 //  jAlias.mm
-//  Simple Preview
 //
-//  Created by Jonathan Taylor on 07/04/2014.
-//  Copyright 2014 Durham University. All rights reserved.
+//	Copyright 2010-2015 Jonathan Taylor. All rights reserved.
+//
+//	Cocoa class representing an alias for a filesystem object
+//  (which should continue to resolve to the same object even if
+//   it is moved around in the filesystem)
 //
 
 #import "jAlias.h"
@@ -53,6 +55,7 @@
 
 -(NSString *)path
 {
+	// Resolve the alias and return the current path to the object
 	BOOL stale;
 	NSError *error;
 	NSURL *url = [NSURL URLByResolvingBookmarkData:self.bookmark options:NSURLBookmarkResolutionWithoutUI relativeToURL:nil bookmarkDataIsStale:&stale error:&error];
@@ -61,6 +64,7 @@
 
 -(NSURL *)url
 {
+	// Resolve the alias and return a current URL for the object
 	BOOL stale;
 	NSError *error;
 	NSURL *url = [NSURL URLByResolvingBookmarkData:self.bookmark options:NSURLBookmarkResolutionWithoutUI relativeToURL:nil bookmarkDataIsStale:&stale error:&error];
@@ -69,6 +73,7 @@
 
 -(NSString *)filename
 {
+	// Return the filename for the object
 	// Works even if bookmark is unresolvable
 	NSDictionary *dict = [NSURL resourceValuesForKeys:[NSArray arrayWithObject:NSURLNameKey] fromBookmarkData:self.bookmark];
 	return [dict objectForKey:NSURLNameKey];
@@ -76,6 +81,7 @@
 
 -(BOOL)resolvesSameAs:(JAlias *)other
 {
+	// Check whether two alias objects refer to the same filesystem object
 	return ([self.path compare:other.path] == NSOrderedSame);
 }
 

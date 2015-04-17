@@ -1,18 +1,27 @@
-/*	JMutex.cpp
-	This module defines a class implementing a mutex
-	The helper class LocalGetMutex can be used as a stack variable which will
-	acquire the specified mutex while the instance remains in scope, releasing it
-	when the instance goes out of scope	*/
+//
+//	jMutex.cpp
+//
+//	Copyright 2010-2015 Jonathan Taylor. All rights reserved.
+//
+//	This module defines a class implementing a mutex
+//	The helper class LocalGetMutex can be used as a stack variable which will
+//	acquire the specified mutex while the instance remains in scope, releasing it
+//	when the instance goes out of scope
+//
+
 #include "jMutex.h"
 #include "jAssert.h"
 #include "jTimeUtils.h"
 #include <stdio.h>
 #include <pthread.h>
 #include <sys/time.h>
-#include <sys/errno.h>
 
+/*	I am pretty sure the intention of the two-stage lock compile-time option was to offer
+	improved performance under certain circumstances, apparently when more concurrent threads are present.
+	Looking at it now, some years later, I am not honestly sure why this was intended to be better!
+	Googling "two stage lock" hasn't particularly helped. I will leave the code in, but disabled
+	(which is how I found it when writing this comment in 2015)	*/
 #define TWO_STAGE_LOCK 0
-//#define TWO_STAGE_LOCK MAC_PRO
 
 JMutex::JMutex()
 {

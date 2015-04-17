@@ -1,6 +1,8 @@
 /*
  *  jTimeUtils.cpp
  *  
+ *	Copyright 2010-2015 Jonathan Taylor. All rights reserved.
+ *
  *	Utilities to determine elapsed time
  *
  */
@@ -10,7 +12,7 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 #if __MACH__
-	#include <Carbon/Carbon.h>
+	#include <CoreServices/CoreServices.h>
 #endif
 
 double GetTimeAbsolute(void)
@@ -20,6 +22,7 @@ double GetTimeAbsolute(void)
 	Nanoseconds ns = AbsoluteToNanoseconds(UpTime());
 	return ns.lo * 1e-9 + ns.hi * (1e-9 * (1LL<<32));
 #else
+	// Standard BSD function
 	struct timeval t;
 	struct timezone tz;
 
@@ -29,6 +32,7 @@ double GetTimeAbsolute(void)
 #endif
 }
 
+// Global variable for program launch time
 static double gStartTime = GetTimeAbsolute();
 
 double GetTimebaseStart(void) { return gStartTime; }
@@ -41,7 +45,8 @@ double GetTime(void)
 
 void ProcessorTime(double *userTime, double *sysTime, double *bothTime)
 {
-	// Note that on the cray (linux), thread time is allocated to "children".
+	// Utility function to return elapsed actual execution time (for performance monitoring)
+	// Note that on some linux systems [was certainly true for the cray...], thread time is allocated to "children".
 	// We need to include that time as well in our calculation
 	struct rusage self, children;
 	
@@ -68,6 +73,7 @@ void ProcessorTime(double *userTime, double *sysTime, double *bothTime)
 
 double CalcElapsedSecs(double t1, double t2)
 {
+	// Kind of trivial utility function, not sure quite why I bothered with this!
 	return t2 - t1;
 }
 
@@ -83,6 +89,7 @@ void ReportElapsedTime_us(double t1, double t2, const char *theText)
 
 void PauseFor(double secs)
 {
+	// Block for the specified number of seconds before returning
 	struct timeval timeout;
 	timeout.tv_sec = (int)secs;
 	timeout.tv_usec = (int)((secs - (int)secs) * 1000000);

@@ -1,9 +1,9 @@
 //
-//  JDispatchTimer.mm
-//  Simple Preview
+//	jDispatchTimer.h
 //
-//  Created by Jonathan Taylor on 05/11/2010.
-//  Copyright 2010 Durham University. All rights reserved.
+//	Copyright 2010-2015 Jonathan Taylor. All rights reserved.
+//
+//	Cocoa class wrapping a timer, which will execute a block on a GCD queue after a specified interval
 //
 
 #import "JDispatchTimer.h"
@@ -29,6 +29,7 @@
 }
 
 #if 0
+// Debug code that can be useful for tracking down retain/release issues.
 -(id)retain
 {
 //	printf("JDispatchTimer retain %p (will be %d)\n", self, self.retainCount+1);
@@ -57,6 +58,7 @@
 
 -(id)initForQueue:(dispatch_queue_t)queue withInterval:(double)dt repeat:(bool)repeat withHandler:(dispatch_block_t)handler
 {
+	// Initialize a timer object running on the specified GCD queue, that will execute the block 'handler' when it fires
 	if (!(self = [super init]))
 		return nil;
 	
@@ -131,6 +133,7 @@
 
 -(void)suspend
 {
+	// Suspend firing of the timer (it will not fire until -restart is called)
 //	printf("Suspend %p\n", self);
 	ALWAYS_ASSERT(repeatInterval != DISPATCH_TIME_FOREVER);		// Not supported for one-shot fire-and-forget timers
 	dispatch_source_set_timer(timerSource, DISPATCH_TIME_FOREVER, DISPATCH_TIME_FOREVER, 0);
@@ -138,6 +141,7 @@
 
 -(void)restart
 {
+	// Resume repeated firing after a previous call to -suspend.
 //	printf("Restart %p (source %p)\n", self, timerSource);
 	ALWAYS_ASSERT(repeatInterval != DISPATCH_TIME_FOREVER);		// Not supported for one-shot fire-and-forget timers
 	[self startTimer];

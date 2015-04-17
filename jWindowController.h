@@ -1,9 +1,9 @@
 //
 //  JWindowController.h
-//  Simple Preview
 //
-//  Created by Jonathan Taylor on 14/09/2013.
+//	Copyright 2011-2015 Jonathan Taylor. All rights reserved.
 //
+//  Subclass of NSWindowController that helps with notification whenever windows are opened or closed
 //
 
 #import <Cocoa/Cocoa.h>

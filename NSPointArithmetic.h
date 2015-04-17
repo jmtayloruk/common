@@ -1,9 +1,9 @@
 /*
  *  NSPointArithmetic.h
- *  Simple Preview
  *
- *  Created by Jonathan Taylor on 02/03/2011.
- *  Copyright 2011 Durham University. All rights reserved.
+ *  Copyright 2011-2015 Jonathan Taylor. All rights reserved.
+ *
+ *  C++ operator-based code to allow direct arithmetic of Cocoa's NSPoint objects
  *
  */
 

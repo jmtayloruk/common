@@ -1,11 +1,14 @@
 /*
  *  jCocoaImageUtils.h
- *  Simple Preview
  *
- *  Created by Jonathan Taylor on 21/02/2011.
- *  Copyright 2011 Durham University. All rights reserved.
+ *  Copyright 2011-2015 Jonathan Taylor. All rights reserved.
+ *
+ *	Utility functions for working with images under Cocoa
  *
  */
+
+#ifndef __J_COCOA_IMAGE_UTILS_H__
+#define __J_COCOA_IMAGE_UTILS_H__ 1
 
 NSBitmapImageRep *RawBitmapFromImage(const NSImage *image);
 void CopyNSImageToGWorld(const NSImage *image, GWorldPtr gWorldPtr, const CGRect *cropRect, double gain);
@@ -13,3 +16,5 @@ NSPoint FractionalCoordWithinImageView(const NSPoint &thePoint, const NSImageVie
 NSPoint ImageViewCoordToImageCoord(const NSPoint &thePoint, const NSImageView *theView);
 NSPoint ImageCoordToImageViewCoord(const NSPoint &thePoint, const NSImageView *theView);
 void BrightenNSImage(NSImage *image, int factor);
+
+#endif

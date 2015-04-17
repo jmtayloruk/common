@@ -1,9 +1,9 @@
 //
 //  BoundsRect.h
-//  scatter
 //
-//  Created by Jonny Taylor on 14/04/2014.
+//	Copyright 2014-2015 Jonathan Taylor. All rights reserved.
 //
+//	Structure representing a rectangle with integer corner positions
 //
 
 #ifndef __BOUNDS_RECT_H__

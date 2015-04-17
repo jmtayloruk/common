@@ -1,9 +1,21 @@
+//
+//	jMutex.h
+//
+//	Copyright 2010-2015 Jonathan Taylor. All rights reserved.
+//
+//	This module defines a class implementing a mutex
+//	The helper class LocalGetMutex can be used as a stack variable which will
+//	acquire the specified mutex while the instance remains in scope, releasing it
+//	when the instance goes out of scope
+//
 #ifndef __JMUTEX_H__
 #define __JMUTEX_H__
 
 #include <pthread.h>
 #include "jAssert.h"
 
+// This compile-time flag maintains a timestamped history of mutex-related activity,
+// as an aid to debugging
 #define MUTEX_TIMESTAMPS 0
 
 class JMutex

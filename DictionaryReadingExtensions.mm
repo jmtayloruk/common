@@ -1,9 +1,9 @@
 //
-//  DictionaryReadingExtensions.m
-//  Spim Interface
+//  DictionaryReadingExtensions.mm
 //
-//  Created by Jonathan Taylor on 20/06/2014.
+//	Copyright 2014-2015 Jonathan Taylor. All rights reserved.
 //
+//	Extensions to NSDictionary for easy and typesafe access to key values
 //
 
 #import "DictionaryReadingExtensions.h"
@@ -12,6 +12,8 @@
 
 -(NSNumber *)getRequiredNumberForKey:(NSString *)key
 {
+	// Obtain the NSNumber associated with the specified key.
+	// Will fail assertion if the key value is absent or is not an NSNumber.
 	ALWAYS_ASSERT([self isKindOfClass:[NSDictionary class]]);
 	NSNumber *num = [self objectForKey:key];
 	ALWAYS_ASSERT([num isKindOfClass:[NSNumber class]]);
@@ -20,6 +22,9 @@
 
 -(NSNumber *)getOptionalNumberForKey:(NSString *)key defaultVal:(NSNumber *)def
 {
+	// Obtain the NSNumber associated with the specified key.
+	// If the key is not present in the dictionary, return the supplied default value instead.
+	// Will fail assertion if the key value is present but is not an NSNumber.
 	ALWAYS_ASSERT([self isKindOfClass:[NSDictionary class]]);
 	NSNumber *num = [self objectForKey:key];
     if (num == nil)

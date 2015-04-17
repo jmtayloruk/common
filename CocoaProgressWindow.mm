@@ -1,9 +1,9 @@
 //
-//  CocoaProgressWindow.m
-//  Simple Preview
+//  CocoaProgressWindow.mm
 //
-//  Created by Jonathan Taylor on 30/09/2010.
-//  Copyright 2010 Durham University. All rights reserved.
+//  Copyright 2010-2015 Jonathan Taylor. All rights reserved.
+//
+//	A cocoa wrapper for my BaseProgressBar class, to display a progress window as a proper OS X window
 //
 
 #import "CocoaProgressWindow.h"
@@ -12,6 +12,8 @@
 
 class CocoaProgressWindowHelper : public BaseProgressBar
 {
+	// Helper class that allows the InternalUpdateProgress function in BaseProgressBar
+	// to call through to the actual display code for the Cocoa window
   protected:
 	CocoaProgressWindow *windowClass;
 	virtual void		InternalUpdateProgress(double newProgress);
@@ -28,31 +30,6 @@ void CocoaProgressWindowHelper::InternalUpdateProgress(double newProgress)
 }
 
 @implementation CocoaProgressWindow
-
-#if 0
--(id)retain
-{
-	id result;
-	@synchronized(self)
-	{
-	NSArray *symbols = [NSThread callStackSymbols];
-	NSLog(@"CPW retain %p (will be %d)\n", self, self.retainCount+1);
-	NSLog(@"%@", symbols);
-	result = [super retain];
-	}
-	return result;
-}
--(void)release
-{
-	@synchronized(self)
-	{
-		NSArray *symbols = [NSThread callStackSymbols];
-		printf("CPW release %p (will be %d)\n", self, self.retainCount-1);
-		NSLog(@"%@", symbols);
-		[super release];
-	}
-}
-#endif
 
 -(id)initForItems:(double)inLength withTitle:(NSString *)title
 {
@@ -175,7 +152,7 @@ void CocoaProgressWindowHelper::InternalUpdateProgress(double newProgress)
 -(void)internalUpdateProgress:(double)newProgress
 {
 	// This currently updates for every single delta progress.
-	// **** I should instigate some sort of flow control in here
+	// TODO: I should instigate some sort of flow control in here
 	// Possibly just do the updating based on a timer.
 	[indicator setDoubleValue:newProgress];
 	[fraction setStringValue:[SWF:@"%d/%d", (int)newProgress, (int)_base->Length()]];

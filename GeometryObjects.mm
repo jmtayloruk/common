@@ -1,9 +1,10 @@
 //
 //  GeometryObjects.mm
-//  Simple Preview
 //
-//  Created by Jonathan Taylor on 26/03/2012.
-//  Copyright 2012 Durham University. All rights reserved.
+//	Copyright 2010-2015 Jonathan Taylor. All rights reserved.
+//
+//	Obj-C objects to wrap an NSRect and an NSPoint.
+//	The main purpose is to allow GUI code to bind to individual variables within the structure
 //
 
 #import "GeometryObjects.h"
