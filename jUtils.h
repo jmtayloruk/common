@@ -12,6 +12,7 @@ namespace fundamental_constants
 	extern const double mu_0;
 	extern const double eta_0;
 	extern const double k_b;
+    extern const double g;
 	extern const double root4PiE0, root4PiMu0;
 	extern const double L, lambda_b;
 }

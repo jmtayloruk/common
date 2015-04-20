@@ -36,6 +36,7 @@ namespace fundamental_constants
 	const double e_0 = 1.0 / (SQUARE(c) * mu_0);	// 8.8541878176e-12
 	const double eta_0 = sqrt(mu_0 / e_0);
 	const double k_b = 1.38065e-23;
+    const double g = 9.81;
 	const double electronic_charge = 1.60217646e-19;
 	const double root4PiE0 = sqrt(4.0 * PI * e_0);		// 1.054822e-05
 	const double root4PiMu0 = sqrt(4.0 * PI * mu_0);	// 3.973835e-03
