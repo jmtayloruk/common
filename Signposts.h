@@ -1,3 +1,12 @@
+//
+//  BoundsRect.h
+//
+//	Copyright 2014-2015 Jonathan Taylor. All rights reserved.
+//
+//	OS X specific code that allows us to insert markers into the Shark system trace
+//	as an aid for performance analysis.
+//
+
 #ifndef __SIGNPOSTS_H__
 #define __SIGNPOSTS_H__ 1
 

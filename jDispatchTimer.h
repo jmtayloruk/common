@@ -1,9 +1,9 @@
 //
-//  JDispatchTimer.h
-//  Simple Preview
+//	jDispatchTimer.h
 //
-//  Created by Jonathan Taylor on 05/11/2010.
-//  Copyright 2010 Durham University. All rights reserved.
+//	Copyright 2010-2015 Jonathan Taylor. All rights reserved.
+//
+//	Cocoa class wrapping a timer, which will execute a block on a GCD queue after a specified interval
 //
 
 #import <Cocoa/Cocoa.h>

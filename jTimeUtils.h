@@ -1,7 +1,9 @@
 /*
  *  jTimeUtils.h
  *  
- *	Utilities to determine elapsed time
+ *	Copyright 2010-2015 Jonathan Taylor. All rights reserved.
+ *
+ *	Utilities to determine elapsed time etc
  *
  */
 

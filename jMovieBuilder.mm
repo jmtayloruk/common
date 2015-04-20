@@ -1,4 +1,29 @@
-#include "jMovieBuilder.cpp"
+//
+//  jMovieBuilder.mm
+//
+//	Copyright 2010-2015 Jonathan Taylor. All rights reserved.
+//
+//	Additional Cocoa/NSImage interface for jMovieBuilder.
+//
+
+#include "jMovieBuilder.h"
+
+void GetDestinationDetailsUsingSheetOnWindow(NSWindow *sheetOnWindow, void (^handler)(NSInteger result, NSSavePanel *savePanel))
+{
+	NSSavePanel *spanel = [NSSavePanel savePanel];
+	// Could use the following to set the starting directory for the save panel:
+	//	[spanel setDirectory:[path stringByExpandingTildeInPath]];
+	spanel.title = @"Save Captured Movie As...";
+	spanel.nameFieldLabel = @"Save Captured Movie As...";
+	spanel.message = @"Pick where to save the captured and compressed movie.";
+	spanel.nameFieldStringValue = @"captured.mov";
+	
+	[spanel beginSheetModalForWindow:sheetOnWindow
+				   completionHandler:^(NSInteger result)
+	 {
+		 handler(result, spanel);
+	 }];
+}
 
 CVPixelBufferRef FastImageFromNSImage(const NSImage *image, const _NSRect cropRect)
 {
@@ -43,7 +68,7 @@ CVPixelBufferRef FastImageFromNSImage(const NSImage *image, const _NSRect cropRe
     return buffer;
 }
 
-void JBetterMovieBuilder::AddFrame(const NSImage *frameImage, const _NSRect *cropRect, double gain)
+void JMovieBuilder::AddFrame(const NSImage *frameImage, const _NSRect *cropRect, double gain)
 {
 	CVPixelBufferRef pixelBuffer = FastImageFromNSImage(frameImage, *cropRect);
 	

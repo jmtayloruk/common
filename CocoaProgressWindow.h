@@ -1,9 +1,10 @@
 //
 //  CocoaProgressWindow.h
-//  Simple Preview
 //
-//  Created by Jonathan Taylor on 30/09/2010.
-//  Copyright 2010 Durham University. All rights reserved.
+//  Copyright 2011-2015 Jonathan Taylor. All rights reserved.
+//
+//	A cocoa wrapper for my BaseProgressBar class, to display a progress window as a proper OS X window
+//
 //
 
 #import <Cocoa/Cocoa.h>

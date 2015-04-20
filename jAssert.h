@@ -1,6 +1,8 @@
 /*
  *	jAssert.h
  *
+ *  Copyright 2011-2015 Jonathan Taylor. All rights reserved.
+ *
  *  Code to handle assertions
  */
 #ifndef __JASSERT_H__
@@ -22,9 +24,6 @@
 		virtual void PullDownCode(void) __attribute__((__noreturn__));
 	  public:
 		virtual ~BaseAssertionHandler() { }
-		/*	I had hoped to designate this next function as noreturn, but that causes endless concerns
-			for the static analyzer which sees e.g. blocks prematurely terminated and subsequent code
-			encountering uninitialized values etc.	*/
 		virtual void AssertionFailed(long line, const char *file) __attribute__((__noreturn__));
 		virtual bool CheckCondition(bool condition, long line, const char *file);
 	};

@@ -1,9 +1,10 @@
 /*
  *  jHistogram.h
- *  Simple Preview
  *
- *  Created by Jonathan Taylor on 06/11/2011.
- *  Copyright 2011 Durham University. All rights reserved.
+ *  Copyright 2011-2015 Jonathan Taylor. All rights reserved.
+ *
+ *  C++ class to maintain a histogram based on datapoints that are added one by one
+ *  Caller can query contents of any particular histogram bin.
  *
  */
 

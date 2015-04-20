@@ -1,9 +1,9 @@
 //
 //  jNotifications.h
-//  Simple Preview
 //
-//  Created by Jonathan Taylor on 11/06/2010.
-//  Copyright 2010 Durham University. All rights reserved.
+//	Copyright 2010-2015 Jonathan Taylor. All rights reserved.
+//
+//	Utility functions relating to Cocoa notifications
 //
 
 #import <Cocoa/Cocoa.h>
