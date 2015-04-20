@@ -1,5 +1,5 @@
 /*
- *	jAssert.h
+ *	jAssert.cpp
  *
  *  Code to handle assertions
  */
