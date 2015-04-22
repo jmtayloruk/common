@@ -59,6 +59,7 @@ class JMovieBuilder
 	
   public:
 			JMovieBuilder(OSType inCodec, Handle outputMovieDataRef, OSType outputMovieDataRefType, const BoundsRect &bounds, float frameRate, OSStatus *outErr, int inQuality = codecLosslessQuality);
+            JMovieBuilder(OSType inCodec, const char *destPath, const BoundsRect &bounds, float frameRate, OSStatus *outErr, int inQuality = codecLosslessQuality);
 	virtual ~JMovieBuilder();
 	
 	int Width(void) { return width; }

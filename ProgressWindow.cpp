@@ -6,7 +6,12 @@
 #include "ProgressWindow.h"
 #include "jUtils.h"
 
-#if 0//HAS_OS_X_GUI     /* this doesn't work on latest OS versions where Carbon is unavailable. Need to update this code to CocoaProgressWindow */
+#if 0//HAS_OS_X_GUI
+/* As currently written, this code doesn't work on latest OS versions where Carbon is unavailable.
+    Need to update this code to CocoaProgressWindow 
+    There may also be issues around (maybe) not having a proper run loop, and yet wanting the window
+    to appear, animate etc. That may need a bit of looking into
+ */
 
 ProgressWindow::ProgressWindow(long x, long y, const char *title, double inLength, ...) : BaseProgressBar(inLength)
 {

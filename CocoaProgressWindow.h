@@ -8,6 +8,7 @@
 //
 
 #import <Cocoa/Cocoa.h>
+#import "jWindowController.h"
 
 @interface CocoaProgressWindow : JWindowController
 {

@@ -10,6 +10,10 @@
 #import "ProgressBar.h"
 #import "jNotifications.h"
 
+#ifndef SWF
+#define SWF NSString stringWithFormat
+#endif
+
 class CocoaProgressWindowHelper : public BaseProgressBar
 {
 	// Helper class that allows the InternalUpdateProgress function in BaseProgressBar

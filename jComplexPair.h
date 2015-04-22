@@ -16,7 +16,7 @@
 #include "jComplexPairSplit.h"
 
 #if HAS_SSE
-  #if 0
+  #if 1
 	#include "jComplexPairAsVector.h"
 	typedef jComplexPairAsVector jComplexPair;
   #else

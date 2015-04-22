@@ -34,6 +34,20 @@ JMovieBuilder::JMovieBuilder(OSType inCodec, Handle outputMovieDataRef, OSType o
 	DoInit(inCodec, inBounds, inFrameRate, outputMovieDataRef, outputMovieDataRefType, outErr, inQuality);
 }
 
+JMovieBuilder::JMovieBuilder(OSType inCodec, const char *destPath, const BoundsRect &inBounds, float inFrameRate, OSStatus *outErr, int inQuality)
+{
+    OSStatus err;
+    Handle outputMovieDataRef = NULL;
+    OSType outputMovieDataRefType;
+    CFStringRef pathString = CFStringCreateWithCString(kCFAllocatorDefault, destPath, kCFStringEncodingMacRoman);
+    CFURLRef outputMovieURL = CFURLCreateWithFileSystemPath(kCFAllocatorDefault, pathString, kCFURLPOSIXPathStyle, false);
+    err = QTNewDataReferenceFromCFURL((CFURLRef)outputMovieURL, 0, &outputMovieDataRef, &outputMovieDataRefType);
+    ALWAYS_ASSERT_NOERR(err);
+    DoInit(inCodec, inBounds, inFrameRate, outputMovieDataRef, outputMovieDataRefType, outErr, inQuality);
+    CFRelease(outputMovieURL);
+    CFRelease(pathString);
+}
+
 void JMovieBuilder::DoInit(OSType inCodec, const BoundsRect &bounds, float frameRate, Handle outputMovieDataRef, OSType outputMovieDataRefType, OSStatus *outErr, int inQuality)
 {
 	width = bounds.w;

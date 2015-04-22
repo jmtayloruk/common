@@ -182,7 +182,7 @@ coord3 SphericalToCartesian(coord3 source)
 	return coord3(cartX, cartY, cartZ);
 }
 
-#if 0
+#if 1
 coordC3 CartesianToSpherical(coordC3 source)
 {
 	// NOTE: To be honest I'm not even sure what it means to have a complex spherical vector,
