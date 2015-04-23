@@ -1,3 +1,13 @@
+//
+//  jCoord.h
+//
+//	Copyright 2010-2015 Jonathan Taylor. All rights reserved.
+//
+//	C++ objects that wrap 2D and 3D vector coordinates
+//	The idea is that these can be acted on like primitive types, using standard C++ operators for arithmetic.
+//	Various vector-related utility functions are also defined.
+//
+
 #ifndef __JCOORD_H__
 #define __JCOORD_H__
 
@@ -106,7 +116,7 @@ struct coord3
 	coord3& operator /= (double n) { return (*this) *= (1/n); }
 	coord3 operator / (double n) const { return coord3(*this) /= n; }
 	inline coord3& operator = (const coord3 &n) { x = n.x; y = n.y; z = n.z; return *this; }
-	// Comparison operators (BUT be warned about FP comparisons which may not give the results you expect!)
+	// Comparison operators (BUT be aware of the general issues of doing comparisons between floating-point variables!)
 	bool operator == (const coord3 &n) { return ((x == n.x) && (y == n.y) && (z == n.z)); }
 	bool operator != (const coord3 &n) { return !(operator==(n)); }
 	
@@ -131,7 +141,7 @@ struct coord3
 	void Print(void) const { printf("(%.12lg, %.12lg, %.12lg)", x, y, z); }
 
 	// Extract one indexed component of the vector
-	// This is not very efficient. Should really redefine x, y, z as a 3 element array, but that will alter rather a lot of the arithmetic code in this struct definition!
+	// This is not very efficient. To improve the efficiency of this function, it would be nice to redefine x, y, z as a 3 element array, but that will alter rather a lot of the arithmetic code in this struct definition!
 	double component(int c) { return (c==0) ? x : ((c==1) ? y : z); }
 };
 
@@ -160,7 +170,7 @@ inline coord3 operator-(const coord3 &r)
 
 /************************ COMPLEX 3D COORDINATE CLASS *******************************/
 
-/*	It would be nice to have a typed differentiation between polar and scalar coordinates
+/*	It would be nice to have a typed differentiation between polar and cartesian coordinates
 	to prevent them being mixed by mistake. Can't do that very easily with subclasses, though
 	because all the operators return coordC3, so an action like theCoord = theCoord * 2 doesn't compile.
 	Might be possible to achieve what I want using a dummy template argument to a templated coordC3.	*/
@@ -206,9 +216,6 @@ struct coordC3
 	coord3 imag(void) const { return coord3(x.imag(), y.imag(), z.imag()); }
 	coordC3 conj(void) const { return coordC3(::conj(x), ::conj(y), ::conj(z)); }
 	void Print(void) const { printf("({%.12lg,%.12lg}, {%.12lg,%.12lg}, {%.12lg,%.12lg})", x.real(), x.imag(), y.real(), y.imag(), z.real(), z.imag()); }
-
-//    friend coordC3 operator*(const jComplex &l, const coordC3 &r);
-  //  friend coordC3 operator-(const jComplex &l, const coordC3 &r);
 };
 
 inline void Print(coordC3 c) { c.Print(); }

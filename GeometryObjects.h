@@ -1,9 +1,10 @@
 /*
  *  GeometryObjects.h
- *  Simple Preview
  *
- *  Created by Jonathan Taylor on 26/03/2012.
- *  Copyright 2012 Durham University. All rights reserved.
+ *	Copyright 2010-2015 Jonathan Taylor. All rights reserved.
+ *
+ *	Obj-C objects to wrap an NSRect and an NSPoint.
+ *	The main purpose is to allow GUI code to bind to individual variables within the structure
  *
  */
 
@@ -12,15 +13,16 @@
 	NSRect rect;
 }
 
-+(JRect*)newRectForNSRect:(const NSRect)r;
++(JRect*)rectWithNSRect:(const NSRect)r;
 -(id)initWithRect:(const NSRect)r;
+-(JRect*)roundedToIntegers;
 
 @property (readwrite) float x;
 @property (readwrite) float y;
 @property (readwrite) float w;
 @property (readwrite) float h;
 @property (readwrite) const NSRect ns;
-@property (readonly) int everything;
+@property (readonly) int everything;	// Can be monitored using KVO to see if any variable changes
 
 @end
 
@@ -29,13 +31,13 @@
 	NSPoint point;
 }
 
-+(JPoint2*)newPointForNSPoint:(const NSPoint)r;
++(JPoint2*)pointWithNSPoint:(const NSPoint)r;
 -(id)initWithPoint:(const NSPoint)r;
 
 @property (readwrite) float x;
 @property (readwrite) float y;
 @property (readwrite) const NSPoint ns;
-@property (readonly) int everything;
+@property (readonly) int everything;	// Can be monitored using KVO to see if any variable changes
 
 @end
 

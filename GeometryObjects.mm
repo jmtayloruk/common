@@ -1,25 +1,30 @@
 //
 //  GeometryObjects.mm
-//  Simple Preview
 //
-//  Created by Jonathan Taylor on 26/03/2012.
-//  Copyright 2012 Durham University. All rights reserved.
+//	Copyright 2010-2015 Jonathan Taylor. All rights reserved.
+//
+//	Obj-C objects to wrap an NSRect and an NSPoint.
+//	The main purpose is to allow GUI code to bind to individual variables within the structure
 //
 
 #import "GeometryObjects.h"
-#import "jUtils.h"
 
 @implementation JRect
 
-+(JRect*)newRectForNSRect:(const NSRect)r
++(JRect*)rectWithNSRect:(const NSRect)r
 {
-	return [[JRect alloc] initWithRect:r];
+	return [[[JRect alloc] initWithRect:r] autorelease];
 }
 
 -(id)initWithRect:(const NSRect)r
 {
 	self.ns = r;
 	return self;
+}
+
+-(JRect*)roundedToIntegers
+{
+    return [JRect rectWithNSRect:NSMakeRect(round(rect.origin.x), round(rect.origin.y), round(rect.size.width), round(rect.size.height))];
 }
 
 -(float)x { return rect.origin.x; }
@@ -52,9 +57,9 @@
 
 @implementation JPoint2
 
-+(JPoint2*)newPointForNSPoint:(const NSPoint)p
++(JPoint2*)pointWithNSPoint:(const NSPoint)p
 {
-	return [[JPoint2 alloc] initWithPoint:p];
+	return [[[JPoint2 alloc] initWithPoint:p] autorelease];
 }
 
 -(id)initWithPoint:(const NSPoint)p

@@ -13,6 +13,7 @@
 #include "VectorTypes.h"
 #include "VectorFunctions.h"
 #include <immintrin.h>
+#include <avxintrin.h>
 
 // Horizontal add works as follows:
 // VHADD x, p, q => x = {p[0]+p[1], q[0]+q[1], p[2]+p[3], q[2]+q[3]}

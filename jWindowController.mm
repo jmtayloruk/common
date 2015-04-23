@@ -1,21 +1,45 @@
 //
-//  JWindowController.m
-//  Simple Preview
+//  JWindowController.h
 //
-//  Created by Jonathan Taylor on 14/09/2013.
+//	Copyright 2011-2015 Jonathan Taylor. All rights reserved.
 //
+//  Subclass of NSWindowController that helps with notification whenever windows are opened or closed
+//	In order for a window class to be monitored, it must subclass JWindowController instead of NSWindowController.
 //
 
 #import "JWindowController.h"
 #import "JNotifications.h"
 
 NSMutableSet *activeWindowControllers = [[NSMutableSet alloc] init];
+
+// Listen for this notification to be notified when windows are opened or closed
 NSString *WindowControllerListChanged = @"jonny.jWindowController.listChanged";
+// It's also possible to monitor the following property on any JWindowController object
+@interface JWindowController()
+    @property (readwrite) int windowControllerListChanged_dummyProperty;
+@end
 
 @implementation JWindowController
 
+-(id)initWithWindowNibName:(NSString *)windowNibName
+{
+	if (!(self = [super initWithWindowNibName:windowNibName]))
+		return nil;
+    
+	[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(someWindowOpenedOrClosed:) name:WindowControllerListChanged object:nil];
+
+    return self;
+}
+
+-(void)dealloc
+{
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
+    [super dealloc];
+}
+
 -(void)windowDidLoad
 {
+	// Window is opening - add it to the list of active window controllers, and notify interested parties
 	ALWAYS_ASSERT(![activeWindowControllers containsObject:self]);
 	[activeWindowControllers addObject:self];
 	QueueNotificationOnMainThread(WindowControllerListChanged, self, false, NSPostASAP);
@@ -23,6 +47,7 @@ NSString *WindowControllerListChanged = @"jonny.jWindowController.listChanged";
 
 -(void)windowWillClose:(NSNotification *)notification
 {
+	// Window is closing - remove it from the list of active window controllers, and notify interested parties
 	if (!CHECK([activeWindowControllers containsObject:self]))
 		return;
 	// Remove self from list of active window controllers.
@@ -36,5 +61,16 @@ NSString *WindowControllerListChanged = @"jonny.jWindowController.listChanged";
 		monitor the window list might be better done a different way.	*/
 	QueueNotificationOnMainThread(WindowControllerListChanged, self, false, NSPostASAP);
 }
+
+-(void)someWindowOpenedOrClosed:(NSNotification *)notification
+{
+    // Our own callback for the notification. This is a rather frustrating solution for a feature I wanted to add.
+    // What I want to do is to allow anybody interested in the window controller list to declare a dependency on a property that
+    // will change whenever window controller list changes. However I can't find an easy way to ensure that *every* window controller's
+    // property will change. This hybrid property + event method is the best I could come up with.
+    self.windowControllerListChanged_dummyProperty++;
+}
+
+@synthesize windowControllerListChanged_dummyProperty = _windowControllerListChanged_dummyProperty;
 
 @end

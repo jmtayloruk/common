@@ -1,8 +1,10 @@
 /*	Module: ProgressBar.cpp
 
+	Copyright 2011-2015 Jonathan Taylor. All rights reserved.
+
 	Code to display a progress bar for time-consuming operations.
 	TextualProgressBar writes a growing line to stdout
-	ProgressWindow (see separate file) displays a window showing a progress bar and
+	CocoaProgressWindow (see separate file) displays a window showing a progress bar and
 	indicating time taken, time remaining etc.	*/
 	
 #include <stdarg.h>
@@ -36,11 +38,13 @@ BaseProgressBar::~BaseProgressBar()
 
 void BaseProgressBar::UpdateLength(double newLength)
 {
+	// Updates the number of items that make up the task whose progress is being monitorer
 	length = newLength;
 }
 
 void BaseProgressBar::UpdateProgress(double newProgress)
 {
+	// Updates the number of task items that have been completed
 	LocalGetMutex lgm(&progressMutex);
 	InternalUpdateProgress(newProgress);
 }
@@ -63,6 +67,8 @@ void BaseProgressBar::GetElapsedTime(int *hours, int *mins, double *secs)
 
 void BaseProgressBar::ResetTimeEstimate(void)
 {
+	// Don't worry about how long it's taken to complete the items so far,
+	// and make future estimates based on the speed we are NOW getting through items
 	startTimeForEstimate = GetTime();
 	startingProgressForEstimate = currentProgress;
 }

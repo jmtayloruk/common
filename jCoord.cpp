@@ -1,7 +1,17 @@
+//
+//  jCoord.cpp
+//
+//	Copyright 2010-2015 Jonathan Taylor. All rights reserved.
+//
+//	Implementations of utility functions for coordinate objects.
+//	Most of these functions are for coordinate transformations.
+//
 #include "jCoord.h"
 
 void coord3::RotateFromSphericalSystem(double theta, double phi)
 {
+	// Convert from a local cartesian basis defined for a point in a spherical coordinate system,
+	// to a pure global cartesian basis.
 	/*		_r_ =		[ cos(phi)sin(theta), sin(phi)sin(theta), cos(theta) ]
 			_theta_ =	[ cos(phi)cos(theta), sin(phi)cos(theta), -sin(theta) ]
 			_phi_ =		[ -sin(phi), cos(phi), 0 ]			*/
@@ -18,6 +28,8 @@ void coord3::RotateFromSphericalSystem(double theta, double phi)
 
 void coord3::RotateToSphericalSystem(double theta, double phi)
 {
+	// Convert to a local cartesian basis defined for a point in a spherical coordinate system,
+	// from a pure global cartesian basis.
 	/*		_r_ =		[ cos(phi)sin(theta), sin(phi)sin(theta), cos(theta) ]
 			_theta_ =	[ cos(phi)cos(theta), sin(phi)cos(theta), -sin(theta) ]
 			_phi_ =		[ -sin(phi), cos(phi), 0 ]			*/
@@ -34,6 +46,8 @@ void coord3::RotateToSphericalSystem(double theta, double phi)
 
 void coordC3::RotateFromSphericalSystem(double theta, double phi)
 {
+	// Convert from a local cartesian basis defined for a point in a spherical coordinate system,
+	// to a pure global cartesian basis.
 	/*		_r_ =		[ cos(phi)sin(theta), sin(phi)sin(theta), cos(theta) ]
 			_theta_ =	[ cos(phi)cos(theta), sin(phi)cos(theta), -sin(theta) ]
 			_phi_ =		[ -sin(phi), cos(phi), 0 ]			*/
@@ -50,6 +64,8 @@ void coordC3::RotateFromSphericalSystem(double theta, double phi)
 
 void coordC3::RotateToSphericalSystem(double theta, double phi)
 {
+	// Convert to a local cartesian basis defined for a point in a spherical coordinate system,
+	// from a pure global cartesian basis.
 	/*		_r_ =		[ cos(phi)sin(theta), sin(phi)sin(theta), cos(theta) ]
 			_theta_ =	[ cos(phi)cos(theta), sin(phi)cos(theta), -sin(theta) ]
 			_phi_ =		[ -sin(phi), cos(phi), 0 ]			*/
@@ -148,6 +164,7 @@ coordC3 RotateToCylindricalSystem(coordC3 c, double phi)
 
 coord3 CartesianToSpherical(coord3 source)
 {
+	// Convert from a Cartesian coordinate to a spherical coordinate
 	double	r = sqrt(source.x*source.x + source.y*source.y + source.z*source.z);
 	double	theta = acos(source.z / r);
 	double	phi = atan2(source.y, source.x);
@@ -157,6 +174,7 @@ coord3 CartesianToSpherical(coord3 source)
 
 coord3 SphericalToCartesian(coord3 source)
 {
+	// Convert from a spherical coordinate to a Cartesian coordinate
 	double	cartX = source.x * cos(source.z) * sin(source.y);
 	double	cartY = source.x * sin(source.z) * sin(source.y);
 	double	cartZ = source.x * cos(source.y);
@@ -164,13 +182,13 @@ coord3 SphericalToCartesian(coord3 source)
 	return coord3(cartX, cartY, cartZ);
 }
 
+#if 1
 coordC3 CartesianToSpherical(coordC3 source)
 {
-	// To be honest I'm not even sure what it means to have a complex spherical vector, 
+	// NOTE: To be honest I'm not even sure what it means to have a complex spherical vector,
 	// as well as specific worries such as whether r should use x^2 or |x|^2, for example
 	// This might have been of interest with evanescent waves, but I think I'll have to leave it for now!
 	// As for the r part, I'm pretty sure I shouldn't use |x|^2...
-#if 1
 	jComplex r = sqrt(source.x*source.x + source.y*source.y + source.z*source.z);
 	jComplex theta = cacos(source.z / r);
 	jComplex val = source.y / source.x;		// **** not sure what to do about quadrants (c.f. atan2...)
@@ -178,7 +196,6 @@ coordC3 CartesianToSpherical(coordC3 source)
 	jComplex phi = complexAtan;
 	
 	return coordC3(r, theta, phi);
-#endif
 }
 
 coordC3 SphericalToCartesian(coordC3 source)
@@ -189,6 +206,7 @@ coordC3 SphericalToCartesian(coordC3 source)
 	
 	return coordC3(cartX, cartY, cartZ);
 }
+#endif
 
 coord3 CartesianToCylindrical(coord3 source)
 {

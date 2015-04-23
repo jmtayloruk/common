@@ -4,6 +4,7 @@
 #include "ProgressBar.h"
 
 #if 0//HAS_OS_X_GUI
+// TODO: need to update this code to use CocoaProgressWindow.
 class ProgressWindow : public BaseProgressBar
 {
   protected:

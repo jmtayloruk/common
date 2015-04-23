@@ -1,3 +1,10 @@
+//
+//  jUtils.h
+//
+//	Copyright 2010-2015 Jonathan Taylor. All rights reserved.
+//
+//	A random assortment of utility functions!
+//
 #ifndef __JUTILS_H__
 #define __JUTILS_H__
 
@@ -12,6 +19,7 @@ namespace fundamental_constants
 	extern const double mu_0;
 	extern const double eta_0;
 	extern const double k_b;
+    extern const double g;
 	extern const double root4PiE0, root4PiMu0;
 	extern const double L, lambda_b;
 }
@@ -25,6 +33,7 @@ void *void_aligned_malloc(size_t size, size_t align_size);
 void aligned_free(volatile void *inPtr);
 template<class C> C *aligned_malloc(size_t size, size_t align_size = 16)
 {
+	// A templated version of void_aligned_malloc that returns a pointer of a specified type
 	return (C *)void_aligned_malloc(size * sizeof(C), align_size);
 }
 
@@ -40,12 +49,14 @@ class LocalEnableDenormalFlushing
 
 template<class C> void DeleteArrayIfNotNull(C *v)
 {
+	// Deletes the supplied memory (allocated using new[]) if the pointer is not NULL
 	if (v != NULL)
 		delete[] v;
 }
 
 template<class C> void DeleteIfNotNull(C *v)
 {
+	// Deletes the supplied memory (allocated using new) if the pointer is not NULL
 	if (v != NULL)
 		delete v;
 }
@@ -57,15 +68,11 @@ inline double RadiansToDegrees(double rad) { return rad * 180.0 / PI; }
 
 char *NewCopyOfString(const char *inString);
 
-#if OS_X
-	#include <Carbon/Carbon.h>
-	StringPtr ConvertCToPascalString (const char *theString, Str255 pStr);
-#endif
-
 bool FileExists(const char *theFile);
 
 
 #if __OBJC__
+	#import <Cocoa/Cocoa.h>
     NSURL *PathToURL(NSString *path, NSURL *relativeTo);
     NSURL *PathToURL(NSString *path);
     bool IsDirectory(NSURL *fileURL);
@@ -81,14 +88,6 @@ bool FileExists(const char *theFile);
   #ifdef __BLOCKS__
         void ForEveryImageFileInDirectory(NSString *dir, void (^callback)(NSString *));
         void ForEveryImageFileInDirectoryConcurrent(NSString *dir, void (^callback)(NSString *));
-  #endif
-    NSString *FirstImageFileNameInDirectory(NSString *dir);
-#endif
-
-#if __OBJC__
-  #ifdef __BLOCKS__
-    void ForEveryImageFileInDirectory(NSString *dir, void (^callback)(NSString *));
-    void ForEveryImageFileInDirectoryConcurrent(NSString *dir, void (^callback)(NSString *));
   #endif
     NSString *FirstImageFileNameInDirectory(NSString *dir);
 #endif
