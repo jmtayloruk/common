@@ -5,8 +5,8 @@
 #include "numpy/arrayobject.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include "/Volumes/Development/Common/JAssert.h"
-#include "/Volumes/Development/Common/JPythonCommon.h"
+#include "jAssert.h"
+#include "jPythonCommon.h"
 
 class JPythonList
 {

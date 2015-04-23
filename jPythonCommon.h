@@ -7,7 +7,7 @@
 void RequireObjectType(PyObject *obj, PyTypeObject &type);
 bool ObjectIsNone(PyObject *obj);
 
-#include "JPythonList.h"
-#include "JPythonArray.h"
+#include "jPythonList.h"
+#include "jPythonArray.h"
 
 #endif

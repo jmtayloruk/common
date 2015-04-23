@@ -9,14 +9,10 @@
 #include "numpy/arrayobject.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include "/Volumes/Development/Common/JAssert.h"
+#include "jAssert.h"
 
-template<class Type> int ArrayType(void)
-{
-	// This should be overridden for all required types in JPythonArray.cpp
-	PyErr_Format(PyErr_NewException("exceptions.TypeError", NULL, NULL), "!ERROR: ArrayType C function not implemented for this Type\n");
-	return -1;
-}
+// This should be specialized for all required types in JPythonArray.cpp
+template<class Type> int ArrayType(void);
 
 template<class Type> class JPythonArray
 {
@@ -57,13 +53,13 @@ template<class Type> class JPythonArray
 		if (PyArray_TYPE(obj) != ArrayType())
 		{
 			// If this error is hit then the wrong array type was passed to the JPythonArray class
-			PyErr_Format(PyErr_NewException("exceptions.TypeError", NULL, NULL), "Array type %d didn't match expected type %d", PyArray_TYPE(obj), ArrayType());
+			PyErr_Format(PyErr_NewException((char*)"exceptions.TypeError", NULL, NULL), "Array type %d didn't match expected type %d", PyArray_TYPE(obj), ArrayType());
 		}
 		int dimCount = PyArray_NDIM(obj);
 		if ((expectedDims != 0) && (dimCount != expectedDims))
 		{
 			// If this error is hit then an array with the wrong dimensions was passed to the JPythonArray class
-			PyErr_Format(PyErr_NewException("exceptions.TypeError", NULL, NULL), "Array had the wrong number of dimensions (got %d, expected %d)\n", dimCount, expectedDims);
+			PyErr_Format(PyErr_NewException((char*)"exceptions.TypeError", NULL, NULL), "Array had the wrong number of dimensions (got %d, expected %d)\n", dimCount, expectedDims);
 		}
 	}	
 
@@ -88,7 +84,7 @@ template<class Type> class JPythonArray
 		else
 		{
 			// If this error is hit then the wrong array type was passed to the JPythonArray class
-			PyErr_Format(PyErr_NewException("exceptions.TypeError", NULL, NULL), "Object is not an array object");
+			PyErr_Format(PyErr_NewException((char*)"exceptions.TypeError", NULL, NULL), "Object is not an array object");
 		}
 	}
 	
