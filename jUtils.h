@@ -90,6 +90,8 @@ bool FileExists(const char *theFile);
         void ForEveryImageFileInDirectoryConcurrent(NSString *dir, void (^callback)(NSString *));
   #endif
     NSString *FirstImageFileNameInDirectory(NSString *dir);
+	NSString *MetadataPathFromImagePath(NSString *fileName);
+	void CopyMetadataForImageFile(NSString *sourceFilePath, NSString *destDirPath, NSString *destFileName = nil);
 #endif
 
 #endif

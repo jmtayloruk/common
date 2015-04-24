@@ -130,6 +130,23 @@ NSString *FirstImageFileNameInDirectory(NSString *dir)
 		return nil;
 }
 
+// These next two functions are really designed for the Spim GUI codebase, but I am including them
+// in this common codebase because they can be useful in other utility code as well
+
+NSString *MetadataPathFromImagePath(NSString *fileName)
+{
+	return [[fileName stringByDeletingPathExtension] stringByAppendingPathExtension:@"plist"];
+}
+
+void CopyMetadataForImageFile(NSString *sourceFilePath, NSString *destDirPath, NSString *destFileName)
+{
+	NSString *metadataPath = MetadataPathFromImagePath(sourceFilePath);
+	if (destFileName == nil)
+		destFileName = @"";	// Copy without specifying a dest filename (i.e. retain existing filename)
+	NSString *cmdString = [SWF:@"cp \"%@\" \"%@/%@\"", metadataPath, destDirPath, destFileName];
+	system([cmdString UTF8String]);
+}
+
 void UpdateKeys(id owner, ...)
 {
 	// Call will/didChangeValueForKey for each of the NSString keys that are passed in.
