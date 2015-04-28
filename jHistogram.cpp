@@ -16,6 +16,7 @@ jHistogram::jHistogram(double fbs, double bw, int numBins, bool io)
 	includeOutliers = io;
 	SetHistogramParams(fbs, bw, numBins);
 	numMissed = 0;
+	missedVal = INT_MIN;
 }
 
 void jHistogram::SetHistogramParams(double fbs, double bw, int numBins, bool reset)

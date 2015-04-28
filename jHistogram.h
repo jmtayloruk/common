@@ -19,7 +19,7 @@ class jHistogram
 	std::vector<int> histogram;
 	double firstBinStart, binWidth;
     int fbsInt;
-	int numMissed;
+	int numMissed, missedVal;
 	bool includeOutliers;
   public:
     jHistogram(double fbs, double binWidth, int numBins, bool includeOutliers = false);
@@ -41,12 +41,16 @@ class jHistogram
     {
         int bin = val - fbsInt;
         if ((bin < 0) || (bin >= int(histogram.size())))
+		{
             numMissed++;
+			missedVal = val;
+		}
         else
             histogram[bin]++;
     }
 	void Reset(void) { histogram.assign(histogram.size(), 0); }
 	int NumMissed(void) const { return numMissed; }
+	int MissedVal(void) const { return missedVal; }
 	size_t NumBins(void) const { return histogram.size(); }
 	double BinStartVal(int i) const { return firstBinStart + i * binWidth; }
 	double MaxVal(void) const;

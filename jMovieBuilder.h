@@ -17,7 +17,7 @@
 class JMovieBuilder
 {
   public:
-			JMovieBuilder(OSType inCodec, char** outputMovieDataRef, OSType outputMovieDataRefType, const BoundsRect &bounds, float frameRate, int32_t *outErr, int inQuality = 0) { ALWAYS_ASSERT(0); }
+			JMovieBuilder(OSType inCodec, char** outputMovieDataRef, OSType outputMovieDataRefType, const BoundsRect &bounds, double frameRate, int32_t *outErr, int inQuality = 0) { ALWAYS_ASSERT(0); }
 };
 
 #else
@@ -38,13 +38,13 @@ class JMovieBuilder
 	Boolean						didBeginVideoMediaEdits;
 	Boolean						verbose;
     TimeScale					timeScale;
-	float						desiredFramesPerSecond;
+	double						desiredFramesPerSecond;
 	TimeValue					frameDuration;
 	CFMutableDictionaryRef		pixelBufferAttributes;
 	OSType						pixelFormat;
 	int							frameCounter;
 	
-	void	DoInit(OSType inCodec, const BoundsRect &bounds, float frameRate, Handle outputMovieDataRef, OSType outputMovieDataRefType, OSStatus *outErr, int inQuality);
+	void	DoInit(OSType inCodec, const BoundsRect &bounds, double frameRate, Handle outputMovieDataRef, OSType outputMovieDataRefType, OSStatus *outErr, int inQuality);
 	void	SetUpOutputMovie(const char *inFileName);
 	void	CreateCompressionSession(ICMCompressionSessionRef *compressionSessionOut);
 	void	CreateVideoMedia(ImageDescriptionHandle imageDesc, TimeScale timescale );
@@ -58,8 +58,8 @@ class JMovieBuilder
 	void	FinishOutputMovie(void);
 	
   public:
-			JMovieBuilder(OSType inCodec, Handle outputMovieDataRef, OSType outputMovieDataRefType, const BoundsRect &bounds, float frameRate, OSStatus *outErr, int inQuality = codecLosslessQuality);
-            JMovieBuilder(OSType inCodec, const char *destPath, const BoundsRect &bounds, float frameRate, OSStatus *outErr, int inQuality = codecLosslessQuality);
+			JMovieBuilder(OSType inCodec, Handle outputMovieDataRef, OSType outputMovieDataRefType, const BoundsRect &bounds, double frameRate, OSStatus *outErr, int inQuality = codecLosslessQuality);
+            JMovieBuilder(OSType inCodec, const char *destPath, const BoundsRect &bounds, double frameRate, OSStatus *outErr, int inQuality = codecLosslessQuality);
 	virtual ~JMovieBuilder();
 	
 	int Width(void) { return width; }

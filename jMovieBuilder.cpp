@@ -27,14 +27,14 @@
 
 #if HAS_OS_X_GUI
 
-JMovieBuilder::JMovieBuilder(OSType inCodec, Handle outputMovieDataRef, OSType outputMovieDataRefType, const BoundsRect &inBounds, float inFrameRate, OSStatus *outErr, int inQuality)
+JMovieBuilder::JMovieBuilder(OSType inCodec, Handle outputMovieDataRef, OSType outputMovieDataRefType, const BoundsRect &inBounds, double inFrameRate, OSStatus *outErr, int inQuality)
 {
 	// Construct a MovieBuilder object.
 	// outputMovieDataRef can be created using the call QTNewDataReferenceFromCFURL, for example.
 	DoInit(inCodec, inBounds, inFrameRate, outputMovieDataRef, outputMovieDataRefType, outErr, inQuality);
 }
 
-JMovieBuilder::JMovieBuilder(OSType inCodec, const char *destPath, const BoundsRect &inBounds, float inFrameRate, OSStatus *outErr, int inQuality)
+JMovieBuilder::JMovieBuilder(OSType inCodec, const char *destPath, const BoundsRect &inBounds, double inFrameRate, OSStatus *outErr, int inQuality)
 {
     OSStatus err;
     Handle outputMovieDataRef = NULL;
@@ -48,7 +48,7 @@ JMovieBuilder::JMovieBuilder(OSType inCodec, const char *destPath, const BoundsR
     CFRelease(pathString);
 }
 
-void JMovieBuilder::DoInit(OSType inCodec, const BoundsRect &bounds, float frameRate, Handle outputMovieDataRef, OSType outputMovieDataRefType, OSStatus *outErr, int inQuality)
+void JMovieBuilder::DoInit(OSType inCodec, const BoundsRect &bounds, double frameRate, Handle outputMovieDataRef, OSType outputMovieDataRefType, OSStatus *outErr, int inQuality)
 {
 	width = bounds.w;
 	height = bounds.h;
