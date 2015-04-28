@@ -12,11 +12,11 @@
 static BaseAssertionHandler defaultHandler;
 BaseAssertionHandler *assertionHandler = &defaultHandler;
 
-void BaseAssertionHandler::AssertionFailed(long line, const char *file)
+void BaseAssertionHandler::AssertionFailed(long line, const char *function, const char *file)
 {
 	// Report the error
 	// This code was moved out of assertion macro for code brevity and to make modification easier
-	printf("Assertion failed on line %ld, file %s\n", line, file);
+	DebugPrintf("Assertion failed on line %ld, function %s, file %s\n", line, function, file);
 	PullDownCode();
 	// Included to satisfy the compiler, which wants to see unambiguously that this function will never return
 	assert(false);
@@ -39,12 +39,12 @@ void BaseAssertionHandler::PullDownCode(void)
 	assert(false);
 }
 
-bool BaseAssertionHandler::CheckCondition(bool condition, long line, const char *file)
+bool BaseAssertionHandler::CheckCondition(bool condition, long line, const char *function, const char *file)
 {
 	if (!condition)
 	{
 		// Report the error
-		printf("Check failed on line %ld, file %s\n", line, file);
+		DebugPrintf("Check failed on line %ld, function %s, file %s\n", line, function, file);
 	}
 	return condition;
 }

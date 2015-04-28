@@ -6,7 +6,7 @@
 //	Cocoa class wrapping a timer, which will execute a block on a GCD queue after a specified interval
 //
 
-#import "JDispatchTimer.h"
+#import "jDispatchTimer.h"
 
 @interface JDispatchTimer()
     @property (readwrite) double oneoffTimeDue;

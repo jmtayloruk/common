@@ -177,6 +177,7 @@
 	inline long long ExtractLongLongPairSum(void *i)
 	{
 		// _mm_extract_epi64 is SSE4.1 so we have to do this one by hand on most machines
+		// TODO: if I have access to any machines that implement this intrinsic, I should implement the option of doing it properly...
 		long long *l = (long long *)i;
 	//	printf("%lld %lld  %llx %llx\n", l[0], l[1], l[0], l[1]);
 		return l[0] + l[1];

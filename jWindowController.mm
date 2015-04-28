@@ -7,8 +7,8 @@
 //	In order for a window class to be monitored, it must subclass JWindowController instead of NSWindowController.
 //
 
-#import "JWindowController.h"
-#import "JNotifications.h"
+#import "jWindowController.h"
+#import "jNotifications.h"
 
 NSMutableSet *activeWindowControllers = [[NSMutableSet alloc] init];
 

@@ -51,10 +51,10 @@ class TextualProgressBar : public BaseProgressBar
 
 	virtual void		InternalUpdateProgress(double newProgress);
 	void				SetTitle(const char *title, va_list argList);
-	void				SetTitle(const char *title, ...);
+	void				SetTitle(const char *title, ...) __printflike(2, 3);
 
   public:
-						TextualProgressBar(const char *title, double inLength, ...) __attribute__ ((format (printf, 2, 4)));
+						TextualProgressBar(const char *title, double inLength, ...) __printflike(2, 4);
 	virtual				~TextualProgressBar() { if (Enabled()) printf("\n"); }
 	virtual void		OverrideEnable(void);
 };
