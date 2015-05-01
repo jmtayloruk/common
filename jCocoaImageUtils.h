@@ -16,5 +16,6 @@ NSPoint FractionalCoordWithinImageView(const NSPoint &thePoint, const NSImageVie
 NSPoint ImageViewCoordToImageCoord(const NSPoint &thePoint, const NSImageView *theView);
 NSPoint ImageCoordToImageViewCoord(const NSPoint &thePoint, const NSImageView *theView);
 void BrightenNSImage(NSImage *image, int factor);
+void AddNoiseToImage(NSImage *image, double level);
 
 #endif

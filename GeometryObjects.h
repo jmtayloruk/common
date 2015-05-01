@@ -44,6 +44,8 @@
 struct IntegerPoint
 {
 	int x, y;
+	IntegerPoint() : x(0), y(0) { }
+	IntegerPoint(int a, int b) : x(a), y(b) { }
 };
 
 // Sadly I can't seem to get pass-by-reference to work with this - some of my ObjC property-based

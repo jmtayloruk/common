@@ -165,3 +165,50 @@ NSPoint FractionalCoordWithinImageView(const NSPoint &thePoint, const NSImageVie
 	printf(" %f %f\n", result.x, result.y);
 	return result;
 }
+
+double GaussianRandom(void)
+{
+	static int counter = 2;
+	static double randomNumbers[2];
+	
+	if (counter == 2)
+	{
+		double x1, x2, w;
+		
+		do {
+			x1 = 2.0 * random_01() - 1.0;
+			x2 = 2.0 * random_01() - 1.0;
+			w = x1 * x1 + x2 * x2;
+		} while ( w >= 1.0 || w == 0.0 );
+		
+		w = sqrt( (-2.0 * log( w ) ) / w );
+		randomNumbers[0] = x1 * w;
+		randomNumbers[1] = x2 * w;
+		counter = 0;
+	}
+	counter++;
+	return randomNumbers[counter - 1];
+}
+
+template<class DataType> void AddNoiseToData(DataType *data, size_t numElements, double level)
+{
+	int maxVal = (DataType)-1;
+	for (size_t i = 0; i < numElements; i++)
+	{
+		double noise = GaussianRandom() * level;
+		int val = int(data[i] + noise);
+		data[i] = (DataType)round(LIMIT(val, 0, maxVal));
+	}
+}
+
+void AddNoiseToImage(NSImage *image, double level)
+{
+	NSBitmapImageRep *bitmap = RawBitmapFromImage(image);
+	if (bitmap.bitsPerPixel == 8)
+		AddNoiseToData((unsigned char*)bitmap.bitmapData, bitmap.bytesPerPlane, level);
+	else
+	{
+		ALWAYS_ASSERT(bitmap.bitsPerPixel == 16);
+		AddNoiseToData((unsigned short*)bitmap.bitmapData, bitmap.bytesPerPlane / 2, level);
+	}
+}
