@@ -9,6 +9,7 @@
 //
 
 #include "DebugPrintf.h"
+#include "jCommon.h"
 #include <Cocoa/Cocoa.h>
 
 void DebugPrintf(const char *format, ...)

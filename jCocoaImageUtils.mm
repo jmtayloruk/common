@@ -11,10 +11,7 @@
 #include "jAssert.h"
 #import "jCocoaImageUtils.h"
 #import "NSPointArithmetic.h"
-
-#ifndef SWF
-	#define SWF NSString stringWithFormat
-#endif
+#include "jCommon.h"
 
 NSBitmapImageRep *RawBitmapFromImage(const NSImage *image)
 {

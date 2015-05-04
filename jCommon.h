@@ -43,6 +43,8 @@ template<class T> T CUBE(const T &a) { return a*a*a; }
 #define SOCKET_ERROR        -1
 extern const int noSigPipe;
 
+#define SWF NSString stringWithFormat
+
 #define WANT_INLINE __attribute__((always_inline))
 
 /*	The intention here was to offer a macro to assist with branch prediction,

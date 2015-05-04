@@ -15,6 +15,7 @@
 #include <stdio.h>
 #include <pthread.h>
 #include <sys/time.h>
+#include <sys/errno.h>
 
 /*	I am pretty sure the intention of the two-stage lock compile-time option was to offer
 	improved performance under certain circumstances, apparently when more concurrent threads are present.
