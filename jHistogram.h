@@ -52,7 +52,8 @@ class jHistogram
 	int NumMissed(void) const { return numMissed; }
 	int MissedVal(void) const { return missedVal; }
 	size_t NumBins(void) const { return histogram.size(); }
-	double BinStartVal(int i) const { return firstBinStart + i * binWidth; }
+	double BinStartVal(int binNumber) const { return firstBinStart + binNumber * binWidth; }
+	double BinForVal(double val) const { return (val - firstBinStart) / binWidth; }
 	double MaxVal(void) const;
 	void Print(void);
 };
