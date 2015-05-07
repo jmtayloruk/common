@@ -91,6 +91,7 @@ bool FileExists(const char *theFile);
   #endif
     NSString *FirstImageFileNameInDirectory(NSString *dir);
 	NSString *MetadataPathFromImagePath(NSString *fileName);
+    id MetadataKeyValueForFramePath(NSString *path, NSString *key);
 	void CopyMetadataForImageFile(NSString *sourceFilePath, NSString *destDirPath, NSString *destFileName = nil);
 #endif
 

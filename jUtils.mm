@@ -130,12 +130,18 @@ NSString *FirstImageFileNameInDirectory(NSString *dir)
 		return nil;
 }
 
-// These next two functions are really designed for the Spim GUI codebase, but I am including them
+// These next three functions are really designed for the Spim GUI codebase, but I am including them
 // in this common codebase because they can be useful in other utility code as well
 
 NSString *MetadataPathFromImagePath(NSString *fileName)
 {
 	return [[fileName stringByDeletingPathExtension] stringByAppendingPathExtension:@"plist"];
+}
+
+id MetadataKeyValueForFramePath(NSString *path, NSString *key)
+{
+    NSMutableDictionary *metadata = [NSMutableDictionary dictionaryWithContentsOfFile:MetadataPathFromImagePath(path)];
+    return [metadata objectForKey:key];
 }
 
 void CopyMetadataForImageFile(NSString *sourceFilePath, NSString *destDirPath, NSString *destFileName)

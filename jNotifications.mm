@@ -54,6 +54,15 @@ void QueueNotificationOnMainThread2(NSNotification *myNotification, bool coalesc
 	// Add notification to the event queue to be serviced whenever the event queue is ready to do so
 	dispatch_async(dispatch_get_main_queue(), 
 	^{
+        if (true)
+        {
+            // Caller wants coalescing to be enabled on this notification
+            // Default behaviour seems to be to keep the OLDEST notification on the queue
+            // I would much rather keep the NEWEST (most up-to-date information)!
+            // In order to achieve that, I remove any existing notifications from the queue before posting this one
+            [[NSNotificationQueue defaultQueue] dequeueNotificationsMatching:myNotification
+                                                                coalesceMask:NSNotificationCoalescingOnName | NSNotificationCoalescingOnSender];
+        }
 		[[NSNotificationQueue defaultQueue]
 				enqueueNotification:myNotification
 				postingStyle:style
