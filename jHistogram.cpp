@@ -11,7 +11,7 @@
 #include "jHistogram.h"
 #include <algorithm>
 
-jHistogram::jHistogram(double fbs, double bw, int numBins, bool io)
+jHistogram::jHistogram(double fbs/*first bin starts at*/, double bw/*bin width*/, int numBins, bool io/*include outliers in end bins*/)
 {
 	includeOutliers = io;
 	SetHistogramParams(fbs, bw, numBins);
@@ -19,7 +19,7 @@ jHistogram::jHistogram(double fbs, double bw, int numBins, bool io)
 	missedVal = INT_MIN;
 }
 
-void jHistogram::SetHistogramParams(double fbs, double bw, int numBins, bool reset)
+void jHistogram::SetHistogramParams(double fbs/*first bin starts at*/, double bw/*bin width*/, int numBins, bool reset)
 {
 	if (includeOutliers)
 		CHECK(reset == true);
@@ -46,7 +46,7 @@ void jHistogram::SetHistogramParams(double fbs, double bw, int numBins, bool res
 		}
 		else
 		{
-			// If we are asked to reset then the caller should have known that these conditions were met
+			// If we are not asked to reset then the caller should have ensured these conditions were met to be able to retain existing data
 			CHECK(false);
 			// Fall through to reset code
 		}
@@ -62,6 +62,7 @@ void jHistogram::SetHistogramParams(double fbs, double bw, int numBins, bool res
 
 double jHistogram::MaxVal(void) const
 {
+	// Greatest value in the histogram
 	return *std::max_element(histogram.begin(), histogram.end());
 }
 

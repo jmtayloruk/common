@@ -28,7 +28,7 @@ class jHistogram
 	void SetHistogramParams(double fbs, double binWidth, int numBins, bool reset = true);
     void AddDatapoint(double val)
     {
-        int bin = int((val - firstBinStart) / binWidth);
+        int bin = BinForVal(val);
         if (includeOutliers)
             bin = LIMIT(bin, 0, int(histogram.size()-1));
         if ((bin < 0) || (bin >= int(histogram.size())))
@@ -39,6 +39,7 @@ class jHistogram
     
     void AddDatapoint_bw1(int val)
     {
+		// Faster implementation for the specific case where the caller knows the bin width is 1 (and boundaries are integers)
         int bin = val - fbsInt;
         if ((bin < 0) || (bin >= int(histogram.size())))
 		{
@@ -52,8 +53,8 @@ class jHistogram
 	int NumMissed(void) const { return numMissed; }
 	int MissedVal(void) const { return missedVal; }
 	size_t NumBins(void) const { return histogram.size(); }
-	double BinStartVal(int binNumber) const { return firstBinStart + binNumber * binWidth; }
-	double BinForVal(double val) const { return (val - firstBinStart) / binWidth; }
+	double BinStartVal(int binNumber) const { /* Value at the lower boundary of this bin */ return firstBinStart + binNumber * binWidth; }
+	int BinForVal(double val) const { /* Bin into which this value falls (no bounds checking) */return int((val - firstBinStart) / binWidth); }
 	double MaxVal(void) const;
 	void Print(void);
 };
