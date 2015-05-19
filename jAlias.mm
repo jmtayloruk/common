@@ -46,7 +46,7 @@
 	[super dealloc];
 }
 
--(id)copyWithZone:(NSZone *)zone;
+-(id)copyWithZone:(NSZone *)zone
 {
 	JAlias *copy = [[[self class] alloc] init];
 	copy.bookmark = self.bookmark;
