@@ -92,13 +92,12 @@ void CocoaProgressWindowHelper::InternalUpdateProgress(double newProgress)
 	return self;
 }
 
--(id)initIndeterminateOverlayWithTitle:(NSString *)title withControl:(NSProgressIndicator *)inProgressIndicator andTextField:(NSTextField *)inTextField
+-(id)initIndeterminateOverlayWithTitle:(NSString *)title withControl:(NSProgressIndicator *)inProgressIndicator
 {
 	if (!(self = [self initWithWindow:nil]))
 		return nil;
 	_base = new CocoaProgressWindowHelper(0, self);
 	indicator = inProgressIndicator;
-	progressTextField = inTextField;
 	self.progressCaption = title;
 	sheetBegun = false;
 	[indicator startAnimation:nil];
@@ -192,14 +191,6 @@ void CocoaProgressWindowHelper::InternalUpdateProgress(double newProgress)
 {
 	// The code that is managing this progress bar must poll for cancellation
 	self.userCancelled = true;
-}
-
--(void)setProgressCaption:(NSString *)s
-{
-	[_progressCaption release];
-	_progressCaption = [s retain];
-	[progressTextField setStringValue:_progressCaption];
-	[progressTextField setNeedsDisplay];
 }
 
 @synthesize progressCaption = _progressCaption;
