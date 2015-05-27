@@ -14,6 +14,7 @@
 #include "VectorFunctions.h"
 #include <immintrin.h>
 #include <avxintrin.h>
+#include <stdlib.h>
 
 // Horizontal add works as follows:
 // VHADD x, p, q => x = {p[0]+p[1], q[0]+q[1], p[2]+p[3], q[2]+q[3]}
@@ -28,16 +29,46 @@ class jComplexPairAsVector256
 
 	jComplexPairAsVector256() { }
 
+	void* operator new(size_t size)
+	{
+		// Override operator new to ensure that the allocated memory is suitably aligned to a 32-byte boundary (as required by some AVX instructions)
+		void *storage;
+		int result = posix_memalign(&storage, sizeof(jComplexPairAsVector256), size);
+		if ((result != 0) || (storage == NULL))
+			throw "allocation fail : no free memory";
+		return storage;
+	}
+	
+	void* operator new[](size_t size)
+	{
+		// Override operator new[] to ensure that the allocated memory is suitably aligned to a 32-byte boundary (as required by some AVX instructions)
+		void *storage;
+		int result = posix_memalign(&storage, sizeof(jComplexPairAsVector256), size);
+//		printf("Allocated %p\n", storage);
+		if ((result != 0) || (storage == NULL))
+			throw "allocation fail : no free memory";
+		return storage;
+	}
+
+	void operator delete(void *ptr) { free(ptr); }
+	void operator delete[](void *ptr) { free(ptr); }
+
 	__m256d ab(void) const { return __ab; }
+    const __m256d *abPtr(void) const { return &__ab; }
 	jComplex a(void) const { return jComplex(__ab[0], __ab[1]); }
 	jComplex b(void) const { return jComplex(__ab[2], __ab[3]); }
 	vDouble re(void) const { return _mm256_extractf128_pd(__builtin_shufflevector(__ab, __ab, 0, 2, 1, 3), 0); }
 	vDouble im(void) const { return _mm256_extractf128_pd(__builtin_shufflevector(__ab, __ab, 0, 2, 1, 3), 1); }
+    double a_r(void) const { return ((double*)&__ab)[0]; }      // Puzzlingly, as of May 2015 this approach gives better code than just __ab[0]
+    double a_i(void) const { return ((double*)&__ab)[1]; }
+    double b_r(void) const { return ((double*)&__ab)[2]; }
+    double b_i(void) const { return ((double*)&__ab)[3]; }
 
 	explicit jComplexPairAsVector256(const double n) { __ab = _mm256_set_pd(n, n, n, n); }		// ***** is this the most efficient way - will the compiler optimize to a broadcast type instruction?
 	explicit jComplexPairAsVector256(const jComplex &inZ) { __ab = _mm256_set_pd(imag(inZ), real(inZ), imag(inZ), real(inZ)); }
 	jComplexPairAsVector256(const jComplexPairAsVector256 &inAB) { __ab = inAB.ab(); }
 	jComplexPairAsVector256(jComplex inA, jComplex inB) { __ab = _mm256_set_pd(imag(inB), real(inB), imag(inA), real(inA)); }
+    jComplexPairAsVector256(double ar, double ai, double br, double bi) { __ab = _mm256_set_pd(bi, br, ai, ar); }
 	jComplexPairAsVector256(__m256d inAB) { __ab = inAB; }
 	jComplexPairAsVector256(__m128d inRe, __m128d inIm) { __ab = _mm256_set_pd(inIm[1], inRe[1], inIm[0], inRe[0]); }		// TODO: temp to be removed (ambiguous)
 	
@@ -183,9 +214,10 @@ class jComplexPairAsVector256
 		return jComplex(vLower(result), vUpper(result));
 	}
 	jComplexPairAsVector256 Negated(double ar, double ai, double br, double bi) const { return jComplexPairAsVector256(_mm256_mul_pd(__ab, (__m256d) { ar, ai, br, bi })); }
+    jComplexPairAsVector256 NegatedUsingXORWith(jComplexPairAsVector256 neg) const { return jComplexPairAsVector256(_mm256_xor_pd(__ab, neg.ab())); }   // Expects a vector containing either 0.0 or -0.0 entries. Uses the XOR operator to negate self according to that pattern
 	jComplexPairAsVector256 GetNegative(void) const { return jComplexPairAsVector256(_mm256_xor_pd(__ab, (__m256d) { -0.0, -0.0, -0.0, -0.0 })); }		// Return { -a, -b }
+    jComplexPairAsVector256 GetNegativeOfFirstOnly(void) const { return jComplexPairAsVector256(_mm256_xor_pd(__ab, (__m256d) { -0.0, -0.0, 0.0, 0.0 })); }		// Return { -a, b }
 	jComplexPairAsVector256 GetNegativeOfSecondOnly(void) const { return jComplexPairAsVector256(_mm256_xor_pd(__ab, (__m256d) { 0.0, 0.0, -0.0, -0.0 })); }		// Return { a, -b }
-	jComplexPairAsVector256 GetNegativeOfRealOnly(void) const { return jComplexPairAsVector256(_mm256_xor_pd(__ab, (__m256d) { -0.0, 0.0, -0.0, 0.0 })); }		// Return { -re(a), im(a), -re(b), im(b) }
 	jComplexPairAsVector256 GetSwappedPairsAndReIm(void) const { return jComplexPairAsVector256(__builtin_shufflevector(__ab, __ab, 3, 2, 1, 0)); }	// Return { b, a } given { a, b }
 	jComplexPairAsVector256 GetSwappedPairs(void) const { return jComplexPairAsVector256(__builtin_shufflevector(__ab, __ab, 2, 3, 0, 1)); }	// Return { b, a } given { a, b }
 	jComplexPairAsVector256 GetSwappedReIm(void) const { return jComplexPairAsVector256(__builtin_shufflevector(__ab, __ab, 1, 0, 3, 2)); }	// Return { im(a), re(a), im(b), re(b) } given { a, b }

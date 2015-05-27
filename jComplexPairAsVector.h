@@ -107,6 +107,7 @@ class jComplexPairAsVector
 	jComplex SumAcross(void) const { return jComplex(SumReal(), SumImag()); }		// Return the sum of the two values as a single complex number
 	jComplexPairAsVector GetNegative(void) const { return jComplexPairAsVector(vNegate(__re), vNegate(__im)); }		// Return the negated values of a and b
 	jComplexPairAsVector GetNegativeOfSecondOnly(void) const { return jComplexPairAsVector(_mm_xor_pd(__re, (vDouble) { 0.0, -0.0 }), _mm_xor_pd(__im, (vDouble) { 0.0, -0.0 })); }		// Return the negated value of b, leaving a unchanged
+    jComplexPairAsVector GetNegativeOfFirstOnly(void) const { return jComplexPairAsVector(_mm_xor_pd(__re, (vDouble) { -0.0, 0.0 }), _mm_xor_pd(__im, (vDouble) { -0.0, 0.0 })); }		// Return the negated value of a, leaving b unchanged
 	jComplexPairAsVector GetSwappedPairs(void) const { return jComplexPairAsVector(vSwapD(__re), vSwapD(__im)); }	// Return { b, a } given { a, b }
 
 	void Print(void) const

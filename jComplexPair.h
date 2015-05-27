@@ -16,17 +16,17 @@
 #include "jComplexPairSplit.h"
 
 #if HAS_SSE
-  #if 1
+    #define COMPLEX_PAIR_IS_VECTOR 1
+  #if HAS_AVX
+    #include "jComplexPairAsVector256.h"
+    typedef jComplexPairAsVector256 jComplexPair;
+  #else
 	#include "jComplexPairAsVector.h"
 	typedef jComplexPairAsVector jComplexPair;
-  #else
-    #include "jComplexPairAsVector256.h"
-	typedef jComplexPairAsVector256 jComplexPair;
-#endif
-	#define COMPLEX_PAIR_IS_VECTOR 1
+  #endif
 #else
+    #define COMPLEX_PAIR_IS_VECTOR 0
 	typedef jComplexPairSplit jComplexPair;
-	#define COMPLEX_PAIR_IS_VECTOR 0
 #endif
 
 #endif

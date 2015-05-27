@@ -30,6 +30,11 @@
 #else
 	#define HAS_SSE 0
 #endif
+#if __AVX__
+#define HAS_AVX 1
+#else
+#define HAS_AVX 0
+#endif
 
 #if __ppc__ || PS3 || __SPU__
 	#define HAS_ALTIVEC 1
