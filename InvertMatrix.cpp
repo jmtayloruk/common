@@ -7,16 +7,9 @@
 #include "jOSMacros.h"
 #include "jAssert.h"
 
-#if __PPC__
-	extern "C"
-	{
-		#include </download/CLAPACK-3.1.1/INCLUDE/f2c.h>
-		#include </download/CLAPACK-3.1.1/INCLUDE/clapack.h>
-		typedef integer __CLPK_integer;
-	}
-#elif OS_X
+#if OS_X
 	#include <Accelerate/Accelerate.h>
-#elif MAC_PRO
+#elif FEDORA_LINUX
 	extern "C"
 	{
 		#include </opt/intel/mkl/10.0.1.014/include/mkl_lapack.h>

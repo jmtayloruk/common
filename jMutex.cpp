@@ -154,7 +154,7 @@ int JMutex::BlockWaitingForSignal(pthread_cond_t *cond, int line, bool mayBeAges
 	lockCount--;
 	
 	int result;
-#if !MAC_PRO
+#if !FEDORA_LINUX
 	/*	I have a timedwait with a very long delay.
 		If a bug means we never get signalled, we will eventually come out
 		of the blocking call and assert. The delay is long enough that we should

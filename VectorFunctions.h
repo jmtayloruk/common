@@ -238,15 +238,11 @@
 	inline vFloat vAdd4(vFloat a, vFloat b, vFloat c, vFloat d) { return vAdd(vAdd(a, b), vAdd(c, d)); }
 #endif
 
-#if MAC_PRO
+#if FEDORA_LINUX
 	#include <sse_mathfun.h>
 	#define vExp exp_ps
-#elif CRAY
-	#define vExp __vrs4_expf
 #elif OS_X
 	#define vExp vexpf
-#elif PS3 || __SPU__
-	#define vExp _expf4
 #endif
 
 #if HAS_SSE || HAS_ALTIVEC

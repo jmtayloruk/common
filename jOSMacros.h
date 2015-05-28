@@ -15,16 +15,6 @@
 
 #define OS_X __MACH__
 
-#if __athlon__
-	#define CRAY 1
-#endif
-
-#if __PPC__
-	#define PS3 1
-        #include <libspe2.h>
-        extern spe_program_handle_t spu_handle;
-#endif
-
 #if __SSE__
 	#define HAS_SSE 1
 #else
@@ -42,20 +32,12 @@
 	#define HAS_ALTIVEC 0
 #endif
 
-// n.b. makefile can define DISABLE_CHUD if we know it is not installed on the system
-#if OS_X && !__ppc__ && !DISABLE_CHUD
-	#define CAN_USE_CHUD 1
-#else
-	#define CAN_USE_CHUD 0
-#endif
-
 #if __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__ >= 1060
 	#define CAN_USE_GRAND_CENTRAL 1
 #else
 	#define CAN_USE_GRAND_CENTRAL 0
 #endif
 
-//#define SYNC_FETCH_AVAILABLE ((!CRAY) && (!PS3))
 #define SYNC_FETCH_AVAILABLE ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 2)))
 #if SYNC_FETCH_AVAILABLE
 	#ifdef __cplusplus
