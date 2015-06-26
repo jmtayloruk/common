@@ -93,6 +93,7 @@ bool FileExists(const char *theFile);
 	NSString *MetadataPathFromImagePath(NSString *fileName);
     id MetadataKeyValueForFramePath(NSString *path, NSString *key);
 	void CopyMetadataForImageFile(NSString *sourceFilePath, NSString *destDirPath, NSString *destFileName = nil);
+	NSInteger frameSortOrder(id string1, id string2, void *);
 #endif
 
 #endif
