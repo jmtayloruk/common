@@ -112,7 +112,36 @@ void aligned_free(volatile void *inPtr)
 	int *ptr2=(int *)ptr - 1;
 	ptr -= *ptr2;
 	free(ptr);
-}	
+}
+
+FILE *fopenf(const char *format __restrict, const char *mode __restrict, ...)
+{
+	// This function behaves like fopen() except that it allows formatted strings like printf etc
+	
+	va_list args;
+	// Read the variable-length arguments and pass them to vsnprintf
+	// to determine how long the formatted string will actually be
+	va_start(args, mode);
+	int size = vsnprintf(NULL, 0, format, args);
+	va_end(args);
+	
+	// Allocate a buffer long enough to hold the string (and its 0-termination character)
+	char *buffer = (char*)malloc(size + 1);
+	ALWAYS_ASSERT(buffer != NULL);
+	
+	// Actually write the string to the buffer
+	va_start(args, mode);
+	vsnprintf(buffer, size+1, format, args);
+	va_end(args);
+	
+	// Open the file with the filename given by the string we made
+	FILE *result = fopen(buffer, mode);
+	
+	// Clean up after ourselves
+	free(buffer);
+	
+	return result;
+}
 
 const char *GetAddressString(int address, char addressString[128])
 {

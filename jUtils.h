@@ -69,7 +69,7 @@ inline double RadiansToDegrees(double rad) { return rad * 180.0 / PI; }
 char *NewCopyOfString(const char *inString);
 
 bool FileExists(const char *theFile);
-
+FILE *fopenf(const char *format __restrict, const char *mode __restrict, ...) __printflike(1, 3);
 
 #if __OBJC__
 	#import <Cocoa/Cocoa.h>
