@@ -12,17 +12,45 @@
 #include "jCommon.h"
 #include <Cocoa/Cocoa.h>
 
+void VDebugPrintf(const char *format, va_list args)
+{
+	va_list args2;
+	__va_copy(args2, args);
+	
+	// Print to stderr
+	vfprintf(stderr, format, args);
+	
+	// Also print to Apple's console log facility, to ensure it shows up when running standalone (not under debugger)
+	NSLogv([SWF:@"%s", format], args2);
+}
+
 void DebugPrintf(const char *format, ...)
 {
 	va_list args;
 
 	// Print to stderr
 	va_start(args, format);
-	vfprintf(stderr, format, args);
+	VDebugPrintf(format, args);
 	va_end(args);
+}
+
+void DebugPrintfFatal(const char *errorIntro, const char *format, ...)
+{
+	va_list args;
 	
-	// Also print to Apple's console log facility, to ensure it shows up when running standalone (not under debugger)
 	va_start(args, format);
-	NSLogv([SWF:@"%s", format], args);
+	VDebugPrintf(format, args);
+	va_end(args);
+
+	va_start(args, format);
+	dispatch_sync(dispatch_get_main_queue(), ^{
+		NSString *errorDetails = [[NSString alloc] initWithFormat:[SWF:@"%s", format] arguments:args];
+		NSAlert *alert = [NSAlert alertWithMessageText:[SWF:@"%s", errorIntro]
+										 defaultButton:@"OK"
+									   alternateButton:nil
+										   otherButton:nil
+							 informativeTextWithFormat:@"%@", errorDetails];
+		[alert runModal];
+	});
 	va_end(args);
 }

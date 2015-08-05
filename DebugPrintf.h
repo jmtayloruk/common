@@ -15,5 +15,6 @@
 #define __DebugPrintf__
 
 void DebugPrintf(const char *format, ...) __printflike(1, 2);
+void DebugPrintfFatal(const char *errorIntro, const char *format, ...) __printflike(2, 3);
 
 #endif /* defined(__DebugPrintf__) */
