@@ -43,8 +43,9 @@ void DebugPrintfFatal(const char *errorIntro, const char *format, ...)
 	va_end(args);
 
 	va_start(args, format);
+    NSAutoreleasePool *pool = [NSAutoreleasePool new];
+    NSString *errorDetails = [[NSString alloc] initWithFormat:[SWF:@"%s", format] arguments:args];
 	dispatch_sync(dispatch_get_main_queue(), ^{
-		NSString *errorDetails = [[NSString alloc] initWithFormat:[SWF:@"%s", format] arguments:args];
 		NSAlert *alert = [NSAlert alertWithMessageText:[SWF:@"%s", errorIntro]
 										 defaultButton:@"OK"
 									   alternateButton:nil
@@ -52,5 +53,6 @@ void DebugPrintfFatal(const char *errorIntro, const char *format, ...)
 							 informativeTextWithFormat:@"%@", errorDetails];
 		[alert runModal];
 	});
+    [pool drain];
 	va_end(args);
 }

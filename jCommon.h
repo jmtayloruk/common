@@ -14,6 +14,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/errno.h>
+#include <algorithm>
 
 #include "jOSMacros.h"
 #include "jAssert.h"
@@ -38,6 +39,9 @@ template<class T> T CUBE(const T &a) { return a*a*a; }
 #endif
 #ifndef MAX
 	#define MAX(A, B) std::max((A), (B))
+#endif
+#ifndef LIMIT
+    #define LIMIT(N, L, U) (std::max(std::min((N), (U)), (L)))
 #endif
 
 #define SOCKET_ERROR        -1

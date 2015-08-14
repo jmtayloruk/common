@@ -14,6 +14,8 @@
 #ifndef __DebugPrintf__
 #define __DebugPrintf__
 
+#include <sys/cdefs.h>      // for __printflike
+
 void DebugPrintf(const char *format, ...) __printflike(1, 2);
 void DebugPrintfFatal(const char *errorIntro, const char *format, ...) __printflike(2, 3);
 

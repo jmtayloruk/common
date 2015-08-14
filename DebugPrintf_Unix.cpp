@@ -9,6 +9,8 @@
 //
 
 #include "DebugPrintf.h"
+#include <stdarg.h>
+#include <stdio.h>
 
 void DebugPrintf(const char *format, ...)
 {
