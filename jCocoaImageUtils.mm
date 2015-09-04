@@ -55,6 +55,12 @@ NSBitmapImageRep *RawBitmapFromImage(const NSImage *image)
 	return [[result retain] autorelease];
 }
 
+NSBitmapImageRep *RawBitmapFromImagePath(NSString *imagePath)
+{
+	NSImage *theImage = [[[NSImage alloc] initWithContentsOfFile:imagePath] autorelease];
+	return RawBitmapFromImage(theImage);
+}
+
 NSImage *AllocNSImageFromFile(const char *path)
 {
 	// Not sure if I use this for anything any more, but it was intended to allow C code

@@ -11,6 +11,7 @@
 #define __J_COCOA_IMAGE_UTILS_H__ 1
 
 NSBitmapImageRep *RawBitmapFromImage(const NSImage *image);
+NSBitmapImageRep *RawBitmapFromImagePath(NSString *imagePath);
 void CopyNSImageToGWorld(const NSImage *image, GWorldPtr gWorldPtr, const CGRect *cropRect, double gain);
 NSPoint FractionalCoordWithinImageView(const NSPoint &thePoint, const NSImageView *theView);
 NSPoint ImageViewCoordToImageCoord(const NSPoint &thePoint, const NSImageView *theView);

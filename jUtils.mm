@@ -55,8 +55,22 @@ NSInteger frameSortOrder(id string1, id string2, void *)
 		if ((pos1 - str1) > (pos2 - str2))
 			return NSOrderedDescending;
 	}
+	if ((pos1 == NULL) && (pos2 == NULL))
+	{
+		// If neither has a dot, and one is shorter than the other, order that one first.
+		// e.g. folder1 comes before folder10
+		if (strlen(str1) < strlen(str2))
+			return NSOrderedAscending;
+		if (strlen(str1) > strlen(str2))
+			return NSOrderedDescending;
+	}
 	// Normal case: just do a standard string comparison.
 	return [(NSString *)string1 caseInsensitiveCompare:(NSString *)string2];
+}
+
+NSInteger frameSortOrderForURLs(id url1, id url2, void *)
+{
+	return frameSortOrder(((NSURL *)url1).path, ((NSURL *)url2).path, nil);
 }
 
 bool IsImageFile(NSString *theFilename)
