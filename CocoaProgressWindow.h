@@ -30,11 +30,11 @@
 -(void)closeSheetAndRelease;
 -(void)closeWindowAndRelease;
 -(void)resetTimeEstimate;
--(void)updateProgress:(int)val;
--(void)deltaProgress:(int)delta;
+-(void)deltaProgress:(double)delta;
 -(void)internalUpdateProgress:(double)newProgress;
 -(IBAction)cancel:(id)sender;
 
 @property (readwrite, retain) NSString *progressCaption;
 @property (readwrite) bool userCancelled;
+@property (readwrite) double progressValue;
 @end

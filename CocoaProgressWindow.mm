@@ -177,12 +177,17 @@ void CocoaProgressWindowHelper::InternalUpdateProgress(double newProgress)
 	_base->ResetTimeEstimate();
 }
 
--(void)updateProgress:(int)val
+-(double)progressValue
+{
+	return indicator.doubleValue;
+}
+
+-(void)setProgressValue:(double)val
 {
 	_base->UpdateProgress(val);
 }
 
--(void)deltaProgress:(int)delta
+-(void)deltaProgress:(double)delta
 {
 	_base->DeltaProgress(delta);
 }
