@@ -41,8 +41,8 @@ NSInteger frameSortOrder(id string1, id string2, void *)
 {
 	// Comparison function used to work out the ordering of a list of image filenames
 	// The complication comes in dealing with files numbered file1.tif, file2.tif... file10.tif... file100.tif
-	const char *str1 = [(NSString *)string1 UTF8String];
-	const char *str2 = [(NSString *)string2 UTF8String];
+	const char *str1 = [((NSString *)string1).lastPathComponent UTF8String];
+	const char *str2 = [((NSString *)string2).lastPathComponent UTF8String];
 	// Identify the first dot in each filename
 	const char *pos1 = strchr(str1, '.');
 	const char *pos2 = strchr(str2, '.');
