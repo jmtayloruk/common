@@ -36,7 +36,7 @@ NSBitmapImageRep *RawBitmapFromImage(const NSImage *image)
 //		printf("Got rep %p (%zd of %d, class %s)\n", imageRepresentation, imgRepresentationIndex, repArray.count, object_getClassName(imageRepresentation));
         if ([imageRepresentation isKindOfClass:[NSBitmapImageRep class]])
 		{
-			ALWAYS_ASSERT(result == nil);	// If we fail this then there are two different bitmap representations stored
+			CHECK(result == nil);	// If we fail this then there are two different bitmap representations stored
 											// (need to decide what to do then...)
 			result = (NSBitmapImageRep*)imageRepresentation;
 		}

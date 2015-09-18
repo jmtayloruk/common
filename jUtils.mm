@@ -23,19 +23,19 @@ NSURL *PathToURL(NSString *path)
 bool IsDirectory(NSURL *fileURL)
 {
 	// Returns true if the supplied URL is a valid URL for a filesystem directory
-    FSRef               ref;
     CFURLRef cfURLRef = (CFURLRef)fileURL;
     
-    // Get the FSRef for the URL
-    if (CFURLGetFSRef(cfURLRef, &ref) == TRUE)
-    {
-		LSItemInfoRecord info;
-		LSCopyItemInfoForRef(&ref, kLSRequestAllFlags, &info);
-		if (info.flags & kLSItemInfoIsContainer)
-			return true;
-	}
+    LSItemInfoRecord info;
+    LSCopyItemInfoForURL(cfURLRef, kLSRequestAllFlags, &info);
+    if (info.flags & kLSItemInfoIsContainer)
+        return true;
 	return false;
 } 
+
+NSInteger alphabeticalOrder(id string1, id string2, void *)
+{
+    return [(NSString *)string1 caseInsensitiveCompare:(NSString *)string2];
+}
 
 NSInteger frameSortOrder(id string1, id string2, void *)
 {
@@ -165,6 +165,55 @@ void CopyMetadataForImageFile(NSString *sourceFilePath, NSString *destDirPath, N
 		destFileName = @"";	// Copy without specifying a dest filename (i.e. retain existing filename)
 	NSString *cmdString = [SWF:@"cp \"%@\" \"%@/%@\"", metadataPath, destDirPath, destFileName];
 	system([cmdString UTF8String]);
+}
+
+double dirCheckTime = 0, contentsTime = 0;
+void PrintCompleteFolderPath(NSString *basePath, int indentationLevel, int leadingCharsToSkip)
+{
+    // Utility function to print out the complete folder path (useful for comparing/merging backup directory contents)
+    double t1 = GetTime();
+    NSArray *dirContents = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:basePath error:nil];
+    dirContents = [dirContents sortedArrayUsingFunction:alphabeticalOrder context:nil];
+    double t2 = GetTime();
+    contentsTime += t2 - t1;
+    double recursionTime = 0;
+    
+    if (indentationLevel == 0)
+        leadingCharsToSkip = strlen(basePath.UTF8String)+1;     // +1 for the '/' character...
+    
+    for (NSString *theFilename in dirContents)
+    {
+        NSString *thePath = [SWF:@"%@/%@", basePath, theFilename];
+        // Quick rejection of things we know are not directories
+        if (IsImageFile(theFilename) ||
+            [theFilename hasSuffix:@".plist"])
+        {
+            continue;
+        }
+        
+        // Print out text files to make sure we are replicating any notes files
+        if ([theFilename hasSuffix:@".txt"] || [theFilename hasSuffix:@".rtf"])
+        {
+            for (int i = 0; i < indentationLevel; i++)
+                printf(" ");
+            printf("%s\n", [thePath substringFromIndex:leadingCharsToSkip].UTF8String);
+        }
+        
+
+        // Now do a proper check for directories
+        if (IsDirectory([NSURL fileURLWithPath:thePath]))
+        {
+            double t3 = GetTime();
+            for (int i = 0; i < indentationLevel; i++)
+                printf(" ");
+            printf("%s\n", [thePath substringFromIndex:leadingCharsToSkip].UTF8String);
+//            printf("%s   %lf %lf\n", thePath.UTF8String, contentsTime, dirCheckTime);
+            PrintCompleteFolderPath(thePath, indentationLevel+1, leadingCharsToSkip);
+            double t4 = GetTime();
+            recursionTime += t4 - t3;
+        }
+    }
+    dirCheckTime += GetTime() - t2 - recursionTime;
 }
 
 void UpdateKeys(id owner, ...)

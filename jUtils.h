@@ -93,6 +93,7 @@ FILE *fopenf(const char *format __restrict, const char *mode __restrict, ...) __
 	NSString *MetadataPathFromImagePath(NSString *fileName);
     id MetadataKeyValueForFramePath(NSString *path, NSString *key);
 	void CopyMetadataForImageFile(NSString *sourceFilePath, NSString *destDirPath, NSString *destFileName = nil);
+    void PrintCompleteFolderPath(NSString *basePath, int indentationLevel, int leadingCharsToSkip);
 	NSInteger frameSortOrder(id string1, id string2, void *);
 	NSInteger frameSortOrderForURLs(id url1, id url2, void *);
 #endif
