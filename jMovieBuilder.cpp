@@ -333,8 +333,6 @@ void JMovieBuilder::FinishOutputMovie(void)
 	DisposeMovie(outputMovie);
 }
 
-#endif
-
 MoviePixelBuffer::MoviePixelBuffer(const BoundsRect &bounds)
 {
 	// config
@@ -359,3 +357,5 @@ MoviePixelBuffer::~MoviePixelBuffer()
 	CFRelease(d);
 	CFRelease(yes);
 }
+
+#endif
