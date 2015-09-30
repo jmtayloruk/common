@@ -20,3 +20,13 @@ void DebugPrintf(const char *format, ...)
 	vfprintf(stderr, format, args);
 	va_end(args);
 }
+
+void DebugPrintfFatal(const char *errorIntro, const char *format, ...)
+{
+    fprintf(stderr, "Fatal error - %s: ", errorIntro);
+    
+    va_list args;
+    va_start(args, format);
+    vfprintf(stderr, format, args);
+    va_end(args);
+}
