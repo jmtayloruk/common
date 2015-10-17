@@ -16,6 +16,9 @@
 #include <sys/errno.h>
 #include <algorithm>
 
+#define PRINTFLIKE(A,B) 
+#define RESTRICT
+
 #include "jOSMacros.h"
 #include "jAssert.h"
 

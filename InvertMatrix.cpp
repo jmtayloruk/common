@@ -24,9 +24,29 @@
 	void dtrtri_(char *uplo, char *diag, int *n, double *a, int *lda, int *info) { dtrtri(*uplo, *diag, *n, a, *lda, info); }
 	void dtrtrs_(char *uplo, char *transa, char *diag, int *n, int *nrhs, double *a, int *lda, double *b, int *ldb, int *info) { dtrtrs(*uplo, *transa, *diag, *n, *nrhs, a, *lda, b, *ldb, info); }
 	typedef int __CLPK_integer;
+#elif 1
+	// Until I come up with a reliable solution for providing a version of lapack, I'm just going to introduce stubs instead
+	#define STUB 1
+#else
+	#include "clapack.h"
+	typedef int __CLPK_integer;
 #endif
 
 #include <stdio.h>
+
+#ifdef STUB
+
+void Fail(void)
+{
+	printf("FATAL ERROR - not compiled against LAPACK so this matrix inversion function is not available\n");
+	ALWAYS_ASSERT(0);
+}
+
+void InvertUpperTriangularMatrix(gsl_matrix *matrix) { Fail(); }
+void SolveWithUpperTriangularMatrix(gsl_matrix *matrix, gsl_matrix *x) { Fail(); }
+void InvertComplexMatrixUsingLAPACK(int inSize, jComplex *matrix) { Fail(); }
+
+#else
 
 void InvertComplexMatrixUsingLAPACK(int inSize, jComplex *matrix)
 {
@@ -129,3 +149,5 @@ void SolveWithUpperTriangularMatrix(gsl_matrix *matrix, gsl_matrix *x)
 {
 	SolveWithUpperTriangularMatrixUsingLAPACK(matrix->size1, x->size2, matrix->data, matrix->tda, x->data, x->tda);
 }
+#endif
+

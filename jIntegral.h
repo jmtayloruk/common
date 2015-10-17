@@ -16,7 +16,7 @@
 
 		Code:
 			[functor type name] functor(this);
-			Integrate<[return type], [kernel type]>(functor, 0, pi, 100);
+			Integrate<[return type], [kernel type]>(functor, 0, PI, 100);
 */
 
 #ifndef __J_INTEGRAL_H__
@@ -390,17 +390,17 @@ template<class RETURN_TYPE, class OUTER_KERNEL, class MIDDLE_KERNEL, class INNER
 
 template<class RETURN_TYPE, class FUNC_TYPE> RETURN_TYPE IntegrateOverCircle(const FUNC_TYPE *functor, double r_1, long xIntervals, long yIntervals)
 {
-	return Integrate2D<RETURN_TYPE, CircularIntegralOuterKernel, UnitKernel>(functor, 0.0, r_1, xIntervals, 0.0, 2.0 * pi, yIntervals);
+	return Integrate2D<RETURN_TYPE, CircularIntegralOuterKernel, UnitKernel>(functor, 0.0, r_1, xIntervals, 0.0, 2.0 * PI, yIntervals);
 }
 
 template<class RETURN_TYPE, class FUNC_TYPE> RETURN_TYPE IntegrateOverSurface2(const FUNC_TYPE &functor, long xIntervals, long yIntervals)
 {
-	return Integrate2D<RETURN_TYPE, SurfaceIntegralOuterKernel, UnitKernel>(&functor, 0.0, pi, xIntervals, 0.0, 2.0 * pi, yIntervals);
+	return Integrate2D<RETURN_TYPE, SurfaceIntegralOuterKernel, UnitKernel>(&functor, 0.0, PI, xIntervals, 0.0, 2.0 * PI, yIntervals);
 }
 
 template<class RETURN_TYPE, class FUNC_TYPE> RETURN_TYPE IntegrateOverHemisphericalSurface(const FUNC_TYPE *functor, long xIntervals, long yIntervals)
 {
-	return Integrate2D<RETURN_TYPE, SurfaceIntegralOuterKernel, UnitKernel>(functor, 0.0, pi / 2.0, xIntervals, 0.0, 2.0 * pi, yIntervals);
+	return Integrate2D<RETURN_TYPE, SurfaceIntegralOuterKernel, UnitKernel>(functor, 0.0, PI / 2.0, xIntervals, 0.0, 2.0 * PI, yIntervals);
 }
 
 template<class RETURN_TYPE, class FUNC_TYPE> RETURN_TYPE IntegrateOverSphericalVolume2(const FUNC_TYPE &functor, double r_1, long xIntervals, long yIntervals, long zIntervals)

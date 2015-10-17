@@ -16,7 +16,7 @@
 
 #include <sys/cdefs.h>      // for __printflike
 
-void DebugPrintf(const char *format, ...) __printflike(1, 2);
-void DebugPrintfFatal(const char *errorIntro, const char *format, ...) __printflike(2, 3);
+void DebugPrintf(const char *format, ...) PRINTFLIKE(1, 2);
+void DebugPrintfFatal(const char *errorIntro, const char *format, ...) PRINTFLIKE(2, 3);
 
 #endif /* defined(__DebugPrintf__) */
