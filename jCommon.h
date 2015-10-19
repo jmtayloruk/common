@@ -16,8 +16,14 @@
 #include <sys/errno.h>
 #include <algorithm>
 
-#define PRINTFLIKE(A,B) 
-#define RESTRICT
+#if OS_X
+	// This should be a proper conditional (from ./configure script...), but for now I'll just use it for parameter checking
+	// on my OS X machines without worrying about availability on other machines.
+	#define PRINTFLIKE(A,B) __printflike((A),(B))
+#else
+	#define PRINTFLIKE(A,B) 
+#endif
+#define RESTRICT __restrict
 
 #include "jOSMacros.h"
 #include "jAssert.h"

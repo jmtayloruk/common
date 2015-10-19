@@ -114,7 +114,7 @@ void aligned_free(volatile void *inPtr)
 	free(ptr);
 }
 
-FILE *fopenf(const char *format RESTRICT, const char *mode RESTRICT, ...)
+FILE *fopenf(const char * RESTRICT format, const char * RESTRICT mode, ...)
 {
 	// This function behaves like fopen() except that it allows formatted strings like printf etc
 	
