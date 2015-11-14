@@ -77,7 +77,7 @@ FILE *fopenf(const char * RESTRICT format, const char * RESTRICT mode, ...) PRIN
     NSURL *PathToURL(NSString *path);
     bool IsDirectory(NSURL *fileURL);
 
-	NSArray *ListImageFilesInDirectory(NSString *dir);
+	NSArray *ListImageFilesInDirectory(NSString *dir, bool sorted = true);
 	void UpdateKeys(id owner, ...) NS_REQUIRES_NIL_TERMINATION;
 	bool StringIsInList(NSString *s, ...) NS_REQUIRES_NIL_TERMINATION;
 

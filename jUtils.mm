@@ -7,6 +7,7 @@
 //
 
 #import <Cocoa/Cocoa.h>
+#include <fts.h>
 
 NSURL *PathToURL(NSString *path, NSURL *relativeTo)
 {
@@ -59,9 +60,11 @@ NSInteger frameSortOrder(id string1, id string2, void *)
 	{
 		// If neither has a dot, and one is shorter than the other, order that one first.
 		// e.g. folder1 comes before folder10
-		if (strlen(str1) < strlen(str2))
+		size_t len1 = strlen(str1);
+		size_t len2 = strlen(str2);
+		if (len1 < len2)
 			return NSOrderedAscending;
-		if (strlen(str1) > strlen(str2))
+		if (len1 > len2)
 			return NSOrderedDescending;
 	}
 	// Normal case: just do a standard string comparison.
@@ -85,18 +88,55 @@ bool IsImageFile(NSString *theFilename)
 			[theFilename hasSuffix:@".eps"]);
 }
 
-NSArray *ListImageFilesInDirectory(NSString *dir)
+NSArray *ListImageFilesInDirectory(NSString *dir, bool sorted)
 {
 	// Returns an array containing NSStrings for each image file in a directory
+#if 0
 	NSArray *dirContents = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:dir error:nil];
-	dirContents = [dirContents sortedArrayUsingFunction:frameSortOrder context:nil];
+	// Filter to keep only the image files
 	NSMutableIndexSet *set = [NSMutableIndexSet indexSet];
 	for (size_t i = 0; i < dirContents.count; i++)
 	{
 		if (IsImageFile([dirContents objectAtIndex:i]))
 			[set addIndex:i];
 	}
-	return [dirContents objectsAtIndexes:set];
+	dirContents = [dirContents objectsAtIndexes:set];
+	dirContents = [dirContents sortedArrayUsingFunction:frameSortOrder context:nil];
+	return dirContents;
+#else
+	// It will hopefully be faster to use lower-level APIs as follows.
+	// Get a pointer to the first in a tree of structures representing the contents of the directory
+	int len = strlen(dir.UTF8String) + 1;
+	char pathBuffer[len];
+	snprintf(pathBuffer, len, "%s", dir.UTF8String);
+	char * const pathArray[2] = { pathBuffer, NULL };
+	FTS *ftsHandle = fts_open(pathArray, FTS_LOGICAL | FTS_NOSTAT, NULL);
+	// We do not actually use this next result, just need to do this before call to fts_children.
+	// May possibly be better just to repeatedly do fts_read?
+	fts_read(ftsHandle);
+
+	// Now we can get the linked list of child files
+	FTSENT *child = fts_children(ftsHandle, FTS_NAMEONLY);
+
+	// Transfer the linked list into a mutable array
+	NSMutableArray *dirContents2 = [NSMutableArray new];
+	while (child != NULL)
+	{
+		// Add any image filenames to our array.
+		/*	Note that this actual traversal and filtering doesn't seem to take
+			a significant amount of time compared with the fts calls above	*/
+		NSString *thisFile = [SWF:@"%s", child->fts_name];
+		if (IsImageFile(thisFile))
+			[dirContents2 addObject:thisFile];
+		child = child->fts_link;
+	}
+	fts_close(ftsHandle);
+
+	// Sort after filtering (let's make the array as small as possible before we sort it!)
+	if (sorted)
+		return [dirContents2 sortedArrayUsingFunction:frameSortOrder context:nil];
+	return dirContents2;
+#endif
 }
 
 void ForEveryImageFileInDirectory(NSString *dir, void (^callback)(NSString *))
