@@ -15,14 +15,27 @@ namespace fundamental_constants
 {
 	extern const double c;
 	extern const double e_0;
-	extern const double electronic_charge;
 	extern const double mu_0;
+	extern const double electronic_charge;
 	extern const double eta_0;
+	extern const double root4PiE0, root4PiMu0;
 	extern const double k_b;
     extern const double g;
-	extern const double root4PiE0, root4PiMu0;
 	extern const double L, lambda_b;
 }
+
+#if JREAL_DEFINED
+extern const jreal PI_R;
+
+namespace fundamental_constants_r
+{
+	extern const jreal c;
+	extern const jreal e_0;
+	extern const jreal mu_0;
+	extern const jreal eta_0;
+	extern const jreal root4PiE0, root4PiMu0;
+}
+#endif
 
 #include "jCommon.h"
 #include "jTimeUtils.h"

@@ -28,6 +28,7 @@ class jComplexPairAsVector256
   public:
 
 	jComplexPairAsVector256() { }
+	static jComplexPairAsVector256 zero(void) { return jComplexPairAsVector256(0, 0, 0, 0); }
 
 	void* operator new(size_t size)
 	{

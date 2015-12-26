@@ -29,7 +29,8 @@ template<class Type> class jComplexAsStdBase : public complex<Type>
   #ifdef __GSL_COMPLEX_H__
 	static gsl_complex ToGSL(const jComplexAsStdBase<Type> &z)
 	{
-		return gsl_complex_rect(z.real(), z.imag());
+		return gsl_complex_rect(AllowPrecisionLossReadingValue_mayAlreadyBeDouble(z.real()),
+								AllowPrecisionLossReadingValue_mayAlreadyBeDouble(z.imag()));
 	}
 	
 	static void Set(jComplexAsStdBase<Type> &outZ, gsl_complex inZ)

@@ -5,9 +5,9 @@
  */
 #include "jBigNum.h"
 
-double jBigNum::expTable[kBigNumMaxExponentInTable + 1];
-double jBigNum::invExpTable[kBigNumMaxExponentInTable + 1];
-double jBigNum::logExponent;
+jreal jBigNum::expTable[kBigNumMaxExponentInTable + 1];
+jreal jBigNum::invExpTable[kBigNumMaxExponentInTable + 1];
+jreal jBigNum::logExponent;
 
 void Print(jBigNum z)
 {
@@ -15,27 +15,27 @@ void Print(jBigNum z)
 	printf(" x e^%ld", z.exponent() * jBigNum::kBigNumExponentPowerOfE);
 }
 
-void MakeScientificNotation(double &x, long &exponent)
+void MakeScientificNotation(jreal &x, long &exponent)
 {
-	while (fabs(x) >= 10.0)
+	while (fabs(x) >= jreal(10.0))
 	{
-		x *= 0.1;
+		x *= jreal(0.1);
 		exponent++;
 	}
-	while (fabs(x) < 1.0)
+	while (fabs(x) < jreal(1.0))
 	{
-		x *= 10.0;
+		x *= jreal(10.0);
 		exponent--;
 	}
 }
 
-void PrintOneComponent(double detail, long exponent)
+void PrintOneComponent(jreal detail, long exponent)
 {
-	double detailPart = detail;
+	jreal detailPart = detail;
 	long decimalExponent = 0;
 	long i;
 
-	if (detail == 0.0)
+	if (detail == jreal(0.0))
 	{
 		printf("0.000000e+00");
 		return;
@@ -45,7 +45,7 @@ void PrintOneComponent(double detail, long exponent)
 	{
 		for (i = 0; i < exponent; i++)
 		{
-			detailPart *= exp(jBigNum::kBigNumExponentPowerOfE);
+			detailPart *= exp(jreal(jBigNum::kBigNumExponentPowerOfE));
 			MakeScientificNotation(detailPart, decimalExponent);
 		}
 	}
@@ -53,11 +53,11 @@ void PrintOneComponent(double detail, long exponent)
 	{
 		for (i = exponent; i < 0; i++)
 		{
-			detailPart /= exp(jBigNum::kBigNumExponentPowerOfE);
+			detailPart /= exp(jreal(jBigNum::kBigNumExponentPowerOfE));
 			MakeScientificNotation(detailPart, decimalExponent);
 		}
 	}
-	printf("%.6lfe%+.02ld", detailPart, decimalExponent);
+	printf("%.6lfe%+.02ld", AllowPrecisionLossReadingValue(detailPart), decimalExponent);
 }	
 	
 void PrintDecimal(jBigNum z)
@@ -74,9 +74,9 @@ void jBigNum::InitBigNum(void)
 {
 	for (long i = 0; i <= kBigNumMaxExponentInTable; i++)
 	{
-		expTable[i] = exp(kBigNumExponentPowerOfE * i);
+		expTable[i] = exp(jreal(kBigNumExponentPowerOfE * i));
 		invExpTable[i] = 1.0 / expTable[i];
-		logExponent = log(exp(kBigNumExponentPowerOfE));
+		logExponent = log(exp(jreal(kBigNumExponentPowerOfE)));
 	}
 }
 

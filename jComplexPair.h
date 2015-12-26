@@ -15,18 +15,25 @@
 #include "VectorTypes.h"
 #include "jComplexPairSplit.h"
 
-#if HAS_SSE
-    #define COMPLEX_PAIR_IS_VECTOR 1
-  #if HAS_AVX
-    #include "jComplexPairAsVector256.h"
-    typedef jComplexPairAsVector256 jComplexPair;
-  #else
-	#include "jComplexPairAsVector.h"
-	typedef jComplexPairAsVector jComplexPair;
-  #endif
-#else
-    #define COMPLEX_PAIR_IS_VECTOR 0
+typedef jComplexPairSplitT<jComplexR, jreal> jComplexPairSplit;
+
+#ifdef USE_JREAL
+	#define COMPLEX_PAIR_IS_VECTOR 0
 	typedef jComplexPairSplit jComplexPair;
+#else
+	#if HAS_SSE
+		#define COMPLEX_PAIR_IS_VECTOR 1
+	  #if HAS_AVX
+		#include "jComplexPairAsVector256.h"
+		typedef jComplexPairAsVector256 jComplexPair;
+	  #else
+		#include "jComplexPairAsVector.h"
+		typedef jComplexPairAsVector jComplexPair;
+	  #endif
+	#else
+		#define COMPLEX_PAIR_IS_VECTOR 0
+		typedef jComplexPairSplit<jComplex, double> jComplexPair;
+	#endif
 #endif
 
 #endif

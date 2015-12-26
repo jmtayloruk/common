@@ -8,78 +8,6 @@
 //
 #include "jCoord.h"
 
-void coord3::RotateFromSphericalSystem(double theta, double phi)
-{
-	// Convert from a local cartesian basis defined for a point in a spherical coordinate system,
-	// to a pure global cartesian basis.
-	/*		_r_ =		[ cos(phi)sin(theta), sin(phi)sin(theta), cos(theta) ]
-			_theta_ =	[ cos(phi)cos(theta), sin(phi)cos(theta), -sin(theta) ]
-			_phi_ =		[ -sin(phi), cos(phi), 0 ]			*/
-	double		newX = cos(phi) * sin(theta) * x
-						+ cos(phi) * cos(theta) * y
-						- sin(phi) * z;
-	double		newY = sin(phi) * sin(theta) * x
-						+ sin(phi) * cos(theta) * y
-						+ cos(phi) * z;
-	double		newZ = cos(theta) * x
-						- sin(theta) * y;
-	Set(newX, newY, newZ);
-}
-
-void coord3::RotateToSphericalSystem(double theta, double phi)
-{
-	// Convert to a local cartesian basis defined for a point in a spherical coordinate system,
-	// from a pure global cartesian basis.
-	/*		_r_ =		[ cos(phi)sin(theta), sin(phi)sin(theta), cos(theta) ]
-			_theta_ =	[ cos(phi)cos(theta), sin(phi)cos(theta), -sin(theta) ]
-			_phi_ =		[ -sin(phi), cos(phi), 0 ]			*/
-	double		newX = cos(phi) * sin(theta) * x
-						+ sin(phi) * sin(theta) * y
-						+ cos(theta) * z;
-	double		newY = cos(phi) * cos(theta) * x
-						+ sin(phi) * cos(theta) * y
-						- sin(theta) * z;
-	double		newZ = -sin(phi) * x
-						+ cos(phi) * y;
-	Set(newX, newY, newZ);
-}
-
-void coordC3::RotateFromSphericalSystem(double theta, double phi)
-{
-	// Convert from a local cartesian basis defined for a point in a spherical coordinate system,
-	// to a pure global cartesian basis.
-	/*		_r_ =		[ cos(phi)sin(theta), sin(phi)sin(theta), cos(theta) ]
-			_theta_ =	[ cos(phi)cos(theta), sin(phi)cos(theta), -sin(theta) ]
-			_phi_ =		[ -sin(phi), cos(phi), 0 ]			*/
-	jComplex	newX = cos(phi) * sin(theta) * x
-						+ cos(phi) * cos(theta) * y
-						- sin(phi) * z;
-	jComplex	newY = sin(phi) * sin(theta) * x
-						+ sin(phi) * cos(theta) * y
-						+ cos(phi) * z;
-	jComplex	newZ = cos(theta) * x
-						- sin(theta) * y;
-	Set(newX, newY, newZ);
-}
-
-void coordC3::RotateToSphericalSystem(double theta, double phi)
-{
-	// Convert to a local cartesian basis defined for a point in a spherical coordinate system,
-	// from a pure global cartesian basis.
-	/*		_r_ =		[ cos(phi)sin(theta), sin(phi)sin(theta), cos(theta) ]
-			_theta_ =	[ cos(phi)cos(theta), sin(phi)cos(theta), -sin(theta) ]
-			_phi_ =		[ -sin(phi), cos(phi), 0 ]			*/
-	jComplex	newX = cos(phi) * sin(theta) * x
-						+ sin(phi) * sin(theta) * y
-						+ cos(theta) * z;
-	jComplex	newY = cos(phi) * cos(theta) * x
-						+ sin(phi) * cos(theta) * y
-						- sin(theta) * z;
-	jComplex	newZ = -sin(phi) * x
-						+ cos(phi) * y;
-	Set(newX, newY, newZ);
-}
-
 coordC3 RotateFromSphericalSystem(coordC3 c, double theta, double phi)
 {
 	c.RotateFromSphericalSystem(theta, phi);
@@ -104,51 +32,6 @@ coord3 RotateToSphericalSystem(coord3 c, double theta, double phi)
 	return c;	
 }
 
-void coord3::RotateFromCylindricalSystem(double phi)
-{
-	/*		_r_ =		[ cos(phi), sin(phi), 0 ]
-			_phi_ =		[ -sin(phi), cos(phi), 0 ]			
-			_z_ =		[ 0, 0, 1 ]			*/
-	double	newX = cos(phi) * x - sin(phi) * y;
-	double	newY = sin(phi) * x + cos(phi) * y;
-	double	newZ = z;
-	Set(newX, newY, newZ);
-}
-
-void coord3::RotateToCylindricalSystem(double phi)
-{
-	// Rotate to a cylindrical system for a point at angle phi in the cylindrical system
-	/*		_r_ =		[ cos(phi), sin(phi), 0 ]
-			_phi_ =		[ -sin(phi), cos(phi), 0 ]			
-			_z_ =		[ 0, 0, 1 ]			*/
-	double	newX = cos(phi) * x + sin(phi) * y;
-	double	newY = -sin(phi) * x + cos(phi) * y;
-	double	newZ = z;
-	Set(newX, newY, newZ);
-}
-
-void coordC3::RotateFromCylindricalSystem(double phi)
-{
-	/*		_r_ =		[ cos(phi), sin(phi), 0 ]
-			_phi_ =		[ -sin(phi), cos(phi), 0 ]			
-			_z_ =		[ 0, 0, 1 ]			*/
-	jComplex	newX = cos(phi) * x - sin(phi) * y;
-	jComplex	newY = sin(phi) * x + cos(phi) * y;
-	jComplex	newZ = z;
-	Set(newX, newY, newZ);
-}
-
-void coordC3::RotateToCylindricalSystem(double phi)
-{
-	/*		_r_ =		[ cos(phi), sin(phi), 0 ]
-			_phi_ =		[ -sin(phi), cos(phi), 0 ]			
-			_z_ =		[ 0, 0, 1 ]			*/
-	jComplex	newX = cos(phi) * x + sin(phi) * y;
-	jComplex	newY = -sin(phi) * x + cos(phi) * y;
-	jComplex	newZ = z;
-	Set(newX, newY, newZ);
-}
-
 coordC3 RotateFromCylindricalSystem(coordC3 c, double phi)
 {
 	c.RotateFromCylindricalSystem(phi);
@@ -162,7 +45,7 @@ coordC3 RotateToCylindricalSystem(coordC3 c, double phi)
 	return c;	
 }
 
-coord3 CartesianToSpherical(coord3 source)
+template<> coord3 CartesianToSpherical(coord3 source)
 {
 	// Convert from a Cartesian coordinate to a spherical coordinate
 	double	r = sqrt(source.x*source.x + source.y*source.y + source.z*source.z);
@@ -172,7 +55,7 @@ coord3 CartesianToSpherical(coord3 source)
 	return coord3(r, theta, phi);
 }
 
-coord3 SphericalToCartesian(coord3 source)
+template<> coord3 SphericalToCartesian(coord3 source)
 {
 	// Convert from a spherical coordinate to a Cartesian coordinate
 	double	cartX = source.x * cos(source.z) * sin(source.y);
@@ -182,7 +65,31 @@ coord3 SphericalToCartesian(coord3 source)
 	return coord3(cartX, cartY, cartZ);
 }
 
-#if 1
+#ifdef USE_JREAL
+template<> coord3R CartesianToSpherical(coord3R source)
+{
+	// Convert from a Cartesian coordinate to a spherical coordinate
+	jreal	r = sqrt(source.x*source.x + source.y*source.y + source.z*source.z);
+	jreal	theta = acos(source.z / r);
+	jreal	phi = atan2(source.y, source.x);
+	
+	return coord3R(r, theta, phi);
+}
+
+template<> coord3R SphericalToCartesian(coord3R source)
+{
+	// Convert from a spherical coordinate to a Cartesian coordinate
+	jreal	cartX = source.x * cos(source.z) * sin(source.y);
+	jreal	cartY = source.x * sin(source.z) * sin(source.y);
+	jreal	cartZ = source.x * cos(source.y);
+	
+	return coord3R(cartX, cartY, cartZ);
+}
+#endif
+
+#if 0
+/*	Disabled as this was just a work in progress
+	As per the note below, I am not sure what it even means to have a complex spherical vector!	*/
 coordC3 CartesianToSpherical(coordC3 source)
 {
 	// NOTE: To be honest I'm not even sure what it means to have a complex spherical vector,
@@ -225,22 +132,8 @@ coord3 CylindricalToCartesian(coord3 source)
 	return coord3(cartX, cartY, cartZ);
 }
 
-coord3 coord3::Cross(const coord3 &n) const
-{
-	return coord3(y * n.z - z * n.y,
-				  z * n.x - x * n.z,
-				  x * n.y - y * n.x);
-}
-
-coordC3 coordC3::Cross(const coordC3 &n) const
-{
-	return coordC3(y * n.z - z * n.y,
-				   z * n.x - x * n.z,
-				   x * n.y - y * n.x);
-}
-
 #ifdef __GSL_COMPLEX_H__
-gsl_vector *coord3::AllocGSLVector(void) const
+template<> gsl_vector *coord3T<double>::AllocGSLVector(void) const
 {
 	gsl_vector	*resultVector = gsl_vector_calloc(3);
 	gsl_vector_set(resultVector, 0, x);
@@ -249,14 +142,14 @@ gsl_vector *coord3::AllocGSLVector(void) const
 	return resultVector;
 }
 
-coord3::coord3(gsl_vector *inVector)
+template<> coord3T<double>::coord3T(gsl_vector *inVector)
 {
 	x = gsl_vector_get(inVector, 0);
 	y = gsl_vector_get(inVector, 1);
 	z = gsl_vector_get(inVector, 2);
 }
 
-coord3::coord3(gsl_vector *inVector, long offset)
+template<> coord3T<double>::coord3T(gsl_vector *inVector, long offset)
 {
 	x = gsl_vector_get(inVector, offset);
 	y = gsl_vector_get(inVector, offset+1);

@@ -33,24 +33,25 @@ class jBigNum
 	static const long kBigNumExponentPowerOfE = 64;
 
   protected:
-	jComplex	_detail;
+	jComplexR	_detail;
 	long		_exponent;
 	
-	static double expTable[kBigNumMaxExponentInTable + 1];
-	static double invExpTable[kBigNumMaxExponentInTable + 1];
-	static double logExponent;
+	static jreal expTable[kBigNumMaxExponentInTable + 1];
+	static jreal invExpTable[kBigNumMaxExponentInTable + 1];
+	static jreal logExponent;
 
   public:
 
-	jBigNum() { _detail = 0.0; _exponent = 0; }
-	explicit jBigNum(double inVal) { _detail = inVal; _exponent = 0; }
-	explicit jBigNum(jComplex inVal) { _detail = inVal; _exponent = 0; }
-	jBigNum(jComplex inVal, long inExponent) { _detail = inVal; _exponent = inExponent; }
+	jBigNum() { _detail = jreal(0.0); _exponent = 0; }
+	explicit jBigNum(jreal inVal) { _detail = inVal; _exponent = 0; }
+	explicit jBigNum(jComplexR inVal) { _detail = inVal; _exponent = 0; }
+	jBigNum(jComplexR inVal, long inExponent) { _detail = inVal; _exponent = inExponent; }
+	static jBigNum zero(void) { return jBigNum(jreal(0), 0); }
 	
 	static void InitBigNum(void);
 	
 	long exponent(void) const { return _exponent; }
-	jComplex detail(void) const { return _detail; }
+	jComplexR detail(void) const { return _detail; }
 	
 	bool	FitsInDouble(void) const { return (abs(_exponent) < (DBL_MAX_10_EXP - 10)); }
 
@@ -71,16 +72,16 @@ class jBigNum
 	}
 	jBigNum operator + (const jBigNum &n) const { return jBigNum(*this) += n; }
 	
-	jBigNum& operator += (const jComplex &n)
+	jBigNum& operator += (const jComplexR &n)
 	{
 		return operator += (jBigNum(n, 0));
 	}
-	jBigNum operator + (const jComplex &n) const { return jBigNum(*this) += n; }
-	jBigNum& operator += (const double n)
+	jBigNum operator + (const jComplexR &n) const { return jBigNum(*this) += n; }
+	jBigNum& operator += (const jreal n)
 	{
-		return operator += (jBigNum(n, 0));
+		return operator +=(jBigNum(n, 0));
 	}
-	jBigNum operator + (const double n) const { return jBigNum(*this) += n; }
+	jBigNum operator + (const jreal n) const { return jBigNum(*this) += n; }
 	
 	jBigNum& operator -= (const jBigNum &n)
 	{
@@ -99,21 +100,21 @@ class jBigNum
 	}
 	jBigNum operator - (const jBigNum &n) const { return jBigNum(*this) -= n; }
 	
-	jBigNum& operator -= (const jComplex &n)
+	jBigNum& operator -= (const jComplexR &n)
 	{
 		return operator -= (jBigNum(n, 0));
 	}
-	jBigNum operator - (const jComplex &n) const { return jBigNum(*this) -= n; }
-	jBigNum& operator -= (const double n)
+	jBigNum operator - (const jComplexR &n) const { return jBigNum(*this) -= n; }
+	jBigNum& operator -= (const jreal n)
 	{
 		return operator -= (jBigNum(n, 0));
 	}
-	jBigNum operator - (const double n) const { return jBigNum(*this) -= n; }
+	jBigNum operator - (const jreal n) const { return jBigNum(*this) -= n; }
 
-	jBigNum& operator *= (const double n) { _detail *= n; return *this; }
-	jBigNum operator * (const double n) const { return jBigNum(*this) *= n; }
-	jBigNum& operator *= (const jComplex &n) { _detail *= n; return *this; }
-	jBigNum operator * (const jComplex &n) const { return jBigNum(*this) *= n; }
+	jBigNum& operator *= (const jreal n) { _detail *= n; return *this; }
+	jBigNum operator * (const jreal n) const { return jBigNum(*this) *= n; }
+	jBigNum& operator *= (const jComplexR &n) { _detail *= n; return *this; }
+	jBigNum operator * (const jComplexR &n) const { return jBigNum(*this) *= n; }
 	jBigNum& operator *= (const jBigNum &n)
 	{
 		_detail *= n.detail();
@@ -129,33 +130,39 @@ class jBigNum
 		return *this;
 	}
 	jBigNum operator / (const jBigNum &n) const { return jBigNum(*this) /= n; }
-	jBigNum& operator /= (jComplex n) { _detail /= n; return *this; }
-	jBigNum operator / (jComplex n) const { return jBigNum(*this) /= n; }
+	jBigNum& operator /= (jComplexR n) { _detail /= n; return *this; }
+	jBigNum operator / (jComplexR n) const { return jBigNum(*this) /= n; }
 	
 	jBigNum conj(void) const { return jBigNum(std::conj(_detail), _exponent); }
-	jComplex to_jcomplex(void) const
+	jComplexR to_jcomplex(void) const
 	{
 		if (_exponent >= 0)
 		{
 			if (_exponent <= kBigNumMaxExponentInTable)
 				return _detail * expTable[_exponent];
 			else
-				return DBL_MAX;
+				return jreal_consts::dbl_max();
 		}
 		else
 		{
 			if (_exponent >= -kBigNumMaxExponentInTable)
 				return _detail * invExpTable[-_exponent];
 			else
-				return DBL_MIN;
+				return jreal_consts::dbl_min();
 		}
 	}	
-	double abs_d(void) const
+
+	jreal abs_r(void) const
 	{
 		return abs(to_jcomplex());
 	}
 	
-	double logAbs(void) const
+	double abs_d(void) const
+	{
+		return AllowPrecisionLossReadingValue(abs(to_jcomplex()));
+	}
+
+	jreal logAbs(void) const
 	{
 		return log(abs(_detail)) + logExponent * _exponent;
 	}
@@ -167,8 +174,8 @@ class jBigNum
 		
 		// Reduce the detail part if it's too large
 		long i;
-//		double absDetail = abs(_detail);
-		double absDetail = sqrt(SQUARE(_detail.real()) + SQUARE(_detail.imag()));
+//		jreal absDetail = abs(_detail);
+		jreal absDetail = sqrt(SQUARE(_detail.real()) + SQUARE(_detail.imag()));
 		for (i = 0; absDetail > expTable[i+1]; i++)
 		{
 			// Check for overflow
@@ -179,7 +186,7 @@ class jBigNum
 		absDetail *= invExpTable[i];
 
 		// Increase the detail part if it's too large
-		if (absDetail != 0.0)
+		if (absDetail != jreal(0.0))
 		{
 			for (i = 0; absDetail < invExpTable[i+1]; i++)
 			{
@@ -192,12 +199,12 @@ class jBigNum
 	}
 };
 
-inline jBigNum operator*(const double l, const jBigNum &r)
+inline jBigNum operator*(const jreal l, const jBigNum &r)
 {
 	return r * l;
 }
 
-inline jBigNum operator*(const jComplex l, const jBigNum &r)
+inline jBigNum operator*(const jComplexR l, const jBigNum &r)
 {
 	return r * l;
 }
@@ -212,34 +219,39 @@ inline jBigNum operator+(const jBigNum &r)
 	return r;
 }
 
-inline jBigNum operator-(const double l, const jBigNum &r)
+inline jBigNum operator-(const jreal l, const jBigNum &r)
 {
 	return (-r) + l;
 }
 
-inline jBigNum operator-(const jComplex l, const jBigNum &r)
+inline jBigNum operator-(const jComplexR l, const jBigNum &r)
 {
 	return (-r) + l;
 }
 
-inline jBigNum operator+(const double l, const jBigNum &r)
+inline jBigNum operator+(const jreal l, const jBigNum &r)
 {
 	return r + l;
 }
 
-inline jBigNum operator+(const jComplex l, const jBigNum &r)
+inline jBigNum operator+(const jComplexR l, const jBigNum &r)
 {
 	return r + l;
 }
 
-inline jBigNum operator/(const double l, const jBigNum &r)
+inline jBigNum operator/(const jreal l, const jBigNum &r)
 {
 	return jBigNum(l / r.detail(), -r.exponent());
 }
 
-inline jBigNum operator/(const jComplex l, const jBigNum &r)
+inline jBigNum operator/(const jComplexR l, const jBigNum &r)
 {
 	return jBigNum(l / r.detail(), -r.exponent());
+}
+
+inline jreal abs_r(const jBigNum &n)
+{
+	return n.abs_r();
 }
 
 inline double abs_d(const jBigNum &n)
@@ -247,7 +259,7 @@ inline double abs_d(const jBigNum &n)
 	return n.abs_d();
 }
 
-inline double logAbs(const jBigNum &n)
+inline jreal logAbs(const jBigNum &n)
 {
 	return n.logAbs();
 }
@@ -257,6 +269,12 @@ inline jBigNum conj(const jBigNum &n)
 	return n.conj();
 }
 
+inline bool is_nan(const jBigNum &z)
+{
+	return (z.detail() != z.detail());
+}
+
+
 inline bool operator==(const jBigNum &a, const jBigNum &b)
 {
 	jBigNum a1 = a, b1 = b;
@@ -265,7 +283,7 @@ inline bool operator==(const jBigNum &a, const jBigNum &b)
 	return ((a1.exponent() == b1.exponent()) && (a1.detail() == b1.detail()));
 }
 
-inline bool operator==(const jBigNum &a, const jComplex &b)
+inline bool operator==(const jBigNum &a, const jComplexR &b)
 {
 	return (a.to_jcomplex() == b);
 }
@@ -274,6 +292,6 @@ void Print(jBigNum z);
 void PrintDecimal(jBigNum z);
 
 bool CheckAgreement(jBigNum val1, jComplex val2, double relError, double absError, bool printOnDisagreement = true, double *amount = NULL);
-bool CheckAgreement(jComplex val1, jBigNum val2, double relError, double absError, bool printOnDisagreement = true, double *amount = NULL);
+bool CheckAgreement(jComplexR val1, jBigNum val2, double relError, double absError, bool printOnDisagreement = true, double *amount = NULL);
 
 #endif

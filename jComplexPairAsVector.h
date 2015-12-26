@@ -24,6 +24,7 @@ class jComplexPairAsVector
   public:
 
 	jComplexPairAsVector() { }
+	static jComplexPairAsVector zero(void) { return jComplexPairAsVector(0, 0, 0, 0); }
 
 	jComplex a(void) const { return jComplex(vLower(__re), vLower(__im)); }
 	jComplex b(void) const { return jComplex(vUpper(__re), vUpper(__im)); }

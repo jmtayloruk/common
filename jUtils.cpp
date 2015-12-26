@@ -27,6 +27,9 @@
 // I define pi myself, even on OS X, because the intel compiler picks up a long double version of pi
 // and then warns about loss of precision! (as well as producing problems with operators on complex numbers)
 const double PI = 6.0 * asin(0.5);
+#if JREAL_DEFINED
+	const jreal PI_R = jreal(6) * asin(jreal(0.5));
+#endif
 
 // Define a variable for NaN.
 // The roundabout way of doing this is an attempt to suppress compiler warnings
@@ -36,20 +39,30 @@ const double _zero = 0.0;
 
 namespace fundamental_constants
 {
-	const double c = 299792458.0;
-	const double mu_0 = 4.0 * PI * 1e-7;
-	const double e_0 = 1.0 / (SQUARE(c) * mu_0);	// 8.8541878176e-12
+	const double c = 299792458.0;		// n.b. defined to be exactly this
+	const double  mu_0 = 4.0 * PI * 1e-7;
+	const double  e_0 = 1.0 / (SQUARE(c) * mu_0);	// 8.8541878176e-12
 	const double eta_0 = sqrt(mu_0 / e_0);
 	const double k_b = 1.38065e-23;
     const double g = 9.81;
 	const double electronic_charge = 1.60217646e-19;
-	const double root4PiE0 = sqrt(4.0 * PI * e_0);		// 1.054822e-05
-	const double root4PiMu0 = sqrt(4.0 * PI * mu_0);	// 3.973835e-03
+	const double  root4PiE0 = sqrt(4.0 * PI * e_0);		// 1.054822e-05
+	const double  root4PiMu0 = sqrt(4.0 * PI * mu_0);	// 3.973835e-03
 	const double L = 6.022e23;
 	
 	// Bjerrum length (DVLO theory). Remember to use static permittivity of water (~80)!	
 	// This is not strictly a constant, but for my purposes it is...
 	const double lambda_b = 0.714e-9;
+}
+
+namespace fundamental_constants_r
+{
+	const jreal c = 299792458;		// n.b. defined to be exactly this
+	const jreal  mu_0 = 4 * PI_R / 10000000;
+	const jreal  e_0 = 1 / (SQUARE(c) * mu_0);	// 8.8541878176e-12
+	const jreal eta_0 = sqrt(mu_0 / e_0);
+	const jreal  root4PiE0 = sqrt(4 * PI_R * e_0);		// 1.054822e-05
+	const jreal  root4PiMu0 = sqrt(4 * PI_R * mu_0);	// 3.973835e-03
 }
 
 LocalEnableDenormalFlushing::LocalEnableDenormalFlushing(void)

@@ -36,12 +36,32 @@ using std::complex;
 typedef jComplexAsStd jComplex;
 typedef std::vector<jComplex> jComplexVector;
 
+#ifdef USE_JREAL
+	typedef jComplexAsStdBase<jreal> jComplexR;
+	typedef std::vector<jComplexR> jComplexVectorR;
+	void Print(jComplexR);
+#else
+	typedef jComplex jComplexR;
+	typedef jComplexVector jComplexVectorR;
+#endif
+
+jComplex PowerOfI(long n);
+
+jComplex AllowPrecisionLossReadingValue(jComplexR val);
+jComplexR AllowPrecisionLossOnParam(jComplex val);
+#ifdef USE_JREAL
+	inline jreal j_norm(const jComplexR &z) { return SQUARE(real(z)) + SQUARE(imag(z)); }
+	jComplexR PowerOfI_r(long n);
+	jComplexR exp_i(jreal radianAngle);
+	jComplexR exp_i(jComplexR z);
+#endif
+
 using std::polar;
 using std::norm;
 
 inline jComplex exp_i(double radianAngle)
 {
-	// This is a bit circuitous to make it work with jComplexAsVector and jComplexWrapper
+	// This is a bit circuitous to make it work with jComplexAsVector
 	// The compiler should tidy it all up for us, though
 	complex<double> result = std::polar(1.0, radianAngle);
 	return jComplex(real(result), imag(result));
@@ -53,29 +73,16 @@ inline jComplex exp_i(jComplex z)
 	return exp_i(z.real()) * exp(-z.imag());
 }
 
-inline jComplexAsStdBase<long double> exp_i(long double radianAngle)
-{
-	// This is a bit circuitous to make it work with jComplexAsVector and jComplexWrapper
-	// The compiler should tidy it all up for us, though
-	complex<long double> result = std::polar(1.0L, radianAngle);
-	return jComplexAsStdBase<long double>(real(result), imag(result));
-}
-
 inline jComplex PowerOfI(long n)
 {
-#if 0
-	n = (n & 3);
-	if (n == 0)
-		return 1.0;
-	if (n == 1)
-		return jComplex::i();
-	if (n == 2)
-		return -1.0;
-	return jComplex(0, -1);
-#else
 	const jComplex powers[4] = { jComplex(1, 0), jComplex(0, 1), jComplex(-1, 0), jComplex(0, -1) };
 	return powers[n&3];		// Note can't write n%4 as this does the wrong thing for n<0 !
-#endif
+}
+
+inline jComplexR PowerOfI_r(long n)
+{
+	const jComplexR powers[4] = { jComplexR(1, 0), jComplexR(0, 1), jComplexR(-1, 0), jComplexR(0, -1) };
+	return powers[n&3];		// Note can't write n%4 as this does the wrong thing for n<0 !
 }
 
 inline jComplex powerOfMinusI(long n)

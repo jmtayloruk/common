@@ -76,74 +76,128 @@ inline coord2 operator-(const coord2 &r)
 	return coord2(-r.x, -r.y);
 }
 
-#define USE_FLOATS 0
-
 /************************ 3D COORDINATE CLASS *******************************/
 
-struct coord3
+template<class Type> struct coord3T
 {
 	// Note that not all operators are implemented - I have only implemented the ones I need.
   public:
-#if USE_FLOATS
-	float	x, y, z;
-#else
-	double	x, y, z;
-#endif
+	Type	x, y, z;
 
 	/*	Constructors - to create a coord3 object, write something like:
 			coord3 a(1.0, 1.4, 1.1);
 			a += coord3(2.4, 1.2, 0.0);		*/
-	coord3() { }
-	coord3(double inX, double inY, double inZ) { x = inX; y = inY; z=inZ; }
+	coord3T<Type>() { }
+	coord3T<Type>(Type inX, Type inY, Type inZ) { x = inX; y = inY; z=inZ; }
+	static coord3T<Type> zero(void) { return coord3T<Type>(Type(0), Type(0), Type(0)); }
 
   #ifdef __GSL_COMPLEX_H__
 	// These are extra constructors for interfacing with the open source GSL library
 	// They should only be compiled in if you include the GSL headers
 	// (so this file will work fine if you do not have GSL installed or have never heard of it)
-				coord3(gsl_vector *inVector);
-				coord3(gsl_vector *inVector, long offset);
+				coord3T<Type>(gsl_vector *inVector);
+				coord3T<Type>(gsl_vector *inVector, long offset);
 	gsl_vector	*AllocGSLVector(void) const;
   #endif
 
 	/*	Overloaded operators which allow you to write code like:
 			myCoord = myOtherCoord + coord3(2.4, 1.2, 0.0);			*/
-	coord3& operator += (const coord3 &n) { x += n.x; y += n.y; z += n.z; return *this; }
-	coord3 operator + (const coord3 &n) const { return coord3(*this) += n; }
-	coord3& operator -= (const coord3 &n) { x -= n.x; y -= n.y; z -= n.z; return *this; }
-	coord3 operator - (const coord3 &n) const { return coord3(*this) -= n; }
-	coord3& operator *= (double n) { x *= n; y *= n; z *= n; return *this; }
-	coord3 operator * (double n) const { return coord3(*this) *= n; }
-	coord3& operator /= (double n) { return (*this) *= (1/n); }
-	coord3 operator / (double n) const { return coord3(*this) /= n; }
-	inline coord3& operator = (const coord3 &n) { x = n.x; y = n.y; z = n.z; return *this; }
+	coord3T<Type>& operator += (const coord3T<Type> &n) { x += n.x; y += n.y; z += n.z; return *this; }
+	coord3T<Type> operator + (const coord3T<Type> &n) const { return coord3T<Type>(*this) += n; }
+	coord3T<Type>& operator -= (const coord3T<Type> &n) { x -= n.x; y -= n.y; z -= n.z; return *this; }
+	coord3T<Type> operator - (const coord3T<Type> &n) const { return coord3T<Type>(*this) -= n; }
+	coord3T<Type>& operator *= (Type n) { x *= n; y *= n; z *= n; return *this; }
+	coord3T<Type> operator * (Type n) const { return coord3T<Type>(*this) *= n; }
+	coord3T<Type>& operator /= (Type n) { return (*this) *= (1/n); }
+	coord3T<Type> operator / (Type n) const { return coord3T<Type>(*this) /= n; }
+	inline coord3T<Type>& operator = (const coord3T<Type> &n) { x = n.x; y = n.y; z = n.z; return *this; }
 	// Comparison operators (BUT be aware of the general issues of doing comparisons between floating-point variables!)
-	bool operator == (const coord3 &n) { return ((x == n.x) && (y == n.y) && (z == n.z)); }
-	bool operator != (const coord3 &n) { return !(operator==(n)); }
+	bool operator == (const coord3T<Type> &n) { return ((x == n.x) && (y == n.y) && (z == n.z)); }
+	bool operator != (const coord3T<Type> &n) { return !(operator==(n)); }
 	
 	// Dot and cross products - e.g. myCoord.Dot(myOtherCoord);
-	inline double Dot(const coord3 &n) const { return x * n.x + y * n.y + z * n.z; }
-	coord3 Cross(const coord3 &n) const;
+	inline Type Dot(const coord3T<Type> &n) const { return x * n.x + y * n.y + z * n.z; }
+	coord3T<Type> Cross(const coord3T<Type> &n) const
+	{
+		return coord3T<Type>(y * n.z - z * n.y,
+					  z * n.x - x * n.z,
+					  x * n.y - y * n.x);
+	}	
 
 	// Utility functions. Some of these are used for cartesian to spherical conversions etc.
-	inline void Set(double inX, double inY, double inZ) { x = inX; y = inY; z = inZ; }
-	void	RotateFromSphericalSystem(double theta, double phi);
-	void	RotateToSphericalSystem(double theta, double phi);
-	void	RotateFromCylindricalSystem(double phi);
-	void	RotateToCylindricalSystem(double phi);
-	void	MultiplyByComponents(const coord3 &n) { x *= n.x; y *= n.y; z *= n.z; }
+	inline void Set(Type inX, Type inY, Type inZ) { x = inX; y = inY; z = inZ; }
+	void	RotateFromSphericalSystem(Type theta, Type phi)
+	{
+		// Convert from a local cartesian basis defined for a point in a spherical coordinate system,
+		// to a pure global cartesian basis.
+		/*		_r_ =		[ cos(phi)sin(theta), sin(phi)sin(theta), cos(theta) ]
+		 _theta_ =	[ cos(phi)cos(theta), sin(phi)cos(theta), -sin(theta) ]
+		 _phi_ =		[ -sin(phi), cos(phi), 0 ]			*/
+		Type		newX = cos(phi) * sin(theta) * x
+		+ cos(phi) * cos(theta) * y
+		- sin(phi) * z;
+		Type		newY = sin(phi) * sin(theta) * x
+		+ sin(phi) * cos(theta) * y
+		+ cos(phi) * z;
+		Type		newZ = cos(theta) * x
+		- sin(theta) * y;
+		Set(newX, newY, newZ);
+	}
+	void	RotateToSphericalSystem(Type theta, Type phi)
+	{
+		// Convert to a local cartesian basis defined for a point in a spherical coordinate system,
+		// from a pure global cartesian basis.
+		/*		_r_ =		[ cos(phi)sin(theta), sin(phi)sin(theta), cos(theta) ]
+		 _theta_ =	[ cos(phi)cos(theta), sin(phi)cos(theta), -sin(theta) ]
+		 _phi_ =		[ -sin(phi), cos(phi), 0 ]			*/
+		double		newX = cos(phi) * sin(theta) * x
+		+ sin(phi) * sin(theta) * y
+		+ cos(theta) * z;
+		double		newY = cos(phi) * cos(theta) * x
+		+ sin(phi) * cos(theta) * y
+		- sin(theta) * z;
+		double		newZ = -sin(phi) * x
+		+ cos(phi) * y;
+		Set(newX, newY, newZ);
+	}
+
+	void	RotateFromCylindricalSystem(Type phi)
+	{
+		/*		_r_ =		[ cos(phi), sin(phi), 0 ]
+		 _phi_ =		[ -sin(phi), cos(phi), 0 ]
+		 _z_ =		[ 0, 0, 1 ]			*/
+		double	newX = cos(phi) * x - sin(phi) * y;
+		double	newY = sin(phi) * x + cos(phi) * y;
+		double	newZ = z;
+		Set(newX, newY, newZ);
+	}
+	void	RotateToCylindricalSystem(Type phi)
+	{
+		// Rotate to a cylindrical system for a point at angle phi in the cylindrical system
+		/*		_r_ =		[ cos(phi), sin(phi), 0 ]
+		 _phi_ =		[ -sin(phi), cos(phi), 0 ]
+		 _z_ =		[ 0, 0, 1 ]			*/
+		double	newX = cos(phi) * x + sin(phi) * y;
+		double	newY = -sin(phi) * x + cos(phi) * y;
+		double	newZ = z;
+		Set(newX, newY, newZ);
+	}
+	void	MultiplyByComponents(const coord3T<Type> &n) { x *= n.x; y *= n.y; z *= n.z; }
 	
 	// More utility functions
-	coord3& Normalize(void) { double invLen = 1 / sqrt(x*x + y*y + z*z); x *= invLen; y *= invLen; z *= invLen; return *this; }
-	inline double SquaredDistanceTo(const coord3 &b) const { return (*this - b).LengthSquared(); }
-	inline double DistanceTo(const coord3 &b) const { return (*this - b).Length(); }
-	inline double LengthSquared(void) const { return SQUARE(x) + SQUARE(y) + SQUARE(z); }
-	inline double Length(void) const { return sqrt(LengthSquared()); }
+	coord3T<Type>& Normalize(void) { Type invLen = 1 / sqrt(x*x + y*y + z*z); x *= invLen; y *= invLen; z *= invLen; return *this; }
+	inline Type SquaredDistanceTo(const coord3T<Type> &b) const { return (*this - b).LengthSquared(); }
+	inline Type DistanceTo(const coord3T<Type> &b) const { return (*this - b).Length(); }
+	inline Type LengthSquared(void) const { return SQUARE(x) + SQUARE(y) + SQUARE(z); }
+	inline Type Length(void) const { return sqrt(LengthSquared()); }
 	void Print(void) const { printf("(%.12lg, %.12lg, %.12lg)", x, y, z); }
 
 	// Extract one indexed component of the vector
 	// This is not very efficient. To improve the efficiency of this function, it would be nice to redefine x, y, z as a 3 element array, but that will alter rather a lot of the arithmetic code in this struct definition!
-	double component(int c) { return (c==0) ? x : ((c==1) ? y : z); }
+	Type component(int c) { return (c==0) ? x : ((c==1) ? y : z); }
 };
+typedef coord3T<double> coord3;
+typedef coord3T<jreal> coord3R;
 
 typedef std::vector<coord3> coord3Vector;
 
@@ -151,18 +205,18 @@ inline void Print(coord3 c) { c.Print(); }
 
 /*	More operator overloading to allow mixing with scalar values
 	e.g. myCoord = 3.0 * myOtherCoord;	*/
-inline coord3 operator*(const double l, const coord3 r)
+template<class Type> inline coord3T<Type> operator*(const Type l, const coord3T<Type> r)
 {
 	return r * l;
 }
 
-inline coord3 operator-(const double l, const coord3 r)
+template<class Type> inline coord3T<Type> operator-(const Type l, const coord3T<Type> r)
 {
 	// Subtract from a scalar. Think carefully about whether you really want to do this!
 	return coord3(l - r.x, l - r.y, l - r.z);
 }
 
-inline coord3 operator-(const coord3 &r)
+template<class Type> inline coord3T<Type> operator-(const coord3T<Type> &r)
 {
 	// Negation operator
 	return coord3(-r.x, -r.y, -r.z);
@@ -175,80 +229,143 @@ inline coord3 operator-(const coord3 &r)
 	because all the operators return coordC3, so an action like theCoord = theCoord * 2 doesn't compile.
 	Might be possible to achieve what I want using a dummy template argument to a templated coordC3.	*/
 using std::conj;
-struct coordC3
+template<class Type, class DoubleType> struct coordC3T
 {
 	// Note that not all operators are implemented - I have only implemented the ones I need.
   public:
-	jComplex	x, y, z;
+	Type	x, y, z;
 
-	coordC3() { }
-	coordC3(const jComplex &inX, const jComplex &inY, const jComplex &inZ) { Set(inX, inY, inZ); }
-	explicit coordC3(coord3 r) : x(r.x), y(r.y), z(r.z) { }
+	coordC3T<Type, DoubleType>() { }
+	coordC3T<Type, DoubleType>(const Type &inX, const Type &inY, const Type &inZ) { Set(inX, inY, inZ); }
+	explicit coordC3T<Type, DoubleType>(coord3T<DoubleType> r) : x(r.x), y(r.y), z(r.z) { }
+	static coordC3T<Type, DoubleType> zero(void) { return coordC3T<Type, DoubleType>(DoubleType(0), DoubleType(0), DoubleType(0)); }
 
-	coordC3& operator += (const coordC3 &n) { x += n.x; y += n.y; z += n.z; return *this; }
-	coordC3 operator + (const coordC3 &n) const { return coordC3(*this) += n; }
-	coordC3& operator -= (const coordC3 &n) { x -= n.x; y -= n.y; z -= n.z; return *this; }
-	coordC3 operator - (const coordC3 &n) const { return coordC3(*this) -= n; }
-	coordC3& operator *= (double n) { x *= n; y *= n; z *= n; return *this; }
-	coordC3 operator * (double n) const { return coordC3(*this) *= n; }
-	coordC3& operator /= (double n) { return (*this) *= (1/n); }
-	coordC3 operator / (double n) const { return coordC3(*this) /= n; }
-	coordC3& operator *= (const jComplex &n) { x *= n; y *= n; z *= n; return *this; }
-	coordC3 operator * (const jComplex &n) const { return coordC3(*this) *= n; }
-	bool operator == (const coordC3 &n) { return ((x == n.x) && (y == n.y) && (z == n.z)); }
+	coordC3T<Type, DoubleType>& operator += (const coordC3T<Type, DoubleType> &n) { x += n.x; y += n.y; z += n.z; return *this; }
+	coordC3T<Type, DoubleType> operator + (const coordC3T<Type, DoubleType> &n) const { return coordC3T<Type, DoubleType>(*this) += n; }
+	coordC3T<Type, DoubleType>& operator -= (const coordC3T<Type, DoubleType> &n) { x -= n.x; y -= n.y; z -= n.z; return *this; }
+	coordC3T<Type, DoubleType> operator - (const coordC3T<Type, DoubleType> &n) const { return coordC3T<Type, DoubleType>(*this) -= n; }
+	coordC3T<Type, DoubleType>& operator *= (double n) { x *= n; y *= n; z *= n; return *this; }
+	coordC3T<Type, DoubleType> operator * (double n) const { return coordC3T<Type, DoubleType>(*this) *= n; }
+	coordC3T<Type, DoubleType>& operator /= (double n) { return (*this) *= (1/n); }
+	coordC3T<Type, DoubleType> operator / (double n) const { return coordC3T<Type, DoubleType>(*this) /= n; }
+	coordC3T<Type, DoubleType>& operator *= (const Type &n) { x *= n; y *= n; z *= n; return *this; }
+	coordC3T<Type, DoubleType> operator * (const Type &n) const { return coordC3T<Type, DoubleType>(*this) *= n; }
+	bool operator == (const coordC3T<Type, DoubleType> &n) { return ((x == n.x) && (y == n.y) && (z == n.z)); }
 	
 	// Dot and cross products
-	inline jComplex Dot(const coordC3 &n) const { return x * n.x + y * n.y + z * n.z; }
-	inline jComplex Dot(const coord3 &n) const { return x * n.x + y * n.y + z * n.z; }
-	coordC3 Cross(const coordC3 &n) const;
+	inline Type Dot(const coordC3T<Type, DoubleType> &n) const { return x * n.x + y * n.y + z * n.z; }
+	inline Type Dot(const coord3T<DoubleType> &n) const { return x * n.x + y * n.y + z * n.z; }
+	coordC3T<Type, DoubleType> Cross(const coordC3T<Type, DoubleType> &n) const
+	{
+		return coordC3T<Type, DoubleType>(y * n.z - z * n.y,
+					   z * n.x - x * n.z,
+					   x * n.y - y * n.x);
+	}
 
-	inline coordC3& operator = (const coordC3 &n) { x = n.x; y = n.y; z = n.z; return *this; }
-	inline void Set(const jComplex &inX, const jComplex &inY, const jComplex &inZ) { x = inX; y = inY; z = inZ; }
-	void	RotateFromSphericalSystem(double theta, double phi);
-	void	RotateToSphericalSystem(double theta, double phi);
-	void	RotateFromCylindricalSystem(double phi);
-	void	RotateToCylindricalSystem(double phi);
+	inline coordC3T<Type, DoubleType>& operator = (const coordC3T<Type, DoubleType> &n) { x = n.x; y = n.y; z = n.z; return *this; }
+	inline void Set(const Type &inX, const Type &inY, const Type &inZ) { x = inX; y = inY; z = inZ; }
+	void	RotateFromSphericalSystem(DoubleType theta, DoubleType phi)
+	{
+		// Convert from a local cartesian basis defined for a point in a spherical coordinate system,
+		// to a pure global cartesian basis.
+		/*		_r_ =		[ cos(phi)sin(theta), sin(phi)sin(theta), cos(theta) ]
+		 _theta_ =	[ cos(phi)cos(theta), sin(phi)cos(theta), -sin(theta) ]
+		 _phi_ =		[ -sin(phi), cos(phi), 0 ]			*/
+		jComplex	newX = cos(phi) * sin(theta) * x
+		+ cos(phi) * cos(theta) * y
+		- sin(phi) * z;
+		jComplex	newY = sin(phi) * sin(theta) * x
+		+ sin(phi) * cos(theta) * y
+		+ cos(phi) * z;
+		jComplex	newZ = cos(theta) * x
+		- sin(theta) * y;
+		Set(newX, newY, newZ);
+	}
+	void	RotateToSphericalSystem(DoubleType theta, DoubleType phi)
+	{
+		// Convert to a local cartesian basis defined for a point in a spherical coordinate system,
+		// from a pure global cartesian basis.
+		/*		_r_ =		[ cos(phi)sin(theta), sin(phi)sin(theta), cos(theta) ]
+		 _theta_ =	[ cos(phi)cos(theta), sin(phi)cos(theta), -sin(theta) ]
+		 _phi_ =		[ -sin(phi), cos(phi), 0 ]			*/
+		jComplex	newX = cos(phi) * sin(theta) * x
+		+ sin(phi) * sin(theta) * y
+		+ cos(theta) * z;
+		jComplex	newY = cos(phi) * cos(theta) * x
+		+ sin(phi) * cos(theta) * y
+		- sin(theta) * z;
+		jComplex	newZ = -sin(phi) * x
+		+ cos(phi) * y;
+		Set(newX, newY, newZ);
+	}
+	void	RotateFromCylindricalSystem(DoubleType phi)
+	{
+		/*		_r_ =		[ cos(phi), sin(phi), 0 ]
+		 _phi_ =		[ -sin(phi), cos(phi), 0 ]
+		 _z_ =		[ 0, 0, 1 ]			*/
+		jComplex	newX = cos(phi) * x - sin(phi) * y;
+		jComplex	newY = sin(phi) * x + cos(phi) * y;
+		jComplex	newZ = z;
+		Set(newX, newY, newZ);
+	}
+	void	RotateToCylindricalSystem(DoubleType phi)
+	{
+		/*		_r_ =		[ cos(phi), sin(phi), 0 ]
+		 _phi_ =		[ -sin(phi), cos(phi), 0 ]
+		 _z_ =		[ 0, 0, 1 ]			*/
+		jComplex	newX = cos(phi) * x + sin(phi) * y;
+		jComplex	newY = -sin(phi) * x + cos(phi) * y;
+		jComplex	newZ = z;
+		Set(newX, newY, newZ);
+	}
 	
-	inline double LengthSquared(void) const { return SQUARE(x.real()) + SQUARE(x.imag()) + SQUARE(y.real()) + SQUARE(y.imag()) + SQUARE(z.real()) + SQUARE(z.imag()); }
-	inline double Length(void) const { return sqrt(LengthSquared()); }
-	coord3 component_abs(void) const { return coord3(abs(x), abs(y), abs(z)); }
-	coord3 real(void) const { return coord3(x.real(), y.real(), z.real()); }
-	coord3 imag(void) const { return coord3(x.imag(), y.imag(), z.imag()); }
-	coordC3 conj(void) const { return coordC3(::conj(x), ::conj(y), ::conj(z)); }
+	inline DoubleType LengthSquared(void) const { return SQUARE(x.real()) + SQUARE(x.imag()) + SQUARE(y.real()) + SQUARE(y.imag()) + SQUARE(z.real()) + SQUARE(z.imag()); }
+	inline DoubleType Length(void) const { return sqrt(LengthSquared()); }
+	coord3T<DoubleType> component_abs(void) const { return coord3T<DoubleType>(abs(x), abs(y), abs(z)); }
+	coord3T<DoubleType> real(void) const { return coord3T<DoubleType>(x.real(), y.real(), z.real()); }
+	coord3T<DoubleType> imag(void) const { return coord3T<DoubleType>(x.imag(), y.imag(), z.imag()); }
+	coordC3T<Type, DoubleType> conj(void) const { return coordC3T<Type, DoubleType>(::conj(x), ::conj(y), ::conj(z)); }
 	void Print(void) const { printf("({%.12lg,%.12lg}, {%.12lg,%.12lg}, {%.12lg,%.12lg})", x.real(), x.imag(), y.real(), y.imag(), z.real(), z.imag()); }
 };
+typedef coordC3T<jComplex, double> coordC3;
+typedef coordC3T<jComplexR, jreal> coordC3R;
 
 inline void Print(coordC3 c) { c.Print(); }
 
-inline coordC3 operator*(const jComplex &l, const coordC3 &r)
+template<class Type, class DoubleType> inline coordC3T<Type, DoubleType> operator*(const Type &l, const coordC3T<Type, DoubleType> &r)
 {
 	return r * l;
 }
 
-inline coordC3 operator-(const jComplex &l, const coordC3 &r)
+template<class Type, class DoubleType> inline coordC3T<Type, DoubleType> operator*(const DoubleType &l, const coordC3T<Type, DoubleType> &r)
 {
-	return coordC3(l - r.x, l - r.y, l - r.z);
+	return r * l;
 }
 
-inline coordC3 operator-(const coordC3 &r)
+template<class Type, class DoubleType> inline coordC3T<Type, DoubleType> operator-(const Type &l, const coordC3T<Type, DoubleType> &r)
 {
-	return coordC3(-r.x, -r.y, -r.z);
+	return coordC3T<Type, DoubleType>(l - r.x, l - r.y, l - r.z);
 }
 
-inline coordC3 operator * (const coord3 &a, jComplex n) { return coordC3(a.x, a.y, a.z) * n; }
+template<class Type, class DoubleType> inline coordC3T<Type, DoubleType> operator-(const coordC3T<Type, DoubleType> &r)
+{
+	return coordC3T<Type, DoubleType>(-r.x, -r.y, -r.z);
+}
 
-inline coordC3 conj(const coordC3 &r)
+template<class Type, class DoubleType> inline coordC3T<Type, DoubleType> operator * (const coord3T<DoubleType> &a, Type n) { return coordC3T<Type, DoubleType>(a.x, a.y, a.z) * n; }
+
+template<class Type, class DoubleType> inline coordC3T<Type, DoubleType> conj(const coordC3T<Type, DoubleType> &r)
 {
 	return r.conj();
 }
 
 
-coord3 CartesianToSpherical(coord3 source);
-coord3 SphericalToCartesian(coord3 source);
+template<class Type> coord3T<Type> CartesianToSpherical(coord3T<Type> source);
+template<class Type> coord3T<Type> SphericalToCartesian(coord3T<Type> source);
 coord3 CartesianToCylindrical(coord3 source);
 coord3 CylindricalToCartesian(coord3 source);
-coordC3 CartesianToSpherical(coordC3 source);
-coordC3 SphericalToCartesian(coordC3 source);
+//coordC3 CartesianToSpherical(coordC3 source);
+//coordC3 SphericalToCartesian(coordC3 source);
 coordC3 RotateFromSphericalSystem(coordC3 c, double theta, double phi);
 coordC3 RotateToSphericalSystem(coordC3 c, double theta, double phi);
 coord3 RotateFromSphericalSystem(coord3 c, double theta, double phi);
@@ -273,20 +390,25 @@ inline coordC3 ConvertToComplex(coord3 &a)
 		myComplexCoord = RotateInXYPlane(myComplexCoord, 3.14159);		// are valid
 */
 
-template<class COORD> COORD RotateInXYPlane(COORD v, double phi)
+template<class COORD, class PhiType> COORD RotateInXYPlane(COORD v, PhiType phi)
 {
-	double sinPhi = sin(phi), cosPhi = cos(phi);
+	PhiType sinPhi = sin(phi), cosPhi = cos(phi);
 	return COORD(v.x * cosPhi - v.y * sinPhi,
 				 v.x * sinPhi + v.y * cosPhi,
 				 v.z);
 }
 
-template<class COORD> COORD RotateInXZPlane(COORD v, double phi)
+template<class COORD, class PhiType> COORD RotateInXZPlane(COORD v, PhiType phi)
 {
-	double sinPhi = sin(phi), cosPhi = cos(phi);
+	PhiType sinPhi = sin(phi), cosPhi = cos(phi);
 	return COORD(v.x * cosPhi - v.z * sinPhi,
 				 v.y,
 				 v.x * sinPhi + v.z * cosPhi);
 }
+
+coord3 AllowPrecisionLossReadingValue(coord3R val);
+coord3R AllowPrecisionLossOnParam(coord3 val);
+coordC3 AllowPrecisionLossReadingValue(coordC3R val);
+coordC3R AllowPrecisionLossOnParam(coordC3 val);
 
 #endif

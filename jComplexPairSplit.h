@@ -11,62 +11,75 @@
 
 #include "jComplex.h"
 
-class jComplexPairSplit
+template <class ComplexType, class DoubleType> class jComplexPairSplitT
 {
 	// This class represents two complex numbers
 	// This implementation just acts as a container for two instances of jComplex
   protected:
-	jComplex __a, __b;
+	ComplexType __a, __b;
 	
   public:
 
-	jComplexPairSplit() { }
+	jComplexPairSplitT() { }
+	static jComplexPairSplitT<ComplexType, DoubleType> zero(void) { return jComplexPairSplitT<ComplexType, DoubleType>(DoubleType(0), DoubleType(0)); }
 
-	jComplex a(void) const { return __a; }
-	jComplex b(void) const { return __b; } 
+	ComplexType a(void) const { return __a; }
+	ComplexType b(void) const { return __b; }
 
-	explicit jComplexPairSplit(const jComplex &inZ) { __a = inZ; __b = inZ; }
-	jComplexPairSplit(const jComplexPairSplit &inAB) { __a = inAB.a(); __b = inAB.b(); }
-	jComplexPairSplit(jComplex inA, jComplex inB) { __a = inA; __b = inB; }
+	explicit jComplexPairSplitT(const ComplexType &inZ) { __a = inZ; __b = inZ; }
+	jComplexPairSplitT(const jComplexPairSplitT &inAB) { __a = inAB.a(); __b = inAB.b(); }
+	jComplexPairSplitT(ComplexType inA, ComplexType inB) { __a = inA; __b = inB; }
 	
-	void SetA(jComplex inA) { __a = inA; }
-	void SetB(jComplex inB) { __b = inB; }
+	void SetA(ComplexType inA) { __a = inA; }
+	void SetB(ComplexType inB) { __b = inB; }
 	
-	jComplexPairSplit& operator += (const jComplexPairSplit &n) { __a += n.a(); __b += n.b(); return *this; }
-	jComplexPairSplit operator + (const jComplexPairSplit &n) const { return jComplexPairSplit(*this) += n; }
-	jComplexPairSplit& operator -= (const jComplexPairSplit &n) { __a -= n.a(); __b -= n.b(); return *this; }
-	jComplexPairSplit operator - (const jComplexPairSplit &n) const { return jComplexPairSplit(*this) -= n; }
-	jComplexPairSplit& operator *= (const jComplexPairSplit &n) { __a *= n.a(); __b *= n.b(); return *this; }
-	jComplexPairSplit operator * (const jComplexPairSplit &n) const { return jComplexPairSplit(*this) *= n; }
-	jComplexPairSplit& operator /= (const jComplexPairSplit &n) { __a /= n.a(); __b /= n.b(); return *this; }
-	jComplexPairSplit operator / (const jComplexPairSplit &n) const { return jComplexPairSplit(*this) /= n; }
+	jComplexPairSplitT& operator += (const jComplexPairSplitT &n) { __a += n.a(); __b += n.b(); return *this; }
+	jComplexPairSplitT operator + (const jComplexPairSplitT &n) const { return jComplexPairSplitT(*this) += n; }
+	jComplexPairSplitT& operator -= (const jComplexPairSplitT &n) { __a -= n.a(); __b -= n.b(); return *this; }
+	jComplexPairSplitT operator - (const jComplexPairSplitT &n) const { return jComplexPairSplitT(*this) -= n; }
+	jComplexPairSplitT& operator *= (const jComplexPairSplitT &n) { __a *= n.a(); __b *= n.b(); return *this; }
+	jComplexPairSplitT operator * (const jComplexPairSplitT &n) const { return jComplexPairSplitT(*this) *= n; }
+	jComplexPairSplitT& operator /= (const jComplexPairSplitT &n) { __a /= n.a(); __b /= n.b(); return *this; }
+	jComplexPairSplitT operator / (const jComplexPairSplitT &n) const { return jComplexPairSplitT(*this) /= n; }
 
-	jComplexPairSplit& operator += (const jComplex &n) { __a += n; __b += n; return *this; }
-	jComplexPairSplit operator + (const jComplex &n) const { return jComplexPairSplit(*this) += n; }
-	jComplexPairSplit& operator -= (const jComplex &n) { __a -= n; __b -= n; return *this; }
-	jComplexPairSplit operator - (const jComplex &n) const { return jComplexPairSplit(*this) -= n; }
-	jComplexPairSplit& operator *= (const jComplex &n) { __a *= n; __b *= n; return *this; }
-	jComplexPairSplit operator * (const jComplex &n) const { return jComplexPairSplit(*this) *= n; }
-	jComplexPairSplit& operator /= (const jComplex &n) { __a /= n; __b /= n; return *this; }
-	jComplexPairSplit operator / (const jComplex &n) const { return jComplexPairSplit(*this) /= n; }
+	jComplexPairSplitT& operator += (const ComplexType &n) { __a += n; __b += n; return *this; }
+	jComplexPairSplitT operator + (const ComplexType &n) const { return jComplexPairSplitT(*this) += n; }
+	jComplexPairSplitT& operator -= (const ComplexType &n) { __a -= n; __b -= n; return *this; }
+	jComplexPairSplitT operator - (const ComplexType &n) const { return jComplexPairSplitT(*this) -= n; }
+	jComplexPairSplitT& operator *= (const ComplexType &n) { __a *= n; __b *= n; return *this; }
+	jComplexPairSplitT operator * (const ComplexType &n) const { return jComplexPairSplitT(*this) *= n; }
+	jComplexPairSplitT& operator /= (const ComplexType &n) { __a /= n; __b /= n; return *this; }
+	jComplexPairSplitT operator / (const ComplexType &n) const { return jComplexPairSplitT(*this) /= n; }
 
-	jComplexPairSplit& operator += (const double &n) { __a += n; __b += n; return *this; }
-	jComplexPairSplit operator + (const double &n) const { return jComplexPairSplit(*this) += n; }
-	jComplexPairSplit& operator -= (const double &n) { __a -= n; __b -= n; return *this; }
-	jComplexPairSplit operator - (const double &n) const { return jComplexPairSplit(*this) -= n; }
-	jComplexPairSplit& operator *= (double n) { __a *= n; __b *= n; return *this; }
-	jComplexPairSplit operator * (double n) const { return jComplexPairSplit(*this) *= n; }
-	jComplexPairSplit& operator /= (double n) { __a /= n; __b /= n; return *this; }
-	jComplexPairSplit operator / (double n) const { return jComplexPairSplit(*this) /= n; }
+	jComplexPairSplitT& operator += (const DoubleType &n) { __a += n; __b += n; return *this; }
+	jComplexPairSplitT operator + (const DoubleType &n) const { return jComplexPairSplitT(*this) += n; }
+	jComplexPairSplitT& operator -= (const DoubleType &n) { __a -= n; __b -= n; return *this; }
+	jComplexPairSplitT operator - (const DoubleType &n) const { return jComplexPairSplitT(*this) -= n; }
+	jComplexPairSplitT& operator *= (DoubleType n) { __a *= n; __b *= n; return *this; }
+	jComplexPairSplitT operator * (DoubleType n) const { return jComplexPairSplitT(*this) *= n; }
+	jComplexPairSplitT& operator /= (DoubleType n) { __a /= n; __b /= n; return *this; }
+	jComplexPairSplitT operator / (DoubleType n) const { return jComplexPairSplitT(*this) /= n; }
 	
-	jComplexPairSplit conj(void) const { return jComplexPairSplit(::conj(__a), ::conj(__b)); }
+	jComplexPairSplitT conj(void) const { return jComplexPairSplitT(::conj(__a), ::conj(__b)); }
 
-	double SumReal(void) const { return real(__a) + real(__b); }
-	double SumNorm(void) const { return norm(__a) + norm(__b); }
-	jComplex SumAcross(void) const { return __a + __b; }
-	jComplexPairSplit GetNegative(void) const { return jComplexPairSplit(-__a, -__b); }
-	jComplexPairSplit GetSwappedPairs(void) const { return jComplexPairSplit(__b, __a); }
-	jComplexPairSplit GetMulWithConjY(const jComplexPairSplit &y) const { return jComplexPairSplit(__a * ::conj(y.a()), __b * ::conj(y.b())); }
+	DoubleType SumReal(void) const { return real(__a) + real(__b); }
+	DoubleType SumNorm(void) const { return norm(__a) + norm(__b); }
+	ComplexType SumAcross(void) const { return __a + __b; }
+	jComplexPairSplitT GetNegative(void) const { return jComplexPairSplitT(-__a, -__b); }
+	jComplexPairSplitT GetSwappedPairs(void) const { return jComplexPairSplitT(__b, __a); }
+	jComplexPairSplitT GetMulWithConjY(const jComplexPairSplitT &y) const { return jComplexPairSplitT(__a * ::conj(y.a()), __b * ::conj(y.b())); }
+	jComplexPairSplitT NegatedUsingXORWith(jComplexPairSplitT neg) const
+	{
+		// Expects a vector containing either 0.0 or -0.0 entries.
+		// Of course, we cannot actually use XOR in this implementation (the call is designed as a hint for vectorized implementations)
+		return jComplexPairSplitT(ComplexType(__a.real() * sign(neg.a().real()),
+										     __a.imag() * sign(neg.a().imag())),
+								 ComplexType(__b.real() * sign(neg.b().real()),
+										     __b.imag() * sign(neg.b().imag())));
+	}
+    jComplexPairSplitT GetNegativeOfFirstOnly(void) const { return jComplexPairSplitT(-__a, __b); }
+	jComplexPairSplitT GetNegativeOfSecondOnly(void) const { return jComplexPairSplitT(__a, -__b); }
+
 	void Print(void) const
 	{
 		printf("{");
@@ -77,58 +90,58 @@ class jComplexPairSplit
 	}
 };
 
-inline jComplexPairSplit operator*(const double l, const jComplexPairSplit &r)
+template<class ComplexType, class DoubleType> inline jComplexPairSplitT<ComplexType, DoubleType> operator*(const DoubleType l, const jComplexPairSplitT<ComplexType, DoubleType> &r)
 {
 	return r * l;
 }
 
-inline jComplexPairSplit operator*(const jComplex l, const jComplexPairSplit &r)
+template<class ComplexType, class DoubleType> inline jComplexPairSplitT<ComplexType, DoubleType> operator*(const ComplexType l, const jComplexPairSplitT<ComplexType, DoubleType> &r)
 {
 	return r * l;
 }
 
-inline jComplexPairSplit operator/(const double l, const jComplexPairSplit &r)
+template<class ComplexType, class DoubleType> inline jComplexPairSplitT<ComplexType, DoubleType> operator/(const DoubleType l, const jComplexPairSplitT<ComplexType, DoubleType> &r)
 {
-	return jComplexPairSplit(l / r.a(), l / r.b());
+	return jComplexPairSplitT<ComplexType, DoubleType>(l / r.a(), l / r.b());
 }
 
-inline jComplexPairSplit operator/(const jComplex l, const jComplexPairSplit &r)
+template<class ComplexType, class DoubleType> inline jComplexPairSplitT<ComplexType, DoubleType> operator/(const ComplexType l, const jComplexPairSplitT<ComplexType, DoubleType> &r)
 {
-	return jComplexPairSplit(l / r.a(), l / r.b());
+	return jComplexPairSplitT<ComplexType, DoubleType>(l / r.a(), l / r.b());
 }
 
-inline jComplexPairSplit operator-(const double l, const jComplexPairSplit &r)
+template<class ComplexType, class DoubleType> inline jComplexPairSplitT<ComplexType, DoubleType> operator-(const DoubleType l, const jComplexPairSplitT<ComplexType, DoubleType> &r)
 {
-	return jComplexPairSplit(l - r.a(), l - r.b());
+	return jComplexPairSplitT<ComplexType, DoubleType>(l - r.a(), l - r.b());
 }
 
-inline jComplexPairSplit operator-(const jComplexPairSplit &r)
+template<class ComplexType, class DoubleType> inline jComplexPairSplitT<ComplexType, DoubleType> operator-(const jComplexPairSplitT<ComplexType, DoubleType> &r)
 {
 	return r.GetNegative();
 }
 
-inline jComplexPairSplit operator+(const jComplexPairSplit &r)
+template<class ComplexType, class DoubleType> inline jComplexPairSplitT<ComplexType, DoubleType> operator+(const jComplexPairSplitT<ComplexType, DoubleType> &r)
 {
 	return r;
 }
 
-inline jComplexPairSplit operator+(const double l, const jComplexPairSplit &r)
+template<class ComplexType, class DoubleType> inline jComplexPairSplitT<ComplexType, DoubleType> operator+(const DoubleType l, const jComplexPairSplitT<ComplexType, DoubleType> &r)
 {
 	return r + l;
 }
 
-inline jComplexPairSplit conj(const jComplexPairSplit &z)
+template<class ComplexType, class DoubleType> inline jComplexPairSplitT<ComplexType, DoubleType> conj(const jComplexPairSplitT<ComplexType, DoubleType> &z)
 {
 	return z.conj();
 }
 
-inline jComplexPairSplit re_part(const jComplexPairSplit &x) { return jComplexPairSplit(real(x.a()), real(x.b())); }
-inline jComplexPairSplit im_part(const jComplexPairSplit &x) { return jComplexPairSplit(imag(x.a()), imag(x.b())); }
-inline double SumReal(const jComplexPairSplit &x) { return x.SumReal(); }
-inline double SumNorm(const jComplexPairSplit &x) { return x.SumNorm(); }
-inline jComplex SumAcross(const jComplexPairSplit &x) { return x.SumAcross(); }
-inline jComplexPairSplit MulXConjY(const jComplexPairSplit &x, const jComplexPairSplit &y) { return x.GetMulWithConjY(y); }
+template<class ComplexType, class DoubleType> inline jComplexPairSplitT<ComplexType, DoubleType> re_part(const jComplexPairSplitT<ComplexType, DoubleType> &x) { return jComplexPairSplitT<ComplexType, DoubleType>(real(x.a()), real(x.b())); }
+template<class ComplexType, class DoubleType> inline jComplexPairSplitT<ComplexType, DoubleType> im_part(const jComplexPairSplitT<ComplexType, DoubleType> &x) { return jComplexPairSplitT<ComplexType, DoubleType>(imag(x.a()), imag(x.b())); }
+template<class ComplexType, class DoubleType> inline DoubleType SumReal(const jComplexPairSplitT<ComplexType, DoubleType> &x) { return x.SumReal(); }
+template<class ComplexType, class DoubleType> inline DoubleType SumNorm(const jComplexPairSplitT<ComplexType, DoubleType> &x) { return x.SumNorm(); }
+template<class ComplexType, class DoubleType> inline ComplexType SumAcross(const jComplexPairSplitT<ComplexType, DoubleType> &x) { return x.SumAcross(); }
+template<class ComplexType, class DoubleType> inline jComplexPairSplitT<ComplexType, DoubleType> MulXConjY(const jComplexPairSplitT<ComplexType, DoubleType> &x, const jComplexPairSplitT<ComplexType, DoubleType> &y) { return x.GetMulWithConjY(y); }
 
-inline jComplexPairSplit SwapPairs(const jComplexPairSplit &x) { return jComplexPairSplit(x.GetSwappedPairs()); }
+template<class ComplexType, class DoubleType> inline jComplexPairSplitT<ComplexType, DoubleType> SwapPairs(const jComplexPairSplitT<ComplexType, DoubleType> &x) { return jComplexPairSplitT<ComplexType, DoubleType>(x.GetSwappedPairs()); }
 
 #endif
