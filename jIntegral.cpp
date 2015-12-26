@@ -12,6 +12,7 @@ namespace jIntegralPrivate
 	template<> double GetZeroSum<double>(void) { return 0.0; }
 	template<> jComplex GetZeroSum<jComplex>(void) { return 0.0; }
 	template<> coordC3 GetZeroSum<coordC3>(void) { return coordC3(0.0, 0.0, 0.0); }
+	template<> coord3 GetZeroSum<coord3>(void) { return coord3(0.0, 0.0, 0.0); }
 
 	bool CompareByAbsolute(double a, double b)
 	{
