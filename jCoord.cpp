@@ -157,7 +157,6 @@ coordC3 RotateFromCylindricalSystem(coordC3 c, double phi)
 
 coordC3 RotateToCylindricalSystem(coordC3 c, double phi)
 {
-	coordC3 result = c;
 	c.RotateToCylindricalSystem(phi);
 	return c;	
 }
