@@ -82,7 +82,7 @@ inline double RadiansToDegrees(double rad) { return rad * 180.0 / PI; }
 char *NewCopyOfString(const char *inString);
 
 bool FileExists(const char *theFile);
-
+FILE *fopenf(const char * RESTRICT format, const char * RESTRICT mode, ...) PRINTFLIKE(1, 3);
 
 #if __OBJC__
 	#import <Cocoa/Cocoa.h>
@@ -90,7 +90,7 @@ bool FileExists(const char *theFile);
     NSURL *PathToURL(NSString *path);
     bool IsDirectory(NSURL *fileURL);
 
-	NSArray *ListImageFilesInDirectory(NSString *dir);
+	NSArray *ListImageFilesInDirectory(NSString *dir, bool sorted = true);
 	void UpdateKeys(id owner, ...) NS_REQUIRES_NIL_TERMINATION;
 	bool StringIsInList(NSString *s, ...) NS_REQUIRES_NIL_TERMINATION;
 
@@ -106,6 +106,9 @@ bool FileExists(const char *theFile);
 	NSString *MetadataPathFromImagePath(NSString *fileName);
     id MetadataKeyValueForFramePath(NSString *path, NSString *key);
 	void CopyMetadataForImageFile(NSString *sourceFilePath, NSString *destDirPath, NSString *destFileName = nil);
+    void PrintCompleteFolderPath(NSString *basePath, int indentationLevel, int leadingCharsToSkip);
+	NSInteger frameSortOrder(id string1, id string2, void *);
+	NSInteger frameSortOrderForURLs(id url1, id url2, void *);
 #endif
 
 #endif

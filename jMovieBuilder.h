@@ -82,7 +82,7 @@ class JMovieBuilder
 void GetDestinationDetailsUsingSheetOnWindow(NSWindow *sheetOnWindow, void (^handler)(NSInteger result, NSSavePanel *savePanel));
 #endif
 
-#if OS_X
+#if HAS_OS_X_GUI
 
 #include <CoreVideo/CoreVideo.h>
 #include "BoundsRect.h"
