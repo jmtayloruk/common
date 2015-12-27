@@ -16,8 +16,8 @@
 	overriding the default assertion handler, as well as potentially keeping the code
 	smaller	*/
 #ifdef J_INLINE_ASSERTS
-	#define ALWAYS_ASSERT(CONDITION) do { if (!(CONDITION)) { DebugPrintf("Assertion failed on line %ld, function %s, file %s\n", (long)__LINE__, __PRETTY_FUNCTION__, __FILE__); *((long *)0L) = 0; } } while(0)
-	#define CHECK(CONDITION) do { if (!(CONDITION)) { DebugPrintf("Check failed on line %ld, function %s, file %s\n", (long)__LINE__, __PRETTY_FUNCTION__, __FILE__); } } while(0)
+	#define ALWAYS_ASSERT(CONDITION) do { if (!(CONDITION)) { DebugPrintf("Assertion failed on line %d, function %s, file %s\n", (int)__LINE__, __PRETTY_FUNCTION__, __FILE__); *((int *)0L) = 0; } } while(0)
+	#define CHECK(CONDITION) do { if (!(CONDITION)) { DebugPrintf("Check failed on line %d, function %s, file %s\n", (int)__LINE__, __PRETTY_FUNCTION__, __FILE__); } } while(0)
 #else
 	class BaseAssertionHandler
 	{
@@ -25,8 +25,8 @@
 		virtual void PullDownCode(void) __attribute__((__noreturn__));
 	  public:
 		virtual ~BaseAssertionHandler() { }
-		virtual void AssertionFailed(long line, const char *function, const char *file) __attribute__((__noreturn__));
-		virtual bool CheckCondition(bool condition, long line, const char *function, const char *file);
+		virtual void AssertionFailed(int line, const char *function, const char *file) __attribute__((__noreturn__));
+		virtual bool CheckCondition(bool condition, int line, const char *function, const char *file);
 	};
 	extern BaseAssertionHandler *assertionHandler;
 
@@ -34,7 +34,7 @@
 	#define CHECK(CONDITION) assertionHandler->CheckCondition((CONDITION), __LINE__, __PRETTY_FUNCTION__, __FILE__)
 #endif
 
-#define ALWAYS_ASSERT_NOERR(RESULT) do { if (RESULT != 0) { DebugPrintf("Error code %ld encountered\n", (long)(RESULT)); ALWAYS_ASSERT(0); } } while(0)
+#define ALWAYS_ASSERT_NOERR(RESULT) do { if (RESULT != 0) { DebugPrintf("Error code %d encountered\n", (int)(RESULT)); ALWAYS_ASSERT(0); } } while(0)
 #define IGNORE_CONDITION(CONDITION) do { } while(0)
 
 // Some assertions are only defined in the debug build

@@ -30,7 +30,7 @@
 #endif
 #include "ObjectPool.h"
 
-inline double SimpsonsMultiplier(long i, long i_max)
+inline double SimpsonsMultiplier(int i, int i_max)
 {
 	if (i == 0 || i == i_max)
 		return 1.0 / 3.0;
@@ -41,12 +41,12 @@ inline double SimpsonsMultiplier(long i, long i_max)
 
 inline double SimpsonsMultiplier(double x, double x_0, double x_1, double dx)
 {
-	long i = (long)((x - x_0 + 0.1*dx) / dx);
-	long i_max = (long)((x_1 - x_0 + 0.1*dx) / dx);
+	int i = (int)((x - x_0 + 0.1*dx) / dx);
+	int i_max = (int)((x_1 - x_0 + 0.1*dx) / dx);
 	return SimpsonsMultiplier(i, i_max);
 }
 
-inline double TrapeziumMultiplier(long i, long i_max)
+inline double TrapeziumMultiplier(int i, int i_max)
 {
 	if (i == 0 || i == i_max)
 		return 1.0 / 2.0;
@@ -102,12 +102,12 @@ namespace jIntegralPrivate
 			file such as Integrate, IntegrateOverCircle should generally be used	*/
 	  protected:
 		double x_0, x_1, dx;
-		long xIntervals;
+		int xIntervals;
 	  
 		typedef Integral<ResultType, Eval, Kernel, moreAccuracy> OurType;
 		typedef CallbackParms<ResultType, Eval, moreAccuracy> CBParmsType;
 
-		ResultType EvaluateIntegrandForI(const Eval *eval, long i, double outerOuterVal, double outerVal) const
+		ResultType EvaluateIntegrandForI(const Eval *eval, int i, double outerOuterVal, double outerVal) const
 		{
 			double x = x_0 + i * dx;
 			return eval->Evaluate(outerOuterVal, outerVal, x) * Kernel::Evaluate(x) * SimpsonsMultiplier(i, xIntervals) * dx;
@@ -119,12 +119,12 @@ namespace jIntegralPrivate
 			if (moreAccuracy)
 			{
 				std::vector<ResultType> results;
-				for (long i = 0; i <= xIntervals; i++)
+				for (int i = 0; i <= xIntervals; i++)
 					results.push_back(EvaluateIntegrandForI(eval, i, outerOuterVal, outerVal));
 				sum = SumResultList(results);
 			}
 			else
-				for (long i = 0; i <= xIntervals; i++)
+				for (int i = 0; i <= xIntervals; i++)
 					sum += EvaluateIntegrandForI(eval, i, outerOuterVal, outerVal);
 			return sum;
 		}
@@ -139,7 +139,7 @@ namespace jIntegralPrivate
 		
 		DEFINE_INTEGER_WORK_FUNCTOR(OurType, IntegerWorkCallback, CallbackFunctor, callbackFunctor, CBParmsType);		
 
-		ResultType InternalEvaluate(const Eval *eval, long intervals)
+		ResultType InternalEvaluate(const Eval *eval, int intervals)
 		{
 			CBParmsType	cbParms(eval);
 			gWorkThreads->DoWorkWithFunctor(&callbackFunctor, 0, intervals, 1, &cbParms);
@@ -159,8 +159,8 @@ namespace jIntegralPrivate
 		}
 
 	  public:
-		Integral(long inxIntervals) { }
-		Integral(double inx_0, double inx_1, long inxIntervals) : callbackFunctor(this)
+		Integral(int inxIntervals) { }
+		Integral(double inx_0, double inx_1, int inxIntervals) : callbackFunctor(this)
 		{
 			x_0 = inx_0;
 			x_1 = inx_1;
@@ -186,7 +186,7 @@ namespace jIntegralPrivate
 			file such as Integrate, IntegrateOverCircle should generally be used	*/
 	  protected:
 		double x_0, x_1, dx;
-		long xIntervals;
+		int xIntervals;
   		typedef CallbackParms<ResultType, InnerEval, moreAccuracy> CBParmsType;
 
 		ResultType EvaluateMiddleIntegralUnthreaded(const InnerEval *eval, double outerVal) const
@@ -196,7 +196,7 @@ namespace jIntegralPrivate
 			if (moreAccuracy)
 			{
 				std::vector<ResultType> results;
-				for (long i = 0; i <= xIntervals; i++)
+				for (int i = 0; i <= xIntervals; i++)
 				{
 					double x = i * dx;
 					results.push_back(Integral<ResultType, InnerEval, KernelY, moreAccuracy>::EvaluateInnerIntegralUnthreaded(eval, outerVal, x) * KernelX::Evaluate(x) * SimpsonsMultiplier(i, xIntervals) * dx);
@@ -204,7 +204,7 @@ namespace jIntegralPrivate
 				sum = SumResultList(results);
 			}
 			else
-				for (long i = 0; i <= xIntervals; i++)
+				for (int i = 0; i <= xIntervals; i++)
 				{
 					double x = i * dx;
 					sum += Integral<ResultType, InnerEval, KernelY, moreAccuracy>::EvaluateInnerIntegralUnthreaded(eval, outerVal, x) * KernelX::Evaluate(x) * SimpsonsMultiplier(i, xIntervals) * dx;
@@ -225,7 +225,7 @@ namespace jIntegralPrivate
 		}
 
 	  public:
-		Integral2D(double inx_0, double inx_1, long inxIntervals, double y_0, double y_1, long yIntervals) : Integral<ResultType, InnerEval, KernelY, moreAccuracy>(y_0, y_1, yIntervals)
+		Integral2D(double inx_0, double inx_1, int inxIntervals, double y_0, double y_1, int yIntervals) : Integral<ResultType, InnerEval, KernelY, moreAccuracy>(y_0, y_1, yIntervals)
 		{
 			x_0 = inx_0;
 			x_1 = inx_1;
@@ -250,7 +250,7 @@ namespace jIntegralPrivate
 			file such as Integrate, IntegrateOverCircle should generally be used	*/
 	  protected:
 		double x_0, x_1, dx;
-		long xIntervals;
+		int xIntervals;
 		typedef CallbackParms<ResultType, InnerEval, moreAccuracy> CBParmsType;
 	  
 		virtual void IntegerWorkCallback(int thisItem, void *userData)
@@ -264,7 +264,7 @@ namespace jIntegralPrivate
 		}
 
 	  public:
-		Integral3D(double inx_0, double inx_1, long inxIntervals, double y_0, double y_1, long yIntervals, double z_0, double z_1, long zIntervals) : Integral2D<ResultType, InnerEval, KernelY, KernelZ, moreAccuracy>(y_0, y_1, yIntervals, z_0, z_1, zIntervals)
+		Integral3D(double inx_0, double inx_1, int inxIntervals, double y_0, double y_1, int yIntervals, double z_0, double z_1, int zIntervals) : Integral2D<ResultType, InnerEval, KernelY, KernelZ, moreAccuracy>(y_0, y_1, yIntervals, z_0, z_1, zIntervals)
 		{
 			x_0 = inx_0;
 			x_1 = inx_1;
@@ -370,40 +370,40 @@ template<class RETURN_TYPE, class KERNEL_FUNC, class FUNC_TYPE> RETURN_TYPE Inte
 	return integral.Evaluate(functor);
 }
 
-template<class RETURN_TYPE, class KERNEL_FUNC, class FUNC_TYPE> RETURN_TYPE BetterSlowerIntegrate(const FUNC_TYPE *functor, double x_0, double x_1, long xIntervals)
+template<class RETURN_TYPE, class KERNEL_FUNC, class FUNC_TYPE> RETURN_TYPE BetterSlowerIntegrate(const FUNC_TYPE *functor, double x_0, double x_1, int xIntervals)
 {
 	jIntegralPrivate::Integral<RETURN_TYPE, FUNC_TYPE, KERNEL_FUNC, true> integral(x_0, x_1, xIntervals);
 	return integral.Evaluate(functor);
 }
 
-template<class RETURN_TYPE, class OUTER_KERNEL, class INNER_KERNEL, class FUNC_TYPE> RETURN_TYPE Integrate2D(const FUNC_TYPE *functor, double x_0, double x_1, long xIntervals, double y_0, double y_1, long yIntervals)
+template<class RETURN_TYPE, class OUTER_KERNEL, class INNER_KERNEL, class FUNC_TYPE> RETURN_TYPE Integrate2D(const FUNC_TYPE *functor, double x_0, double x_1, int xIntervals, double y_0, double y_1, int yIntervals)
 {
 	jIntegralPrivate::Integral2D<RETURN_TYPE, FUNC_TYPE, OUTER_KERNEL, INNER_KERNEL, false> integral(x_0, x_1, xIntervals, y_0, y_1, yIntervals);
 	return integral.Evaluate(functor);
 }
 
-template<class RETURN_TYPE, class OUTER_KERNEL, class MIDDLE_KERNEL, class INNER_KERNEL, class FUNC_TYPE> RETURN_TYPE Integrate3D(const FUNC_TYPE *functor, double x_0, double x_1, long xIntervals, double y_0, double y_1, long yIntervals, double z_0, double z_1, long zIntervals)
+template<class RETURN_TYPE, class OUTER_KERNEL, class MIDDLE_KERNEL, class INNER_KERNEL, class FUNC_TYPE> RETURN_TYPE Integrate3D(const FUNC_TYPE *functor, double x_0, double x_1, int xIntervals, double y_0, double y_1, int yIntervals, double z_0, double z_1, int zIntervals)
 {
 	jIntegralPrivate::Integral3D<RETURN_TYPE, FUNC_TYPE, OUTER_KERNEL, MIDDLE_KERNEL, INNER_KERNEL, false> integral(x_0, x_1, xIntervals, y_0, y_1, yIntervals, z_0, z_1, zIntervals);
 	return integral.Evaluate(functor);
 }
 
-template<class RETURN_TYPE, class FUNC_TYPE> RETURN_TYPE IntegrateOverCircle(const FUNC_TYPE *functor, double r_1, long xIntervals, long yIntervals)
+template<class RETURN_TYPE, class FUNC_TYPE> RETURN_TYPE IntegrateOverCircle(const FUNC_TYPE *functor, double r_1, int xIntervals, int yIntervals)
 {
 	return Integrate2D<RETURN_TYPE, CircularIntegralOuterKernel, UnitKernel>(functor, 0.0, r_1, xIntervals, 0.0, 2.0 * PI, yIntervals);
 }
 
-template<class RETURN_TYPE, class FUNC_TYPE> RETURN_TYPE IntegrateOverSurface2(const FUNC_TYPE &functor, long xIntervals, long yIntervals)
+template<class RETURN_TYPE, class FUNC_TYPE> RETURN_TYPE IntegrateOverSurface2(const FUNC_TYPE &functor, int xIntervals, int yIntervals)
 {
 	return Integrate2D<RETURN_TYPE, SurfaceIntegralOuterKernel, UnitKernel>(&functor, 0.0, PI, xIntervals, 0.0, 2.0 * PI, yIntervals);
 }
 
-template<class RETURN_TYPE, class FUNC_TYPE> RETURN_TYPE IntegrateOverHemisphericalSurface(const FUNC_TYPE *functor, long xIntervals, long yIntervals)
+template<class RETURN_TYPE, class FUNC_TYPE> RETURN_TYPE IntegrateOverHemisphericalSurface(const FUNC_TYPE *functor, int xIntervals, int yIntervals)
 {
 	return Integrate2D<RETURN_TYPE, SurfaceIntegralOuterKernel, UnitKernel>(functor, 0.0, PI / 2.0, xIntervals, 0.0, 2.0 * PI, yIntervals);
 }
 
-template<class RETURN_TYPE, class FUNC_TYPE> RETURN_TYPE IntegrateOverSphericalVolume2(const FUNC_TYPE &functor, double r_1, long xIntervals, long yIntervals, long zIntervals)
+template<class RETURN_TYPE, class FUNC_TYPE> RETURN_TYPE IntegrateOverSphericalVolume2(const FUNC_TYPE &functor, double r_1, int xIntervals, int yIntervals, int zIntervals)
 {
 	return Integrate3D<RETURN_TYPE, VolumeIntegralOuterKernel, SurfaceIntegralOuterKernel, UnitKernel>(&functor, 0.0, r_1, xIntervals, 0.0, PI, yIntervals, 0.0, 2.0 * PI, zIntervals);
 }
@@ -413,7 +413,7 @@ template<class RETURN_TYPE, class FUNC_TYPE> RETURN_TYPE IntegrateOverSphericalV
 #ifdef __JCOORD_H__
 // This is probably not an ideal way of doing it, but I want to define this but this header
 // still accessible to code that does not include coord3
-template<class RETURN_TYPE, class FUNC_TYPE> RETURN_TYPE IntegrateOverCubicVolume(const FUNC_TYPE *functor, coord3 origin, double r, long xIntervals, long yIntervals, long zIntervals)
+template<class RETURN_TYPE, class FUNC_TYPE> RETURN_TYPE IntegrateOverCubicVolume(const FUNC_TYPE *functor, coord3 origin, double r, int xIntervals, int yIntervals, int zIntervals)
 {
 	return Integrate3D<RETURN_TYPE, UnitKernel, UnitKernel, UnitKernel>(functor, origin.x-r, origin.x+r, xIntervals, origin.y-r, origin.y+r, yIntervals, origin.z-r, origin.z+r, zIntervals);
 }

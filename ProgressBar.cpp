@@ -14,7 +14,7 @@
 #include "jTimeUtils.h"
 #include "ProgressBar.h"
 
-long BaseProgressBar::disabled = 0;
+int BaseProgressBar::disabled = 0;
 
 BaseProgressBar::BaseProgressBar(double inLength)
 {
@@ -84,7 +84,7 @@ void BaseProgressBar::EstimateTimeRemaining(int *hours, int *mins, double *secs)
 }
 
 const char *TextualProgressBar::kTextProgressBarSpaces = "                                                  ";
-const long TextualProgressBar::kTextProgressBarWidth = strlen(TextualProgressBar::kTextProgressBarSpaces);
+const int TextualProgressBar::kTextProgressBarWidth = strlen(TextualProgressBar::kTextProgressBarSpaces);
 
 TextualProgressBar::TextualProgressBar(const char *title, double inLength, ...) : BaseProgressBar(inLength)
 {
@@ -123,7 +123,7 @@ void TextualProgressBar::SetTitle(const char *title, va_list argList)
 		while (strchr(lastTitleLine, '\n') != NULL)
 			lastTitleLine = strchr(lastTitleLine, '\n') + 1;
 			
-		for (long i = strlen(lastTitleLine) + 2; i > 0; i--)
+		for (int i = strlen(lastTitleLine) + 2; i > 0; i--)
 			printf(" ");
 		drawnTitle = true;
 	}
@@ -135,10 +135,10 @@ void TextualProgressBar::InternalUpdateProgress(double newProgress)
 	
 	if (Enabled())
 	{
-		long	numCharsRequired = (long)((newProgress / length) * kTextProgressBarWidth);
+		int	numCharsRequired = (int)((newProgress / length) * kTextProgressBarWidth);
 		if (numCharsRequired > numCharsDrawn)
 		{
-			for (long i = 0; i < (numCharsRequired - numCharsDrawn); i++)
+			for (int i = 0; i < (numCharsRequired - numCharsDrawn); i++)
 				printf("-");
 			fflush(stdout);
 			numCharsDrawn = numCharsRequired;

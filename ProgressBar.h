@@ -8,8 +8,8 @@ class BaseProgressBar
   protected:
 	double				currentProgress;
 	double				length;
-	static long			disabled;
-	long				overrideEnabled;
+	static int			disabled;
+	int				overrideEnabled;
 	JMutex				progressMutex;
 
 	double				startTime, startTimeForEstimate;
@@ -44,8 +44,8 @@ class TextualProgressBar : public BaseProgressBar
 {
   protected:
 	static const char	*kTextProgressBarSpaces;
-	static const long	kTextProgressBarWidth;
-	long				numCharsDrawn;
+	static const int	kTextProgressBarWidth;
+	int				numCharsDrawn;
 	char				cachedTitle[256];
 	bool				drawnTitle;
 

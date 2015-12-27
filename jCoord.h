@@ -96,7 +96,7 @@ template<class Type> struct coord3T
 	// They should only be compiled in if you include the GSL headers
 	// (so this file will work fine if you do not have GSL installed or have never heard of it)
 				coord3T<Type>(gsl_vector *inVector);
-				coord3T<Type>(gsl_vector *inVector, long offset);
+				coord3T<Type>(gsl_vector *inVector, int offset);
 	gsl_vector	*AllocGSLVector(void) const;
   #endif
 

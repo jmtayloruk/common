@@ -23,16 +23,16 @@ class JMutex
   protected:
 	pthread_mutex_t	mutex;
 	pthread_mutex_t	mutex2;
-	long			lockCount;
+	int			lockCount;
 	
 #if MUTEX_TIMESTAMPS
 	enum { kMutexHistorySize = 128 };
-	long			historyPos;
+	int			historyPos;
 	UnsignedWide	creationTime;
 	UnsignedWide	mutexTime[kMutexHistorySize];
 	UnsignedWide	mutexBlockTime[kMutexHistorySize];
 	bool			got[kMutexHistorySize];
-	long			historyLine[kMutexHistorySize];
+	int			historyLine[kMutexHistorySize];
 	int				historyTryResult[kMutexHistorySize];
 	bool			wrapped;
 #endif
@@ -44,7 +44,7 @@ class JMutex
 	void	Lock(int line);
 	void	Unlock(int line);
 	int		BlockWaitingForSignal(pthread_cond_t *cond, int line, bool mayBeAges = false);
-	void	DumpHistory(long maxItems);
+	void	DumpHistory(int maxItems);
 	void	ResetHistory(bool resetZero);
 };
 
@@ -52,7 +52,7 @@ class JRWLock
 {
   protected:
 	pthread_rwlock_t lock;
-	long			lockCount;
+	int			lockCount;
 	
   public:
 			JRWLock();
@@ -161,7 +161,7 @@ class LocalGetWriteLock
 	};
 	
 	extern RWLockEvent rwLogBuffer[kRWLogBufferSize];
-	extern long rwLockBufferPos;
+	extern int rwLockBufferPos;
 #endif
 
 #endif

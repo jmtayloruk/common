@@ -9,19 +9,19 @@ class ProgressWindow : public BaseProgressBar
 {
   protected:
 	WindowRef		theWindow;
-	long			windowWidth, windowHeight;
+	int			windowWidth, windowHeight;
 	
 	virtual void	InternalUpdateProgress(double newProgress);
 
   public:
-					ProgressWindow(long x, long y, const char *title, double inLength, ...) __attribute__ ((format (printf, 4, 6)));
+					ProgressWindow(int x, int y, const char *title, double inLength, ...) __attribute__ ((format (printf, 4, 6)));
 	virtual			~ProgressWindow();
 };
 #else
 class ProgressWindow : public TextualProgressBar
 {
   public:
-					ProgressWindow(long x, long y, const char *title, double inLength, ...) __attribute__ ((format (printf, 4, 6)));
+					ProgressWindow(int x, int y, const char *title, double inLength, ...) __attribute__ ((format (printf, 4, 6)));
 	virtual			~ProgressWindow() { }
 };
 #endif

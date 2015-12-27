@@ -94,7 +94,7 @@ void JMutex::Lock(int line)
 #endif
 
 	if (lockCount != 0)
-		printf("lock count %ld\n", lockCount);
+		printf("lock count %d\n", lockCount);
 	ALWAYS_ASSERT(lockCount == 0);
 	lockCount++;
 
@@ -203,11 +203,11 @@ int JMutex::BlockWaitingForSignal(pthread_cond_t *cond, int line, bool mayBeAges
 	return result;
 }
 
-void JMutex::DumpHistory(long maxItems)
+void JMutex::DumpHistory(int maxItems)
 {
 #if MUTEX_TIMESTAMPS
 	maxItems = MIN(maxItems, kMutexHistorySize);
-	long pos = historyPos - maxItems;
+	int pos = historyPos - maxItems;
 	if (pos < 0)
 	{
 		if (wrapped)
@@ -245,7 +245,7 @@ void JMutex::ResetHistory(bool resetZero)
 
 #if RW_TIMESTAMPS
 	RWLockEvent rwLogBuffer[kRWLogBufferSize];
-	long rwLockBufferPos = 0;
+	int rwLockBufferPos = 0;
 	
 	void DumpLogBuffer(void)
 	{
@@ -278,7 +278,7 @@ JRWLock::~JRWLock()
 void JRWLock::WriteLock(int line)
 {
 #if RW_TIMESTAMPS
-	long pos = __sync_fetch_and_add(&rwLockBufferPos, 1);
+	int pos = __sync_fetch_and_add(&rwLockBufferPos, 1);
 	rwLogBuffer[pos % kRWLogBufferSize].Init(kLockEventGetWriteLock, this, line);
 #endif
 
@@ -294,7 +294,7 @@ void JRWLock::WriteLock(int line)
 void JRWLock::ReadLock(int line, JRWLock *secondaryLock)
 {
 #if RW_TIMESTAMPS
-	long pos = __sync_fetch_and_add(&rwLockBufferPos, 1);
+	int pos = __sync_fetch_and_add(&rwLockBufferPos, 1);
 	rwLogBuffer[pos % kRWLogBufferSize].Init(kLockEventGetReadLock, this, line);
 #endif
 
@@ -336,7 +336,7 @@ void JRWLock::ReadLock(int line, JRWLock *secondaryLock)
 void JRWLock::Unlock(int line)
 {
 #if RW_TIMESTAMPS
-	long pos = __sync_fetch_and_add(&rwLockBufferPos, 1);
+	int pos = __sync_fetch_and_add(&rwLockBufferPos, 1);
 	rwLogBuffer[pos % kRWLogBufferSize].Init(kLockEventDoUnlock, this, line);
 #endif
 	int result = pthread_rwlock_unlock(&lock);

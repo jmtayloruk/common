@@ -13,7 +13,7 @@
     to appear, animate etc. That may need a bit of looking into
  */
 
-ProgressWindow::ProgressWindow(long x, long y, const char *title, double inLength, ...) : BaseProgressBar(inLength)
+ProgressWindow::ProgressWindow(int x, int y, const char *title, double inLength, ...) : BaseProgressBar(inLength)
 {
 	ControlRef	rootControl;
 	Str255 buffer;
@@ -88,7 +88,7 @@ void ProgressWindow::InternalUpdateProgress(double newProgress)
 
 #else
 
-ProgressWindow::ProgressWindow(long x, long y, const char *title, double inLength, ...) : TextualProgressBar(NULL, inLength)
+ProgressWindow::ProgressWindow(int x, int y, const char *title, double inLength, ...) : TextualProgressBar(NULL, inLength)
 {
 	va_list		argList;
 	va_start(argList, inLength);

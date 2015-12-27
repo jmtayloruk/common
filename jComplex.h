@@ -45,13 +45,13 @@ typedef std::vector<jComplex> jComplexVector;
 	typedef jComplexVector jComplexVectorR;
 #endif
 
-jComplex PowerOfI(long n);
+jComplex PowerOfI(int n);
 
 jComplex AllowPrecisionLossReadingValue(jComplexR val);
 jComplexR AllowPrecisionLossOnParam(jComplex val);
 #ifdef USE_JREAL
 	inline jreal j_norm(const jComplexR &z) { return SQUARE(real(z)) + SQUARE(imag(z)); }
-	jComplexR PowerOfI_r(long n);
+	jComplexR PowerOfI_r(int n);
 	jComplexR exp_i(jreal radianAngle);
 	jComplexR exp_i(jComplexR z);
 #endif
@@ -73,19 +73,19 @@ inline jComplex exp_i(jComplex z)
 	return exp_i(z.real()) * exp(-z.imag());
 }
 
-inline jComplex PowerOfI(long n)
+inline jComplex PowerOfI(int n)
 {
 	const jComplex powers[4] = { jComplex(1, 0), jComplex(0, 1), jComplex(-1, 0), jComplex(0, -1) };
 	return powers[n&3];		// Note can't write n%4 as this does the wrong thing for n<0 !
 }
 
-inline jComplexR PowerOfI_r(long n)
+inline jComplexR PowerOfI_r(int n)
 {
 	const jComplexR powers[4] = { jComplexR(1, 0), jComplexR(0, 1), jComplexR(-1, 0), jComplexR(0, -1) };
 	return powers[n&3];		// Note can't write n%4 as this does the wrong thing for n<0 !
 }
 
-inline jComplex powerOfMinusI(long n)
+inline jComplex powerOfMinusI(int n)
 {
 	n = (n & 3);
 	if (n == 0)

@@ -148,7 +148,7 @@ template<> coord3T<double>::coord3T(gsl_vector *inVector)
 	z = gsl_vector_get(inVector, 2);
 }
 
-template<> coord3T<double>::coord3T(gsl_vector *inVector, long offset)
+template<> coord3T<double>::coord3T(gsl_vector *inVector, int offset)
 {
 	x = gsl_vector_get(inVector, offset);
 	y = gsl_vector_get(inVector, offset+1);
