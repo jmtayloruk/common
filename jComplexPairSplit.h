@@ -20,15 +20,15 @@ template <class ComplexType, class DoubleType> class jComplexPairSplitT
 	
   public:
 
-	jComplexPairSplitT() { }
+	jComplexPairSplitT() : __a(), __b() { }
 	static jComplexPairSplitT<ComplexType, DoubleType> zero(void) { return jComplexPairSplitT<ComplexType, DoubleType>(DoubleType(0), DoubleType(0)); }
 
 	ComplexType a(void) const { return __a; }
 	ComplexType b(void) const { return __b; }
 
-	explicit jComplexPairSplitT(const ComplexType &inZ) { __a = inZ; __b = inZ; }
-	jComplexPairSplitT(const jComplexPairSplitT &inAB) { __a = inAB.a(); __b = inAB.b(); }
-	jComplexPairSplitT(ComplexType inA, ComplexType inB) { __a = inA; __b = inB; }
+	explicit jComplexPairSplitT(const ComplexType &inZ) : __a(inZ), __b(inZ) { }
+	jComplexPairSplitT(const jComplexPairSplitT &inAB) : __a(inAB.a()), __b(inAB.b()) { }
+	jComplexPairSplitT(ComplexType inA, ComplexType inB) : __a(inA), __b(inB) { }
 	
 	void SetA(ComplexType inA) { __a = inA; }
 	void SetB(ComplexType inB) { __b = inB; }

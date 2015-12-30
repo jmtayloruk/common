@@ -35,6 +35,9 @@ namespace fundamental_constants_r
 	extern const jreal eta_0;
 	extern const jreal root4PiE0, root4PiMu0;
 }
+#else
+	extern const double PI_R;
+	#define fundamental_constants_r fundamental_constants
 #endif
 
 #include "jCommon.h"

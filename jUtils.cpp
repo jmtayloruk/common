@@ -29,6 +29,8 @@
 const double PI = 6.0 * asin(0.5);
 #if JREAL_DEFINED
 	const jreal PI_R = jreal(6) * asin(jreal(0.5));
+#else
+	const double PI_R = 6.0 * asin(0.5);
 #endif
 
 // Define a variable for NaN.
@@ -55,15 +57,19 @@ namespace fundamental_constants
 	const double lambda_b = 0.714e-9;
 }
 
+#if JREAL_DEFINED
+
 namespace fundamental_constants_r
 {
 	const jreal c = 299792458;		// n.b. defined to be exactly this
 	const jreal  mu_0 = 4 * PI_R / 10000000;
-	const jreal  e_0 = 1 / (SQUARE(c) * mu_0);	// 8.8541878176e-12
+	const jreal  e_0 = 1 / (SQUARE(c) * mu_0);
 	const jreal eta_0 = sqrt(mu_0 / e_0);
-	const jreal  root4PiE0 = sqrt(4 * PI_R * e_0);		// 1.054822e-05
-	const jreal  root4PiMu0 = sqrt(4 * PI_R * mu_0);	// 3.973835e-03
+	const jreal  root4PiE0 = sqrt(4 * PI_R * e_0);
+	const jreal  root4PiMu0 = sqrt(4 * PI_R * mu_0);
 }
+
+#endif
 
 LocalEnableDenormalFlushing::LocalEnableDenormalFlushing(void)
 {

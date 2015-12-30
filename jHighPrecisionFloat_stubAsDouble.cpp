@@ -32,7 +32,7 @@ jHighPrecisionFloat cosh(const jHighPrecisionFloat &val) { return AllowPrecision
 jHighPrecisionFloat tan(const jHighPrecisionFloat &val) { return AllowPrecisionLossOnParam(tan(val.doubleVal())); }
 jHighPrecisionFloat asin(const jHighPrecisionFloat &val) { return AllowPrecisionLossOnParam(asin(val.doubleVal())); }
 jHighPrecisionFloat acos(const jHighPrecisionFloat &val) { return AllowPrecisionLossOnParam(acos(val.doubleVal())); }
-jHighPrecisionFloat atan2(const jHighPrecisionFloat &x, const jHighPrecisionFloat &y) { return AllowPrecisionLossOnParam(atan2(x.doubleVal(), y.doubleVal())); }
+jHighPrecisionFloat atan2(const jHighPrecisionFloat &y, const jHighPrecisionFloat &x) { return AllowPrecisionLossOnParam(atan2(y.doubleVal(), x.doubleVal())); }
 jHighPrecisionFloat sign(const jHighPrecisionFloat &val) { return AllowPrecisionLossOnParam(copysign(1.0, val.doubleVal())); }
 
 jHighPrecisionFloat jHighPrecisionFloat::dbl_max(void) { return AllowPrecisionLossOnParam(DBL_MAX); }
@@ -41,17 +41,6 @@ jHighPrecisionFloat jHighPrecisionFloat::nan(void) { return AllowPrecisionLossOn
 jHighPrecisionFloat jHighPrecisionFloat::lnpi(void) { return AllowPrecisionLossOnParam(M_LNPI); }
 jHighPrecisionFloat jHighPrecisionFloat::ln2(void) { return AllowPrecisionLossOnParam(M_LN2); }
 jHighPrecisionFloat jHighPrecisionFloat::epsilon(void) { return AllowPrecisionLossOnParam(GSL_DBL_EPSILON); }
-
-jComplexR exp_i(jreal radianAngle)
-{
-	return jComplexR(cos(radianAngle), sin(radianAngle));
-}
-
-jComplexR exp_i(jComplexR z)
-{
-	// exp(i(a+ib)) = exp(ia) * exp(-b)
-	return exp_i(z.real()) * exp(-z.imag());
-}
 
 int CallThrough(jreal a, jreal b, hp_sf_result *result, int (*gslFunc)(double a, double b, gsl_sf_result *r))
 {
@@ -124,26 +113,4 @@ jComplexVector z_bessel_h1l_array(const int highestN, const jComplex z)
 	return resultComplex;
 }
 
-coordC3R AllowPrecisionLossOnParam(coordC3 val) { return coordC3R(AllowPrecisionLossOnParam(val.x), AllowPrecisionLossOnParam(val.y), AllowPrecisionLossOnParam(val.z)); }
-jComplexR AllowPrecisionLossOnParam(jComplex val) { return jComplexR(AllowPrecisionLossOnParam(val.real()), AllowPrecisionLossOnParam(val.imag())); }
-
-double AllowPrecisionLossReadingValue(jreal val) { return val.doubleVal(); }
-double AllowPrecisionLossReadingValue_mayAlreadyBeDouble(jreal val) { return val.doubleVal(); }
-double AllowPrecisionLossReadingValue_mayAlreadyBeDouble(double val) { return val; }
-jreal AllowPrecisionLossOnParam(double val) { return jHighPrecisionFloat(val); }
-
-#else
-
-coordC3R AllowPrecisionLossOnParam(coordC3 val) { return coordC3R(AllowPrecisionLossOnParam(val.x), AllowPrecisionLossOnParam(val.y), AllowPrecisionLossOnParam(val.z)); }
-jComplexR AllowPrecisionLossOnParam(jComplex val) { return jComplexR(AllowPrecisionLossOnParam(val.real()), AllowPrecisionLossOnParam(val.imag())); }
-
-double AllowPrecisionLossReadingValue(jreal val) { return val; }
-double AllowPrecisionLossReadingValue_mayAlreadyBeDouble(jreal val) { return val; }
-jreal AllowPrecisionLossOnParam(double val) { return val; }
-
 #endif
-
-coord3R AllowPrecisionLossOnParam(coord3 val) { return coord3R(AllowPrecisionLossOnParam(val.x), AllowPrecisionLossOnParam(val.y), AllowPrecisionLossOnParam(val.z)); }
-coord3 AllowPrecisionLossReadingValue(coord3R val) { return coord3(AllowPrecisionLossReadingValue(val.x), AllowPrecisionLossReadingValue(val.y), AllowPrecisionLossReadingValue(val.z)); }
-coordC3 AllowPrecisionLossReadingValue(coordC3R val) { return coordC3(AllowPrecisionLossReadingValue(val.x), AllowPrecisionLossReadingValue(val.y), AllowPrecisionLossReadingValue(val.z)); }
-jComplex AllowPrecisionLossReadingValue(jComplexR val) { return jComplex(AllowPrecisionLossReadingValue(val.real()), AllowPrecisionLossReadingValue(val.imag())); }

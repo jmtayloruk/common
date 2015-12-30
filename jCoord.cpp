@@ -8,6 +8,29 @@
 //
 #include "jCoord.h"
 
+template<> void coord3T<double>::Print(void) const
+{
+	printf("(%.12lg, %.12lg, %.12lg)", x, y, z);
+}
+
+#if JREAL_DEFINED
+template<> void coord3T<jreal>::Print(void) const
+{
+	printf("(");
+	x.Print();
+	printf(", ");
+	y.Print();
+	printf(", ");
+	z.Print();
+	printf(")");
+}
+#endif
+
+void Print(coord3 c)
+{
+	c.Print();
+}
+
 coordC3 RotateFromSphericalSystem(coordC3 c, double theta, double phi)
 {
 	c.RotateFromSphericalSystem(theta, phi);

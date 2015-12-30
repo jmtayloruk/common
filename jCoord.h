@@ -87,7 +87,7 @@ template<class Type> struct coord3T
 	/*	Constructors - to create a coord3 object, write something like:
 			coord3 a(1.0, 1.4, 1.1);
 			a += coord3(2.4, 1.2, 0.0);		*/
-	coord3T<Type>() { }
+	coord3T<Type>() : x(), y(), z() { }
 	coord3T<Type>(Type inX, Type inY, Type inZ) { x = inX; y = inY; z=inZ; }
 	static coord3T<Type> zero(void) { return coord3T<Type>(Type(0), Type(0), Type(0)); }
 
@@ -190,8 +190,9 @@ template<class Type> struct coord3T
 	inline Type DistanceTo(const coord3T<Type> &b) const { return (*this - b).Length(); }
 	inline Type LengthSquared(void) const { return SQUARE(x) + SQUARE(y) + SQUARE(z); }
 	inline Type Length(void) const { return sqrt(LengthSquared()); }
-	void Print(void) const { printf("(%.12lg, %.12lg, %.12lg)", x, y, z); }
 
+	void Print(void) const;
+	
 	// Extract one indexed component of the vector
 	// This is not very efficient. To improve the efficiency of this function, it would be nice to redefine x, y, z as a 3 element array, but that will alter rather a lot of the arithmetic code in this struct definition!
 	Type component(int c) { return (c==0) ? x : ((c==1) ? y : z); }
@@ -201,7 +202,7 @@ typedef coord3T<jreal> coord3R;
 
 typedef std::vector<coord3> coord3Vector;
 
-inline void Print(coord3 c) { c.Print(); }
+void Print(coord3 c);
 
 /*	More operator overloading to allow mixing with scalar values
 	e.g. myCoord = 3.0 * myOtherCoord;	*/
@@ -235,7 +236,7 @@ template<class Type, class DoubleType> struct coordC3T
   public:
 	Type	x, y, z;
 
-	coordC3T<Type, DoubleType>() { }
+	coordC3T<Type, DoubleType>() : x(), y(), z() { }
 	coordC3T<Type, DoubleType>(const Type &inX, const Type &inY, const Type &inZ) { Set(inX, inY, inZ); }
 	explicit coordC3T<Type, DoubleType>(coord3T<DoubleType> r) : x(r.x), y(r.y), z(r.z) { }
 	static coordC3T<Type, DoubleType> zero(void) { return coordC3T<Type, DoubleType>(DoubleType(0), DoubleType(0), DoubleType(0)); }
