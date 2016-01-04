@@ -245,10 +245,10 @@ template<class Type, class DoubleType> struct coordC3T
 	coordC3T<Type, DoubleType> operator + (const coordC3T<Type, DoubleType> &n) const { return coordC3T<Type, DoubleType>(*this) += n; }
 	coordC3T<Type, DoubleType>& operator -= (const coordC3T<Type, DoubleType> &n) { x -= n.x; y -= n.y; z -= n.z; return *this; }
 	coordC3T<Type, DoubleType> operator - (const coordC3T<Type, DoubleType> &n) const { return coordC3T<Type, DoubleType>(*this) -= n; }
-	coordC3T<Type, DoubleType>& operator *= (double n) { x *= n; y *= n; z *= n; return *this; }
-	coordC3T<Type, DoubleType> operator * (double n) const { return coordC3T<Type, DoubleType>(*this) *= n; }
-	coordC3T<Type, DoubleType>& operator /= (double n) { return (*this) *= (1/n); }
-	coordC3T<Type, DoubleType> operator / (double n) const { return coordC3T<Type, DoubleType>(*this) /= n; }
+	coordC3T<Type, DoubleType>& operator *= (DoubleType n) { x *= n; y *= n; z *= n; return *this; }
+	coordC3T<Type, DoubleType> operator * (DoubleType n) const { return coordC3T<Type, DoubleType>(*this) *= n; }
+	coordC3T<Type, DoubleType>& operator /= (DoubleType n) { return (*this) *= (1/n); }
+	coordC3T<Type, DoubleType> operator / (DoubleType n) const { return coordC3T<Type, DoubleType>(*this) /= n; }
 	coordC3T<Type, DoubleType>& operator *= (const Type &n) { x *= n; y *= n; z *= n; return *this; }
 	coordC3T<Type, DoubleType> operator * (const Type &n) const { return coordC3T<Type, DoubleType>(*this) *= n; }
 	bool operator == (const coordC3T<Type, DoubleType> &n) { return ((x == n.x) && (y == n.y) && (z == n.z)); }
@@ -272,13 +272,13 @@ template<class Type, class DoubleType> struct coordC3T
 		/*		_r_ =		[ cos(phi)sin(theta), sin(phi)sin(theta), cos(theta) ]
 		 _theta_ =	[ cos(phi)cos(theta), sin(phi)cos(theta), -sin(theta) ]
 		 _phi_ =		[ -sin(phi), cos(phi), 0 ]			*/
-		jComplex	newX = cos(phi) * sin(theta) * x
+		Type	newX = cos(phi) * sin(theta) * x
 		+ cos(phi) * cos(theta) * y
 		- sin(phi) * z;
-		jComplex	newY = sin(phi) * sin(theta) * x
+		Type	newY = sin(phi) * sin(theta) * x
 		+ sin(phi) * cos(theta) * y
 		+ cos(phi) * z;
-		jComplex	newZ = cos(theta) * x
+		Type	newZ = cos(theta) * x
 		- sin(theta) * y;
 		Set(newX, newY, newZ);
 	}
@@ -289,13 +289,13 @@ template<class Type, class DoubleType> struct coordC3T
 		/*		_r_ =		[ cos(phi)sin(theta), sin(phi)sin(theta), cos(theta) ]
 		 _theta_ =	[ cos(phi)cos(theta), sin(phi)cos(theta), -sin(theta) ]
 		 _phi_ =		[ -sin(phi), cos(phi), 0 ]			*/
-		jComplex	newX = cos(phi) * sin(theta) * x
+		Type	newX = cos(phi) * sin(theta) * x
 		+ sin(phi) * sin(theta) * y
 		+ cos(theta) * z;
-		jComplex	newY = cos(phi) * cos(theta) * x
+		Type	newY = cos(phi) * cos(theta) * x
 		+ sin(phi) * cos(theta) * y
 		- sin(theta) * z;
-		jComplex	newZ = -sin(phi) * x
+		Type	newZ = -sin(phi) * x
 		+ cos(phi) * y;
 		Set(newX, newY, newZ);
 	}
@@ -304,9 +304,9 @@ template<class Type, class DoubleType> struct coordC3T
 		/*		_r_ =		[ cos(phi), sin(phi), 0 ]
 		 _phi_ =		[ -sin(phi), cos(phi), 0 ]
 		 _z_ =		[ 0, 0, 1 ]			*/
-		jComplex	newX = cos(phi) * x - sin(phi) * y;
-		jComplex	newY = sin(phi) * x + cos(phi) * y;
-		jComplex	newZ = z;
+		Type	newX = cos(phi) * x - sin(phi) * y;
+		Type	newY = sin(phi) * x + cos(phi) * y;
+		Type	newZ = z;
 		Set(newX, newY, newZ);
 	}
 	void	RotateToCylindricalSystem(DoubleType phi)
@@ -314,9 +314,9 @@ template<class Type, class DoubleType> struct coordC3T
 		/*		_r_ =		[ cos(phi), sin(phi), 0 ]
 		 _phi_ =		[ -sin(phi), cos(phi), 0 ]
 		 _z_ =		[ 0, 0, 1 ]			*/
-		jComplex	newX = cos(phi) * x + sin(phi) * y;
-		jComplex	newY = -sin(phi) * x + cos(phi) * y;
-		jComplex	newZ = z;
+		Type	newX = cos(phi) * x + sin(phi) * y;
+		Type	newY = -sin(phi) * x + cos(phi) * y;
+		Type	newZ = z;
 		Set(newX, newY, newZ);
 	}
 	
@@ -326,12 +326,12 @@ template<class Type, class DoubleType> struct coordC3T
 	coord3T<DoubleType> real(void) const { return coord3T<DoubleType>(x.real(), y.real(), z.real()); }
 	coord3T<DoubleType> imag(void) const { return coord3T<DoubleType>(x.imag(), y.imag(), z.imag()); }
 	coordC3T<Type, DoubleType> conj(void) const { return coordC3T<Type, DoubleType>(::conj(x), ::conj(y), ::conj(z)); }
-	void Print(void) const { printf("({%.12lg,%.12lg}, {%.12lg,%.12lg}, {%.12lg,%.12lg})", x.real(), x.imag(), y.real(), y.imag(), z.real(), z.imag()); }
+	void Print(void) const;
 };
 typedef coordC3T<jComplex, double> coordC3;
 typedef coordC3T<jComplexR, jreal> coordC3R;
 
-inline void Print(coordC3 c) { c.Print(); }
+void Print(coordC3 c);
 
 template<class Type, class DoubleType> inline coordC3T<Type, DoubleType> operator*(const Type &l, const coordC3T<Type, DoubleType> &r)
 {

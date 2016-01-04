@@ -49,14 +49,14 @@ public:
 	void setErr(double inErr) { __err = inErr; }
 	
 	explicit jHighPrecisionFloat_mpfr(double inVal);
-//	explicit jHighPrecisionFloat_mpfr(const mpfr_t &inVal, double inErr);
+	explicit jHighPrecisionFloat_mpfr(double inVal, double inErr);
 
 	// For no-argument functions, e.g. constants like pi
 	explicit jHighPrecisionFloat_mpfr(int (*func)(mpfr_ptr, mpfr_rnd_t));
 	// For single-argument functions e.g. sin
-	explicit jHighPrecisionFloat_mpfr(int (*func)(mpfr_ptr, mpfr_srcptr, mpfr_rnd_t), const jHighPrecisionFloat_mpfr &srcVal, double inErr);
+	explicit jHighPrecisionFloat_mpfr(int (*func)(mpfr_ptr, mpfr_srcptr, mpfr_rnd_t), const jHighPrecisionFloat_mpfr &srcVal, double inErr, bool noRoundingWillOccur);
 	// For two-argument functions e.g. atan2
-	explicit jHighPrecisionFloat_mpfr(int (*func)(mpfr_ptr, mpfr_srcptr, mpfr_srcptr, mpfr_rnd_t), const jHighPrecisionFloat_mpfr &x, const jHighPrecisionFloat_mpfr &y, double inErr);
+	explicit jHighPrecisionFloat_mpfr(int (*func)(mpfr_ptr, mpfr_srcptr, mpfr_srcptr, mpfr_rnd_t), const jHighPrecisionFloat_mpfr &x, const jHighPrecisionFloat_mpfr &y, double inErr, bool noRoundingWillOccur);
 	// Sometimes necessary to do things semi-manually like this
 	explicit jHighPrecisionFloat_mpfr(mpfr_ptr inVal, double inErr);
 	
@@ -64,6 +64,7 @@ public:
 	jHighPrecisionFloat_mpfr(int inVal);
 	jHighPrecisionFloat_mpfr(long inVal);		// Rarely used, but I do occasionally use this
 //	jHighPrecisionFloat_mpfr(long long inVal) { __val = inVal; __err = 0.0; }
+	jHighPrecisionFloat_mpfr(const char *numString, double inErr);
 	
 	const mpfr_t &mpfrVal(void) const { return __val; }
 	mpfr_t &mpfrVal_nonConst(void) { return __val; }
@@ -83,7 +84,7 @@ public:
 		return (*this);
 	}
 	jHighPrecisionFloat_mpfr GetNegative(void) const { return jHighPrecisionFloat_mpfr(*this).NegateThis(); }
-	
+
 	static jHighPrecisionFloat_mpfr dbl_max(void);
 	static jHighPrecisionFloat_mpfr dbl_min(void);
 	static jHighPrecisionFloat_mpfr nan(void);
@@ -92,14 +93,15 @@ public:
 	static jHighPrecisionFloat_mpfr lnpi(void);
 	static jHighPrecisionFloat_mpfr ln2(void);
 	static jHighPrecisionFloat_mpfr epsilon(void);
+	static double epsilonAsDouble(void);
+	static double RoundingError(double newVal, double inErr);
 
-	void Print(void) const
+	void Print(const char *suffix = "") const
 	{
-		mpfr_printf("%.32RNf", __val);
+		mpfr_printf("%.38RNf", __val);
+		printf("%s", suffix);
 	}
 };
-
-void Print(jHighPrecisionFloat_mpfr x);
 
 inline jHighPrecisionFloat_mpfr operator-(const jHighPrecisionFloat_mpfr &r)
 {
@@ -160,12 +162,5 @@ inline bool operator <= (const jHighPrecisionFloat_mpfr &x, const jHighPrecision
 {
 	return !(x > y);
 }
-
-
-struct hp_sf_result_struct {
-	jreal val;
-	jreal err;
-};
-typedef struct hp_sf_result_struct hp_sf_result;
 
 #endif

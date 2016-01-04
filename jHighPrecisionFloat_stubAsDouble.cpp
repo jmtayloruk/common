@@ -11,17 +11,20 @@
  *	compared to the native 'double' type.
  */
 
-#if USE_JREAL
+#ifdef USE_JREAL
 
-void Print(jHighPrecisionFloat x)
+const long jHighPrecisionFloat::precision = 52;
+
+void Print(jHighPrecisionFloat x, const char *suffix)
 {
-	x.Print();
+	x.Print(suffix);
 }
 
 int floor_int(const jHighPrecisionFloat &val) { return int(floor(val.doubleVal())); } 		// Calculate floor(val) and convert to int
 bool is_nan(const jHighPrecisionFloat &val) { return val.doubleVal() != val.doubleVal(); }
 jHighPrecisionFloat fabs(const jHighPrecisionFloat &val) { return AllowPrecisionLossOnParam(fabs(val.doubleVal())); }
 jHighPrecisionFloat abs(const jHighPrecisionFloat &val) { return AllowPrecisionLossOnParam(fabs(val.doubleVal())); }
+jHighPrecisionFloat pow(const jHighPrecisionFloat &val, const jHighPrecisionFloat &power) { return AllowPrecisionLossOnParam(pow(val.doubleVal(), power.doubleVal())); }
 jHighPrecisionFloat exp(const jHighPrecisionFloat &val) { return AllowPrecisionLossOnParam(exp(val.doubleVal())); }
 jHighPrecisionFloat sqrt(const jHighPrecisionFloat &val) { return AllowPrecisionLossOnParam(sqrt(val.doubleVal())); }
 jHighPrecisionFloat log(const jHighPrecisionFloat &val) { return AllowPrecisionLossOnParam(log(val.doubleVal())); }
@@ -42,20 +45,11 @@ jHighPrecisionFloat jHighPrecisionFloat::lnpi(void) { return AllowPrecisionLossO
 jHighPrecisionFloat jHighPrecisionFloat::ln2(void) { return AllowPrecisionLossOnParam(M_LN2); }
 jHighPrecisionFloat jHighPrecisionFloat::epsilon(void) { return AllowPrecisionLossOnParam(GSL_DBL_EPSILON); }
 
-int CallThrough(jreal a, jreal b, hp_sf_result *result, int (*gslFunc)(double a, double b, gsl_sf_result *r))
-{
-	gsl_sf_result r;
-	int gslResult = gslFunc(AllowPrecisionLossReadingValue(a), AllowPrecisionLossReadingValue(b), &r);
-	result->val = AllowPrecisionLossOnParam(r.val);
-	result->err = AllowPrecisionLossOnParam(r.err);
-	return gslResult;
-}
-
-jreal gsl_sf_lnpoch(const jreal a, const jreal x)
+jreal gsl_sf_lnpoch(const jreal &a, const jreal &x)
 {
 	return AllowPrecisionLossOnParam(gsl_sf_lnpoch(AllowPrecisionLossReadingValue(a), AllowPrecisionLossReadingValue(x)));
 }
-int gsl_sf_legendre_sphPlm_array(const int lmax, int m, const jreal x, jreal * result_array)
+int gsl_sf_legendre_sphPlm_array(const int lmax, int m, const jreal &x, jreal * result_array)
 {
 	double resultDouble[lmax+1];
 	int gslResult = gsl_sf_legendre_sphPlm_array(lmax, m, AllowPrecisionLossReadingValue(x), resultDouble);
@@ -64,12 +58,12 @@ int gsl_sf_legendre_sphPlm_array(const int lmax, int m, const jreal x, jreal * r
 	return gslResult;
 }
 
-jreal gsl_sf_log_1plusx(const jreal x)
+jreal gsl_sf_log_1plusx(const jreal &x)
 {
 	return AllowPrecisionLossOnParam(gsl_sf_log_1plusx(AllowPrecisionLossReadingValue(x)));
 }
 
-int gsl_sf_bessel_Jn_array(int nmin, int nmax, jreal x, jreal * result_array)
+int gsl_sf_bessel_Jn_array(int nmin, int nmax, jreal &x, jreal *result_array)
 {
 	// TODO: when I implement this fully myself I should probably make it so that it handles underflow gracefully and silently.
 	// I should then check everywhere I call this, because it looks like there are hacks in several different places!
@@ -81,7 +75,7 @@ int gsl_sf_bessel_Jn_array(int nmin, int nmax, jreal x, jreal * result_array)
 		return gslResult;
 }
 
-int gsl_sf_bessel_jl_array(const int lmax, const jreal x, jreal * result_array)
+int gsl_sf_bessel_jl_array(const int lmax, const jreal &x, jreal *result_array)
 {
 	double resultDouble[lmax+1];
 	int gslResult = gsl_sf_bessel_jl_array(lmax, AllowPrecisionLossReadingValue(x), resultDouble);
@@ -90,27 +84,18 @@ int gsl_sf_bessel_jl_array(const int lmax, const jreal x, jreal * result_array)
 	return gslResult;
 }
 
-jComplexR z_bessel_jl(const int l, const jComplexR x)
+jComplexR z_bessel_jl(const int l, const jComplexR &x)
 {
 	return AllowPrecisionLossOnParam(z_bessel_jl(l, AllowPrecisionLossReadingValue(x)));
 }
 
-jComplexVectorR z_bessel_jl_array(const int lmax, const jComplexR z)
+jComplexVectorR z_bessel_jl_array(const int lmax, const jComplexR &z)
 {
 	jComplexVectorR resultComplexR(lmax+1);
 	jComplexVector resultComplex = z_bessel_jl_array(lmax, AllowPrecisionLossReadingValue(z));
 	for (int i = 0; i <= lmax; i++)
 		resultComplexR[i] = AllowPrecisionLossOnParam(resultComplex[i]);
 	return resultComplexR;
-}
-
-jComplexVector z_bessel_h1l_array(const int highestN, const jComplex z)
-{
-	jComplexVector resultComplex(highestN+1);
-	jComplexVectorR resultComplexR = z_bessel_h1l_array(highestN, AllowPrecisionLossOnParam(z));
-	for (int i = 0; i <= highestN; i++)
-		resultComplex[i] = AllowPrecisionLossReadingValue(resultComplexR[i]);
-	return resultComplex;
 }
 
 #endif

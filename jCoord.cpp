@@ -31,6 +31,29 @@ void Print(coord3 c)
 	c.Print();
 }
 
+template<> void coordC3T<jComplex, double>::Print(void) const
+{
+	printf("({%.12lg,%.12lg}, {%.12lg,%.12lg}, {%.12lg,%.12lg})", x.real(), x.imag(), y.real(), y.imag(), z.real(), z.imag());
+}
+
+#if JREAL_DEFINED
+template<> void coordC3T<jComplexR, jreal>::Print(void) const
+{
+	printf("(");
+	::Print(x);
+	printf(", ");
+	::Print(y);
+	printf(", ");
+	::Print(z);
+	printf(")");
+}
+#endif
+
+void Print(coordC3 c)
+{
+	c.Print();
+}
+
 coordC3 RotateFromSphericalSystem(coordC3 c, double theta, double phi)
 {
 	c.RotateFromSphericalSystem(theta, phi);

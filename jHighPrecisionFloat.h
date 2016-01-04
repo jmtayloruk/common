@@ -47,6 +47,7 @@
 	// I would like to eliminate abs and just have fabs for clarity, but std::complex expects abs() to be implemented, so this next function has to remain
 	jreal abs(const jreal &val);
 	jreal exp(const jreal &val);
+	jreal pow(const jreal &val, const jreal &power);
 	jreal sqrt(const jreal &val);
 	jreal log(const jreal &val);
 	jreal sin(const jreal &x);
@@ -59,11 +60,11 @@
 	jreal atan2(const jreal &y, const jreal &x);
 	jreal sign(const jreal &val);
 
-	jreal gsl_sf_lnpoch(const jreal a, const jreal x);
-	int gsl_sf_legendre_sphPlm_array(const int lmax, int m, const jreal x, jreal * result_array);
-	jreal gsl_sf_log_1plusx(const jreal x);
-	int gsl_sf_bessel_Jn_array(int nmin, int nmax, jreal x, jreal * result_array);// TODO: when I implement this I need to make sure it can handle underflow gracefully and silently. I should then check everywhere I call this, because it looks like there are hacks in several different places!
-	int gsl_sf_bessel_jl_array(const int lmax, const jreal x, jreal * result_array);
+	jreal gsl_sf_lnpoch(const jreal &a, const jreal &x);
+	int gsl_sf_legendre_sphPlm_array(const int lmax, int m, const jreal &x, jreal *result_array);
+	jreal gsl_sf_log_1plusx(const jreal &x);
+	int gsl_sf_bessel_Jn_array(int nmin, int nmax, jreal &x, jreal *result_array);// TODO: when I implement this I need to make sure it can handle underflow gracefully and silently. I should then check everywhere I call this, because it looks like there are hacks in several different places!
+	int gsl_sf_bessel_jl_array(const int lmax, const jreal &x, jreal *result_array);
 
 	#include <vector>
 	typedef std::vector<jreal> realVector;
@@ -75,5 +76,6 @@ double AllowPrecisionLossReadingValue(jreal val);
 double AllowPrecisionLossReadingValue_mayAlreadyBeDouble(jreal val);
 double AllowPrecisionLossReadingValue_mayAlreadyBeDouble(double val);
 jreal AllowPrecisionLossOnParam(double val);
+void Print(jreal x, const char *suffix = "");
 
 #endif

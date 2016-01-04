@@ -21,7 +21,7 @@ void Print(jComplex z)
 	printf("{%.12le, %.12le}", z.real(), z.imag());
 }
 
-#if USE_JREAL
+#ifdef USE_JREAL
 void Print(jComplexR z)
 {
 	printf("{%.12le, %.12le}", AllowPrecisionLossReadingValue(z.real()), AllowPrecisionLossReadingValue(z.imag()));

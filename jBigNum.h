@@ -29,7 +29,7 @@
 class jBigNum
 {
   public:
-	static const long kBigNumMaxExponentInTable = 100;
+	static const long kBigNumMaxExponentInTable = 10 /* Any larger overflows a 'double' */;
 	static const long kBigNumExponentPowerOfE = 64;
 
   protected:

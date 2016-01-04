@@ -24,7 +24,7 @@ jComplexR exp_i(jComplexR z)
 double AllowPrecisionLossReadingValue(jreal val) { return val.doubleVal(); }
 double AllowPrecisionLossReadingValue_mayAlreadyBeDouble(jreal val) { return val.doubleVal(); }
 double AllowPrecisionLossReadingValue_mayAlreadyBeDouble(double val) { return val; }
-jreal AllowPrecisionLossOnParam(double val) { return jreal(val); }
+jreal AllowPrecisionLossOnParam(double val) { return jreal(val, 0); }
 
 #else
 

@@ -1,12 +1,18 @@
 /*
- *	jHighPrecisionFloat.h
+ *	jHighPrecisionFloat_stubAsDouble.h
  *
- *  Class representing a floating-point number, but potentially to higher (or lower) precision 
+ *  Class representing a floating-point number, but potentially to higher (or lower) precision
  *	than supported by the ubiquitous 'double' type.
+ *
+ *	This implementation is just a wrapper around the 'double' type.
+ *	Its purpose is just to help test the migration of existing code to the jHighPrecisionFloat type,
+ *	but without actually adding any extra precision(!).
+ *	A modern compiler should hopefully be able to compile this into code that has little or no overhead
+ *	compared to the native 'double' type.
  */
 
-#ifndef __JHIGH_PRECISION_FLOAT_H__
-#define __JHIGH_PRECISION_FLOAT_H__
+#ifndef __JHIGH_PRECISION_FLOAT_STUB_DOUBLE_H__
+#define __JHIGH_PRECISION_FLOAT_STUB_DOUBLE_H__
 
 #define HIGH_PRECISION_REAL 1
 
@@ -30,20 +36,24 @@
 class jHighPrecisionFloat
 {
 	// This class represents a high-precision floating-point number, with associated error on accuracy
+	// However at present the error propagation is not properly implemented
 protected:
 	double __val, __err;
 	
 public:
+	static const long precision;
 	
 	jHighPrecisionFloat() { __val = 0; __err = 0; }		// This must construct a value of zero - std::complex appears to expect this!
 	
 	double doubleVal(void) const { return __val; }
 	double doubleErr(void) const { return __err; }
 	
-	explicit jHighPrecisionFloat(double inVal) { __val = inVal; __err = 0.0; }
+	explicit jHighPrecisionFloat(double inVal) { __val = inVal; __err = GSL_DBL_EPSILON * inVal; }
+	explicit jHighPrecisionFloat(double inVal, double inErr) { __val = inVal; __err = inErr; }
 	jHighPrecisionFloat(int inVal) { __val = inVal; __err = 0.0; }
 	jHighPrecisionFloat(long inVal) { __val = inVal; __err = 0.0; }
 	jHighPrecisionFloat(long long inVal) { __val = inVal; __err = 0.0; }
+	jHighPrecisionFloat(const char *numString, double inErr) { __val = strtod(numString, NULL); __err = inErr; }
 	
 	jHighPrecisionFloat& operator += (const jHighPrecisionFloat &n) { __val += n.doubleVal(); return *this; }
 	jHighPrecisionFloat operator + (const jHighPrecisionFloat &n) const { return jHighPrecisionFloat(*this) += n; }
@@ -54,7 +64,7 @@ public:
 	jHighPrecisionFloat& operator /= (const jHighPrecisionFloat &n) { __val /= n.doubleVal(); return *this; }
 	jHighPrecisionFloat operator / (const jHighPrecisionFloat &n) const { return jHighPrecisionFloat(*this) /= n; }
 	
-	jHighPrecisionFloat GetNegative(void) const { return jHighPrecisionFloat(-__val); }
+	jHighPrecisionFloat GetNegative(void) const { return jHighPrecisionFloat(-__val, __err); }
 	
 	static jHighPrecisionFloat dbl_max(void);
 	static jHighPrecisionFloat dbl_min(void);
@@ -63,9 +73,9 @@ public:
 	static jHighPrecisionFloat ln2(void);
 	static jHighPrecisionFloat epsilon(void);
 
-	void Print(void) const
+	void Print(const char *suffix = "") const
 	{
-		printf("%lg", __val);
+		printf("%lg%s", __val, suffix);
 	}
 };
 
@@ -148,18 +158,6 @@ jHighPrecisionFloat asin(const jHighPrecisionFloat &x);
 jHighPrecisionFloat acos(const jHighPrecisionFloat &x);
 jHighPrecisionFloat atan2(const jHighPrecisionFloat &y, const jHighPrecisionFloat &x);
 jHighPrecisionFloat sign(const jHighPrecisionFloat &val);
-
-struct hp_sf_result_struct {
-	jreal val;
-	jreal err;
-};
-typedef struct hp_sf_result_struct hp_sf_result;
-
-jreal gsl_sf_lnpoch(const jreal a, const jreal x);
-int gsl_sf_legendre_sphPlm_array(const int lmax, int m, const jreal x, jreal * result_array);
-jreal gsl_sf_log_1plusx(const jreal x);
-int gsl_sf_bessel_Jn_array(int nmin, int nmax, jreal x, jreal * result_array);// TODO: when I implement this I need to make sure it can handle underflow gracefully and silently. I should then check everywhere I call this, because it looks like there are hacks in several different places!
-int gsl_sf_bessel_jl_array(const int lmax, const jreal x, jreal * result_array);
 
 #include <vector>
 typedef std::vector<jreal> realVector;
