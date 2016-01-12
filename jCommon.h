@@ -27,6 +27,7 @@
 
 #include "jOSMacros.h"
 #include "jAssert.h"
+#include "jHighPrecisionFloat.h"      // Will just define jreal as double, unless compile-time flag specifically set
 
 /*	There are some asserts which cause the code to run
 	ORDERS OF MAGNITUDE more slowly if they are compiled in.

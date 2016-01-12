@@ -9,18 +9,20 @@
 #define __JHIGH_PRECISION_FLOAT_H__
 
 #ifndef USE_JREAL
-	typedef double jreal;
+    typedef double jreal;
 	typedef class jreal_as_double_consts jreal_consts;
 
+    #include <float.h>
+    extern const double NaN;
 	class jreal_as_double_consts
 	{
 	  public:
-		static double dbl_max(void) { return GSL_DBL_MAX; }
-		static double dbl_min(void) { return GSL_DBL_MIN; }
-		static double nan(void) { return GSL_NAN; }
-		static double lnpi(void) { return M_LNPI; }
-		static double ln2(void) { return M_LN2; }
-		static double epsilon(void) { return GSL_DBL_EPSILON; }
+		static double dbl_max(void) { return DBL_MAX; }
+		static double dbl_min(void) { return DBL_MIN; }
+		static double nan(void) { return NaN; }
+        static double lnpi(void) { return 1.14472988584940017414342735135; /* ln(pi) */ }
+        static double ln2(void) { return 0.69314718055994530941723212146; /* ln(2) */ }
+		static double epsilon(void) { return DBL_EPSILON; }
 	};
 
 	#include <vector>
