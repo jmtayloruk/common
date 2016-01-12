@@ -12,6 +12,7 @@
 
 NSBitmapImageRep *RawBitmapFromImage(const NSImage *image);
 NSBitmapImageRep *RawBitmapFromImagePath(NSString *imagePath);
+bool /*sizes matched*/ PopulateArrayFromBitmap(const NSBitmapImageRep *bitmap, double *destArray, int destWidth, int destHeight, int downsampleFactor, bool assertOnSizeMismatch);
 void CopyNSImageToGWorld(const NSImage *image, GWorldPtr gWorldPtr, const CGRect *cropRect, double gain);
 NSPoint FractionalCoordWithinImageView(const NSPoint &thePoint, const NSImageView *theView);
 NSPoint ImageViewCoordToImageCoord(const NSPoint &thePoint, const NSImageView *theView);

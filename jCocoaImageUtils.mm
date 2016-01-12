@@ -13,6 +13,73 @@
 #import "NSPointArithmetic.h"
 #include "jCommon.h"
 
+bool /*sizes matched*/ PopulateArrayFromBitmap(const NSBitmapImageRep *bitmap, double *destArray, int destWidth, int destHeight, int downsampleFactor, bool assertOnSizeMismatch)
+{
+    // Handle potential difference in bitmap and array dimensions
+    bool sizeMismatch = false;
+    if (bitmap.pixelsWide != destWidth * downsampleFactor)
+        sizeMismatch = true;
+    if (bitmap.pixelsHigh != destHeight * downsampleFactor)
+        sizeMismatch = true;
+    if (assertOnSizeMismatch)
+        ALWAYS_ASSERT(!sizeMismatch);
+    int width = MIN(destWidth, bitmap.pixelsWide/downsampleFactor);
+    int height = MIN(destHeight, bitmap.pixelsHigh/downsampleFactor);
+    int x0 = 0, y0 = 0;
+    if (sizeMismatch)
+    {
+        if (bitmap.pixelsWide / downsampleFactor < destWidth)
+            x0 = (destWidth - bitmap.pixelsWide / downsampleFactor) / 2;
+        if (bitmap.pixelsHigh / downsampleFactor < destHeight)
+            y0 = (destHeight - bitmap.pixelsHigh / downsampleFactor) / 2;
+    }
+    
+    // For now we expect an 8- or 16-bit greyscale image
+    if (bitmap.bitsPerPixel == 16)
+    {
+        for (int y = 0; y < height; y++)
+        {
+            const unsigned short *rowSource = (const unsigned short*)(bitmap.bitmapData + (y * downsampleFactor) * bitmap.bytesPerRow);
+            ALWAYS_ASSERT((y+y0)*destWidth+(width+x0) <= destWidth * destHeight);
+            double scaleFactor = 1.0 / 65536.0;
+            for (int x = 0; x < width; x++)
+            {
+                destArray[(y+y0)*destWidth+(x+x0)] = rowSource[x*downsampleFactor] * scaleFactor;
+            }
+        }
+    }
+    else
+    {
+        ALWAYS_ASSERT(bitmap.bitsPerPixel == 8);
+    //    ALWAYS_ASSERT(!(bitmap.bitmapFormat & NSAlphaFirstBitmapFormat));
+
+        for (int y = 0; y < height; y++)
+        {
+            const unsigned char *rowSource = bitmap.bitmapData + (y * downsampleFactor) * bitmap.bytesPerRow;
+            if (!CHECK((y+y0)*destWidth+(width+x0) <= destWidth * destHeight))
+            {
+                printf("%d %d %d %d %d %d\n", y, y0, x0, width, destWidth, destHeight);
+            }
+            ALWAYS_ASSERT((y+y0)*destWidth+(width+x0) <= destWidth * destHeight);
+            double scaleFactor = 1.0 / 256.0;
+            for (int x = 0; x < width; x++)
+            {
+                destArray[(y+y0)*destWidth+(x+x0)] = rowSource[x*downsampleFactor] * scaleFactor;
+            }
+        }
+    }
+    
+    return sizeMismatch;
+}
+
+bool /*sizes matched*/ PopulateArrayFromBitmap(const char *bitmapPath, double *destArray, int destWidth, int destHeight, int downsampleFactor, bool assertOnSizeMismatch)
+{
+    NSAutoreleasePool *pool = [NSAutoreleasePool new];
+    bool result = PopulateArrayFromBitmap(RawBitmapFromImagePath([SWF:@"%s", bitmapPath]), destArray, destWidth, destHeight, downsampleFactor, assertOnSizeMismatch);
+    [pool drain];
+    return result;
+}
+
 NSBitmapImageRep *RawBitmapFromImage(const NSImage *image)
 {
 	// Returns an NSBitmapImageRep from the NSImage that is passed in.
