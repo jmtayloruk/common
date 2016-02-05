@@ -8,6 +8,7 @@
 
 #include "jAssert.h"
 #include "assert.h"
+#include "DebugPrintf.h"
 
 static BaseAssertionHandler defaultHandler;
 BaseAssertionHandler *assertionHandler = &defaultHandler;

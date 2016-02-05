@@ -12,6 +12,7 @@
 #include "jMutex.h"
 #include "jAssert.h"
 #include "jTimeUtils.h"
+#include "DebugPrintf.h"
 #include <stdio.h>
 #include <pthread.h>
 #include <sys/time.h>

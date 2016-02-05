@@ -11,6 +11,7 @@
 #include "DebugPrintf.h"
 #include "jCommon.h"
 #include <Cocoa/Cocoa.h>
+#include <pthread.h>
 
 void VDebugPrintf(const char *format, va_list args)
 {
