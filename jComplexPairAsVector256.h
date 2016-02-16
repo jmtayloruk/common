@@ -223,13 +223,13 @@ class jComplexPairAsVector256
 	jComplexPairAsVector256 GetSwappedPairs(void) const { return jComplexPairAsVector256(__builtin_shufflevector(__ab, __ab, 2, 3, 0, 1)); }	// Return { b, a } given { a, b }
 	jComplexPairAsVector256 GetSwappedReIm(void) const { return jComplexPairAsVector256(__builtin_shufflevector(__ab, __ab, 1, 0, 3, 2)); }	// Return { im(a), re(a), im(b), re(b) } given { a, b }
 
-	void Print(void) const
+	void Print(const char *suffix = "") const
 	{
 		printf("{");
 		::Print(a());
 		printf(", ");
 		::Print(b());
-		printf("}");
+		printf("}%s", suffix);
 	}
 };
 

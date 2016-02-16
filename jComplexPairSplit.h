@@ -80,13 +80,13 @@ template <class ComplexType, class DoubleType> class jComplexPairSplitT
     jComplexPairSplitT GetNegativeOfFirstOnly(void) const { return jComplexPairSplitT(-__a, __b); }
 	jComplexPairSplitT GetNegativeOfSecondOnly(void) const { return jComplexPairSplitT(__a, -__b); }
 
-	void Print(void) const
+	void Print(const char *suffix = "") const
 	{
 		printf("{");
 		::Print(a());
 		printf(", ");
 		::Print(b());
-		printf("}");
+		printf("}%s", suffix);
 	}
 };
 

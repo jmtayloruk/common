@@ -32,6 +32,8 @@ double AllowPrecisionLossReadingValue(jreal val) { return val; }
 double AllowPrecisionLossReadingValue_mayAlreadyBeDouble(jreal val) { return val; }
 jreal AllowPrecisionLossOnParam(double val) { return val; }
 
+void Print(jreal x, const char *suffix) { printf("%.17le%s", x, suffix); }
+
 #endif
 
 coord3R AllowPrecisionLossOnParam(coord3 val) { return coord3R(AllowPrecisionLossOnParam(val.x), AllowPrecisionLossOnParam(val.y), AllowPrecisionLossOnParam(val.z)); }

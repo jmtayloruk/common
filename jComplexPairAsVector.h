@@ -118,13 +118,13 @@ class jComplexPairAsVector
     jComplexPairAsVector GetNegativeOfFirstOnly(void) const { return jComplexPairAsVector(_mm_xor_pd(__re, (vDouble) { -0.0, 0.0 }), _mm_xor_pd(__im, (vDouble) { -0.0, 0.0 })); }		// Return the negated value of a, leaving b unchanged
 	jComplexPairAsVector GetSwappedPairs(void) const { return jComplexPairAsVector(vSwapD(__re), vSwapD(__im)); }	// Return { b, a } given { a, b }
 
-	void Print(void) const
+	void Print(const char *suffix = "") const
 	{
 		printf("{");
 		::Print(a());
 		printf(", ");
 		::Print(b());
-		printf("}");
+		printf("}%s", suffix);
 	}
 };
 

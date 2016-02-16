@@ -98,7 +98,8 @@ public:
 
 	void Print(const char *suffix = "") const
 	{
-		mpfr_printf("%.38RNf", __val);
+		mpfr_printf("%.38RNe", __val);
+		printf("±%.2le", __err);
 		printf("%s", suffix);
 	}
 };

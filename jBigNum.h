@@ -288,7 +288,7 @@ inline bool operator==(const jBigNum &a, const jComplexR &b)
 	return (a.to_jcomplex() == b);
 }
 
-void Print(jBigNum z);
+void Print(jBigNum z, const char *suffix = "");
 void PrintDecimal(jBigNum z);
 
 bool CheckAgreement(jBigNum val1, jComplex val2, double relError, double absError, bool printOnDisagreement = true, double *amount = NULL);

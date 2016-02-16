@@ -9,10 +9,10 @@ jreal jBigNum::expTable[kBigNumMaxExponentInTable + 1];
 jreal jBigNum::invExpTable[kBigNumMaxExponentInTable + 1];
 jreal jBigNum::logExponent;
 
-void Print(jBigNum z)
+void Print(jBigNum z, const char *suffix)
 {
 	Print(z.detail());
-	printf(" x e^%ld", z.exponent() * jBigNum::kBigNumExponentPowerOfE);
+	printf(" x e^%ld%s", z.exponent() * jBigNum::kBigNumExponentPowerOfE, suffix);
 }
 
 void MakeScientificNotation(jreal &x, long &exponent)

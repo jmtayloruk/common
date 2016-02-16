@@ -39,7 +39,7 @@ typedef std::vector<jComplex> jComplexVector;
 #ifdef USE_JREAL
 	typedef jComplexAsStdBase<jreal> jComplexR;
 	typedef std::vector<jComplexR> jComplexVectorR;
-	void Print(jComplexR);
+	void Print(jComplexR, const char *suffix = "");
 #else
 	typedef jComplex jComplexR;
 	typedef jComplexVector jComplexVectorR;
@@ -97,9 +97,9 @@ inline jComplex powerOfMinusI(int n)
 	return jComplex::i();
 }
 
-void Print(jComplex z);
+void Print(jComplex z, const char *suffix = "");
 #ifdef __GSL_COMPLEX_H__
-	void Print(gsl_complex z);
+	void Print(gsl_complex z, const char *suffix = "");
 #endif
 
 inline double j_norm(const jComplex &z) { return SQUARE(real(z)) + SQUARE(imag(z)); }

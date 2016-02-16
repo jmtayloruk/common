@@ -86,7 +86,7 @@ class jComplexAsVector
 	double abs(void) const { return sqrt(Intensity()); }
 	jComplexAsVector conj(void) const { return jComplexAsVector(_mm_xor_pd(__z, (vDouble) { 0.0, -0.0 })); }
 	double Theta(void) const { return atan2(imag(), real()); }
-	void Print(void) const { printf("{%lg,%lg}", real(), imag()); }
+	void Print(const char *suffix = "") const { printf("{%lg,%lg}%s", real(), imag(), suffix); }
 	
   #ifdef __GSL_COMPLEX_H__
  	static void Set(jComplexAsVector &outZ, gsl_complex inZ)

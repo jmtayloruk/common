@@ -56,10 +56,10 @@ struct coord2
 	inline double LengthSquared(void) const { return SQUARE(x) + SQUARE(y); }
 	inline double Length(void) const { return sqrt(LengthSquared()); }
 	double Angle(void) const { return atan2(y, x); }
-	void Print(void) const { printf("(%.12lg, %.12lg)", x, y); }
+	void Print(const char *suffix = "") const { printf("(%.12lg, %.12lg)%s", x, y, suffix); }
 };
 
-inline void Print(coord2 c) { c.Print(); }
+inline void Print(coord2 c, const char *suffix = "") { c.Print(suffix); }
 
 inline coord2 operator*(const double l, const coord2 r)
 {
@@ -191,7 +191,7 @@ template<class Type> struct coord3T
 	inline Type LengthSquared(void) const { return SQUARE(x) + SQUARE(y) + SQUARE(z); }
 	inline Type Length(void) const { return sqrt(LengthSquared()); }
 
-	void Print(void) const;
+	void Print(const char *suffix = "") const;
 	
 	// Extract one indexed component of the vector
 	// This is not very efficient. To improve the efficiency of this function, it would be nice to redefine x, y, z as a 3 element array, but that will alter rather a lot of the arithmetic code in this struct definition!
@@ -202,7 +202,7 @@ typedef coord3T<jreal> coord3R;
 
 typedef std::vector<coord3> coord3Vector;
 
-void Print(coord3 c);
+void Print(coord3 c, const char *suffix = "");
 
 /*	More operator overloading to allow mixing with scalar values
 	e.g. myCoord = 3.0 * myOtherCoord;	*/
@@ -326,12 +326,12 @@ template<class Type, class DoubleType> struct coordC3T
 	coord3T<DoubleType> real(void) const { return coord3T<DoubleType>(x.real(), y.real(), z.real()); }
 	coord3T<DoubleType> imag(void) const { return coord3T<DoubleType>(x.imag(), y.imag(), z.imag()); }
 	coordC3T<Type, DoubleType> conj(void) const { return coordC3T<Type, DoubleType>(::conj(x), ::conj(y), ::conj(z)); }
-	void Print(void) const;
+	void Print(const char *suffix = "") const;
 };
 typedef coordC3T<jComplex, double> coordC3;
 typedef coordC3T<jComplexR, jreal> coordC3R;
 
-void Print(coordC3 c);
+void Print(coordC3 c, const char *suffix = "");
 
 template<class Type, class DoubleType> inline coordC3T<Type, DoubleType> operator*(const Type &l, const coordC3T<Type, DoubleType> &r)
 {

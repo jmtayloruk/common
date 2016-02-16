@@ -79,7 +79,7 @@ public:
 	}
 };
 
-void Print(jHighPrecisionFloat x);
+void Print(jHighPrecisionFloat x, const char *suffix = "");
 
 inline jHighPrecisionFloat operator-(const jHighPrecisionFloat &r)
 {
