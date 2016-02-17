@@ -4,7 +4,7 @@
 //	Copyright 2010-2015 Jonathan Taylor. All rights reserved.
 //
 //	Implementations of utility functions for coordinate objects.
-//	Most of these functions are for coordinate transformations.
+//	Most of the functions here are for coordinate transformations.
 //
 #include "jCoord.h"
 

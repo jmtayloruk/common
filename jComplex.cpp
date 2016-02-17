@@ -1,6 +1,8 @@
 /*
  *	jComplex.cpp
  *
+ *  Copyright 2011-2015 Jonathan Taylor. All rights reserved.
+ *
  *  A few utility functions for complex numbers.
  */
 

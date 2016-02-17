@@ -7,6 +7,10 @@
 //	The idea is that these can be acted on like primitive types, using standard C++ operators for arithmetic.
 //	Various vector-related utility functions are also defined.
 //
+//	Note that there is currently no type distinction between cartesian
+//	and spherical coordinates, for example, and it is down to the caller
+//	to keep track (e.g. through variable naming) which they are dealing with.
+//
 
 #ifndef __JCOORD_H__
 #define __JCOORD_H__

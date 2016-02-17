@@ -1,6 +1,8 @@
 /*
  *	jHighPrecisionFloat_stubAsDouble.h
  *
+ *  Copyright 2011-2015 Jonathan Taylor. All rights reserved.
+ *
  *  Class representing a floating-point number, but potentially to higher (or lower) precision
  *	than supported by the ubiquitous 'double' type.
  *
@@ -8,7 +10,7 @@
  *	Its purpose is just to help test the migration of existing code to the jHighPrecisionFloat type,
  *	but without actually adding any extra precision(!).
  *	A modern compiler should hopefully be able to compile this into code that has little or no overhead
- *	compared to the native 'double' type.
+ *	compared to the native 'double' type, but of course it should not normally be used for "production" code!
  */
 
 #ifndef __JHIGH_PRECISION_FLOAT_STUB_DOUBLE_H__

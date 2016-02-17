@@ -1,10 +1,11 @@
-//
-//  jHighPrecisionFloat.cpp
-//  scatter
-//
-//  Created by Jonny Taylor on 29/12/2015.
-//
-//
+/*
+ *	jHighPrecisionFloat.cpp
+ *
+ *  Copyright 2011-2015 Jonathan Taylor. All rights reserved.
+ *
+ *  Class representing a floating-point number, but potentially to higher (or lower) precision
+ *	than supported by the ubiquitous 'double' type.
+ */
 
 #include "jHighPrecisionFloat.h"
 #include "jComplex.h"

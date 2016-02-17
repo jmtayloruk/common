@@ -1,5 +1,7 @@
 /*	Template: jIntegral.h
 
+	Copyright 2010-2015 Jonathan Taylor. All rights reserved.
+ 
 	Template classes for evaluating integrals numerically.
 	This is intended to hide the detail of a numerical integral as much as possible,
 	while maintaining the same performance when compiler optimizations are enabled.

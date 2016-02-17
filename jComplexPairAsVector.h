@@ -1,6 +1,8 @@
 /*
  *	jComplexPairAsVector.h
  *
+ *  Copyright 2011-2015 Jonathan Taylor. All rights reserved.
+ *
  *  Class representing two complex numbers, storing the values as two altivec/SSE vectors,
  *	one for the real parts and one for the complex parts. This currently supports most common
  *	arithmetic operations, as well as a few special functions (e.g. GetMulWithConjY) to perform

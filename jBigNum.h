@@ -1,6 +1,8 @@
 /*
  *	jBigNum.h
  *
+ *	Copyright 2010-2015 Jonathan Taylor. All rights reserved.
+ *
  *  This class represents a complex number that can be potentially very large,
  *	with operator overloading allowing instances to be operated on in standard
  *	arithmetic expressions without any special treatment.
@@ -14,7 +16,11 @@
  *	but it will be clear from the end result that a problem has occurred due to the presence of infinities and/or NaNs
  *	in the results.
  *
- *	TODO: do I really want to keep this, or should I transition to the GMP library?
+ *	NOTE: I introduced this class some time ago, and since then I have implemented the jreal wrapper around 
+ *	the GMP library. In many cases that may be a preferable alternative, but jBigNum will be significantly faster
+ *	(albeit more unwieldy and limited in features) in cases where the problem is simply that there are large exponents,
+ *	rather than an actual requirement for higher precision.
+ *	It is mostly here just to support legacy code, though.
  *
  */
 

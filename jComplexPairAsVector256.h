@@ -1,6 +1,8 @@
 /*
  *	jComplexPairAsVector256.h
  *
+ *  Copyright 2011-2015 Jonathan Taylor. All rights reserved.
+ *
  *  Class representing two complex numbers, storing the values as a single 256-bit AVX vector.
  *	This currently supports most common arithmetic operations, as well as a few special functions
  *	(e.g. GetMulWithConjY) to perform special operations which can have particularly efficient implementations.

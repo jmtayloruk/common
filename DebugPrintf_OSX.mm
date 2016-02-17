@@ -4,6 +4,8 @@
 //  Copyright 2015 Jonathan Taylor. All rights reserved.
 //
 //	Implementation of DebugPrintf suitable for running on OS X
+//	Print to stderr but also call NSLog so that the message shows up even when running as a standalone app
+//
 //	Only one platform-specific implementation file like this one should be included in a project,
 //	or else there will be linker errors due to multiple function definitions.
 //

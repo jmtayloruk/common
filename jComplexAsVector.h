@@ -1,5 +1,7 @@
 /*
- *	jComplex.h
+ *	jComplexAsVector.h
+ *
+ *  Copyright 2011-2015 Jonathan Taylor. All rights reserved.
  *
  *  Class to handle complex numbers, based on the Altivec/SSE vector double type.
  *	See discussion in jComplex.h on the efficiency of this implementation.

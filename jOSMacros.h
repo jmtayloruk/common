@@ -1,11 +1,12 @@
-/*
- *  jOSMacros.h
- *  scatter
- *
- *  Created by Jonathan Taylor on 27/08/2009.
- *  Copyright 2009 Durham University. All rights reserved.
- *
- */
+//
+//  jOSMacros.h
+//
+//  Copyright 2009-2015 Jonathan Taylor. All rights reserved.
+//
+//	Checks compiler-supplied platform-dependent macros to determine
+//	whether specific features are available.
+//	This could also be done through an autoconfig script
+//
 
 #ifndef __J_OS_MACROS_H__
 #define __J_OS_MACROS_H__

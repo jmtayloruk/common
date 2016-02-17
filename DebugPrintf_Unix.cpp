@@ -3,7 +3,9 @@
 //
 //  Copyright 2015 Jonathan Taylor. All rights reserved.
 //
-//	Implementation of DebugPrintf suitable for running on OS X
+//	Implementation of DebugPrintf suitable for running on Unix
+//	Print the message to stderr.
+//
 //	Only one platform-specific implementation file like this one should be included in a project,
 //	or else there will be linker errors due to multiple function definitions.
 //

@@ -1,6 +1,8 @@
 /*
  *	jComplex.h
  *
+ *  Copyright 2011-2015 Jonathan Taylor. All rights reserved.
+ *
  *  Class to handle complex numbers.
  *	There are in fact two variants, one based on std::complex and one based on an altivec/SSE vector.
  *	The latter is in fact not very efficient on intel because the sort of instructions required for

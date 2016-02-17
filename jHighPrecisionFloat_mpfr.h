@@ -1,8 +1,12 @@
 /*
- *	jHighPrecisionFloat.h
+ *	jHighPrecisionFloat_mpfr.h
  *
- *  Class representing a floating-point number, but potentially to higher (or lower) precision 
+ *  Copyright 2011-2015 Jonathan Taylor. All rights reserved.
+ *
+ *  Class representing a floating-point number, but potentially to higher (or lower) precision
  *	than supported by the ubiquitous 'double' type.
+ *
+ *	This implementation relies on the MPFR library to implement the underlying high-precision arithmetic.
  */
 
 #ifndef __JHIGH_PRECISION_FLOAT_MPFR_H__
@@ -12,7 +16,7 @@
 
 #include <src/mpfr.h>
 
-// **** all these need redefining once I have a proper high precision implementation
+// TODO: all these need redefining once I have a proper high precision implementation
 #define J_DBL_EPSILON jreal(GSL_DBL_EPSILON)
 #define J_SQRT_DBL_EPSILON jreal(GSL_SQRT_DBL_EPSILON)
 #define J_ROOT4_DBL_EPSILON jreal(GSL_ROOT4_DBL_EPSILON)

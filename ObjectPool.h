@@ -1,5 +1,7 @@
 /*	Template: ObjectPool.h
 
+	Copyright 2010-2015 Jonathan Taylor. All rights reserved.
+
 	Template classes for maintaining a pool of allocated objects that can be reserved by individual threads.
 	This can be useful when an object takes time to create, allocate, or in some way post-process, but
 	we don't know in advance exactly how many will be required simultaneously.
