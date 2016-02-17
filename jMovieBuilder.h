@@ -1,10 +1,11 @@
-//
-//  jMovieBuilder.h
-//
-//	Copyright 2010-2015 Jonathan Taylor. All rights reserved.
-//
-//	Build up a movie file from individual frames that are supplied to this class by the caller in sequence.
-//
+/*
+	jMovieBuilder.h
+ 
+	Copyright 2010-2015 Jonathan Taylor. All rights reserved.
+
+	Build up a movie file from individual frames that are supplied to this class by the caller in sequence.
+*/
+
 #ifndef __JMOVIEBUILDER_H__
 #define __JMOVIEBUILDER_H__
 
@@ -13,7 +14,8 @@
 
 #if !HAS_OS_X_GUI
 
-// Code not implemented except on OS X. This first bit of code here is just dummy code to allow things to compile.
+// Code not implemented except on OS X
+// This first bit of code here is just dummy code to allow things to compile on other platforms, but without any functionality
 class JMovieBuilder
 {
   public:

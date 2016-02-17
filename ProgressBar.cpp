@@ -1,11 +1,12 @@
-/*	Module: ProgressBar.cpp
+/*	ProgressBar.cpp
 
 	Copyright 2011-2015 Jonathan Taylor. All rights reserved.
 
 	Code to display a progress bar for time-consuming operations.
 	TextualProgressBar writes a growing line to stdout
 	CocoaProgressWindow (see separate file) displays a window showing a progress bar and
-	indicating time taken, time remaining etc.	*/
+	indicating time taken, time remaining etc.	
+ */
 	
 #include <stdarg.h>
 #include <algorithm>

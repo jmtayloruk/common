@@ -1,4 +1,6 @@
-/*	Module: ProgressWindow.cpp
+/*	ProgressWindow.cpp
+
+	Copyright 2010-2015 Jonathan Taylor. All rights reserved.
 
 	OS X-only code which displays a window showing the progress of a time-consuming operation,
 	printing the elapsed time and an estimate of the time remaining	until the operation is complete.	*/
@@ -87,6 +89,8 @@ void ProgressWindow::InternalUpdateProgress(double newProgress)
 }
 
 #else
+
+// Fall back to TextualProgressBar!
 
 ProgressWindow::ProgressWindow(int x, int y, const char *title, double inLength, ...) : TextualProgressBar(NULL, inLength)
 {

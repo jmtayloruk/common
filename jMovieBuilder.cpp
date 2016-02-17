@@ -1,4 +1,7 @@
-/*	Module: JMovieBuilder.cpp
+/*
+ 	jMovieBuilder.cpp
+ 
+ 	Copyright 2010-2015 Jonathan Taylor. All rights reserved.
 
 	Create a movie file based on a series of image frames passed to us by the caller.
 	Uses QuickTime, and is currently OS X-only (though should be possible to port
@@ -17,8 +20,6 @@
 		// JMovieBuilder destructor does the required cleanup automatically when it goes out of scope
 	}
 	
-	n.b. JMovieBuilder is heavily inspired by the Apple sample code CaptureAndCompressIPBMovie.c
- 
 */
 	
 
