@@ -1,11 +1,11 @@
 /*
  *	jComplexPair.h
  *
+ *  Copyright 2011-2015 Jonathan Taylor. All rights reserved.
+ *
  *  Class representing two complex numbers.
- *	There are in fact two variants, one which stores the values as two jComplex types,
- *	and one based on two altivec/SSE vectors, one for the real parts and one for the complex parts.
- *	The latter is generally extremely efficient on systems that support it. It has not yet been
- *	implemented for altivec - this would probably require a bit of alternative code to be written.
+ *	There are in fact several variants, with different underlying storage formats.
+ *	The vector-based implementations are the fastest.
  */
 
 #ifndef __JCOMPLEX_PAIR_H__

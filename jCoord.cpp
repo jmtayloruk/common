@@ -4,17 +4,17 @@
 //	Copyright 2010-2015 Jonathan Taylor. All rights reserved.
 //
 //	Implementations of utility functions for coordinate objects.
-//	Most of these functions are for coordinate transformations.
+//	Most of the functions here are for coordinate transformations.
 //
 #include "jCoord.h"
 
-template<> void coord3T<double>::Print(void) const
+template<> void coord3T<double>::Print(const char *suffix) const
 {
-	printf("(%.12lg, %.12lg, %.12lg)", x, y, z);
+	printf("(%.12lg, %.12lg, %.12lg)%s", x, y, z, suffix);
 }
 
 #if JREAL_DEFINED
-template<> void coord3T<jreal>::Print(void) const
+template<> void coord3T<jreal>::Print(const char *suffix) const
 {
 	printf("(");
 	x.Print();
@@ -22,22 +22,22 @@ template<> void coord3T<jreal>::Print(void) const
 	y.Print();
 	printf(", ");
 	z.Print();
-	printf(")");
+	printf(")%s", suffix);
 }
 #endif
 
-void Print(coord3 c)
+void Print(coord3 c, const char *suffix)
 {
-	c.Print();
+	c.Print(suffix);
 }
 
-template<> void coordC3T<jComplex, double>::Print(void) const
+template<> void coordC3T<jComplex, double>::Print(const char *suffix) const
 {
-	printf("({%.12lg,%.12lg}, {%.12lg,%.12lg}, {%.12lg,%.12lg})", x.real(), x.imag(), y.real(), y.imag(), z.real(), z.imag());
+	printf("({%.12lg,%.12lg}, {%.12lg,%.12lg}, {%.12lg,%.12lg})%s", x.real(), x.imag(), y.real(), y.imag(), z.real(), z.imag(), suffix);
 }
 
 #if JREAL_DEFINED
-template<> void coordC3T<jComplexR, jreal>::Print(void) const
+template<> void coordC3T<jComplexR, jreal>::Print(const char *suffix) const
 {
 	printf("(");
 	::Print(x);
@@ -45,13 +45,13 @@ template<> void coordC3T<jComplexR, jreal>::Print(void) const
 	::Print(y);
 	printf(", ");
 	::Print(z);
-	printf(")");
+	printf(")%s", suffix);
 }
 #endif
 
-void Print(coordC3 c)
+void Print(coordC3 c, const char *suffix)
 {
-	c.Print();
+	c.Print(suffix);
 }
 
 coordC3 RotateFromSphericalSystem(coordC3 c, double theta, double phi)

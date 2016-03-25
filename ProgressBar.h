@@ -1,3 +1,13 @@
+/*	ProgressBar.h
+ 
+ Copyright 2011-2015 Jonathan Taylor. All rights reserved.
+ 
+ Code to display a progress bar for time-consuming operations.
+ TextualProgressBar writes a growing line to stdout
+ CocoaProgressWindow (see separate file) displays a window showing a progress bar and
+ indicating time taken, time remaining etc.
+ */
+
 #ifndef __PROGRESSBAR_H__
 #define __PROGRESSBAR_H__
 

@@ -1,10 +1,18 @@
+/*	ProgressWindow.h
+ 
+	Copyright 2010-2015 Jonathan Taylor. All rights reserved.
+
+	OS X-only code which displays a window showing the progress of a time-consuming operation,
+	printing the elapsed time and an estimate of the time remaining	until the operation is complete.
+ */
+
 #ifndef __PROGRESSWINDOW_H__
 #define __PROGRESSWINDOW_H__
 
 #include "ProgressBar.h"
 
 #if 0//HAS_OS_X_GUI
-// TODO: need to update this code to use CocoaProgressWindow.
+// TODO: need to update this code to use CocoaProgressWindow - see also comments in .cpp file
 class ProgressWindow : public BaseProgressBar
 {
   protected:

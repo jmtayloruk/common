@@ -1,3 +1,12 @@
+/*
+ *	VectorFunctions.h
+ *
+ *	Copyright 2010-2015 Jonathan Taylor. All rights reserved.
+ *
+ *  Platform-independent wrappers around basic CPU vector operations
+ *
+ */
+
 #ifndef __VECTOR_FUNCTIONS_H__
 #define __VECTOR_FUNCTIONS_H__
 

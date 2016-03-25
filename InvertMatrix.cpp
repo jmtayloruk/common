@@ -1,11 +1,21 @@
 /*	Module InvertMatrix.cpp
-	Functions used to invert matrices (which make use of LAPACK)
-	These are kept in a separate module because Accelerate.h conflicts with the GSL headers.	*/
+
+	Copyright 2010-2015 Jonathan Taylor. All rights reserved.
+
+	Functions used to invert matrices (some of which make use of LAPACK)
+	These are kept in a separate module because Accelerate.h conflicts with the GSL headers:
+	this way there is more control about how things are compiled
+ 
+	This is a bit of a mixed-up file, and it probably contains some overlap between functions 
+	that do the same thing (for historical reasons!). I'm going to leave it as-is for now, though.
+ */
 	
 #include "InvertMatrix.h"
 
 #include "jOSMacros.h"
 #include "jAssert.h"
+#include "gsl/gsl_linalg.h"
+#include "qr_complex.h"
 
 #if OS_X
 	#include <Accelerate/Accelerate.h>
@@ -149,5 +159,6 @@ void SolveWithUpperTriangularMatrix(gsl_matrix *matrix, gsl_matrix *x)
 {
 	SolveWithUpperTriangularMatrixUsingLAPACK(matrix->size1, x->size2, matrix->data, matrix->tda, x->data, x->tda);
 }
+
 #endif
 

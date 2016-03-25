@@ -1,6 +1,8 @@
 /*
  *	jComplexPairAsVector.h
  *
+ *  Copyright 2011-2015 Jonathan Taylor. All rights reserved.
+ *
  *  Class representing two complex numbers, storing the values as two altivec/SSE vectors,
  *	one for the real parts and one for the complex parts. This currently supports most common
  *	arithmetic operations, as well as a few special functions (e.g. GetMulWithConjY) to perform
@@ -118,13 +120,13 @@ class jComplexPairAsVector
     jComplexPairAsVector GetNegativeOfFirstOnly(void) const { return jComplexPairAsVector(_mm_xor_pd(__re, (vDouble) { -0.0, 0.0 }), _mm_xor_pd(__im, (vDouble) { -0.0, 0.0 })); }		// Return the negated value of a, leaving b unchanged
 	jComplexPairAsVector GetSwappedPairs(void) const { return jComplexPairAsVector(vSwapD(__re), vSwapD(__im)); }	// Return { b, a } given { a, b }
 
-	void Print(void) const
+	void Print(const char *suffix = "") const
 	{
 		printf("{");
 		::Print(a());
 		printf(", ");
 		::Print(b());
-		printf("}");
+		printf("}%s", suffix);
 	}
 };
 

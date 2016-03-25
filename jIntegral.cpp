@@ -1,7 +1,10 @@
-/*	jIntegral.cpp
-
-	A few specific implementations for jIntegral.h
-*/
+//
+//  jIntegral.cpp
+//
+//	Copyright 2010-2015 Jonathan Taylor. All rights reserved.
+//
+//	A few specific implementations for jIntegral.h
+//
 
 #include "jIntegral.h"
 #include "jComplex.h"

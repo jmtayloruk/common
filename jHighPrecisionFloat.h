@@ -1,7 +1,9 @@
 /*
  *	jHighPrecisionFloat.h
  *
- *  Class representing a floating-point number, but potentially to higher (or lower) precision 
+ *  Copyright 2011-2015 Jonathan Taylor. All rights reserved.
+ *
+ *  Class representing a floating-point number, but potentially to higher (or lower) precision
  *	than supported by the ubiquitous 'double' type.
  */
 

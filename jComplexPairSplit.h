@@ -1,9 +1,11 @@
 /*
  *	jComplexPairSplit.h
  *
+ *  Copyright 2011-2015 Jonathan Taylor. All rights reserved.
+ *
  *  Class representing two complex numbers, storing the values as two jComplex objects
- *	This implementation is generic, but not particularly high performance - if SSE is
- *	available then jComplexPairAsVectoris a much better choice
+ *	This is a generic reference implementation, but it is not particularly high performance - 
+ *  if SSE is available then jComplexPairAsVectoris a much better choice
  */
 
 #ifndef __JCOMPLEX_PAIR_SPLIT_H__
@@ -80,13 +82,13 @@ template <class ComplexType, class DoubleType> class jComplexPairSplitT
     jComplexPairSplitT GetNegativeOfFirstOnly(void) const { return jComplexPairSplitT(-__a, __b); }
 	jComplexPairSplitT GetNegativeOfSecondOnly(void) const { return jComplexPairSplitT(__a, -__b); }
 
-	void Print(void) const
+	void Print(const char *suffix = "") const
 	{
 		printf("{");
 		::Print(a());
 		printf(", ");
 		::Print(b());
-		printf("}");
+		printf("}%s", suffix);
 	}
 };
 

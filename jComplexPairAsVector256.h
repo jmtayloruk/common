@@ -1,6 +1,8 @@
 /*
  *	jComplexPairAsVector256.h
  *
+ *  Copyright 2011-2015 Jonathan Taylor. All rights reserved.
+ *
  *  Class representing two complex numbers, storing the values as a single 256-bit AVX vector.
  *	This currently supports most common arithmetic operations, as well as a few special functions
  *	(e.g. GetMulWithConjY) to perform special operations which can have particularly efficient implementations.
@@ -223,13 +225,13 @@ class jComplexPairAsVector256
 	jComplexPairAsVector256 GetSwappedPairs(void) const { return jComplexPairAsVector256(__builtin_shufflevector(__ab, __ab, 2, 3, 0, 1)); }	// Return { b, a } given { a, b }
 	jComplexPairAsVector256 GetSwappedReIm(void) const { return jComplexPairAsVector256(__builtin_shufflevector(__ab, __ab, 1, 0, 3, 2)); }	// Return { im(a), re(a), im(b), re(b) } given { a, b }
 
-	void Print(void) const
+	void Print(const char *suffix = "") const
 	{
 		printf("{");
 		::Print(a());
 		printf(", ");
 		::Print(b());
-		printf("}");
+		printf("}%s", suffix);
 	}
 };
 

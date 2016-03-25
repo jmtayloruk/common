@@ -1,6 +1,8 @@
 /*
  *	jBigNum.cpp
  *
+ *	Copyright 2010-2015 Jonathan Taylor. All rights reserved.
+ *
  *  Utility functions associated with jBigNum class (see header file)
  */
 #include "jBigNum.h"
@@ -9,10 +11,10 @@ jreal jBigNum::expTable[kBigNumMaxExponentInTable + 1];
 jreal jBigNum::invExpTable[kBigNumMaxExponentInTable + 1];
 jreal jBigNum::logExponent;
 
-void Print(jBigNum z)
+void Print(jBigNum z, const char *suffix)
 {
 	Print(z.detail());
-	printf(" x e^%ld", z.exponent() * jBigNum::kBigNumExponentPowerOfE);
+	printf(" x e^%ld%s", z.exponent() * jBigNum::kBigNumExponentPowerOfE, suffix);
 }
 
 void MakeScientificNotation(jreal &x, long &exponent)

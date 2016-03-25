@@ -1,5 +1,7 @@
 /*
- *	jComplex.h
+ *	jComplexAsStd.h
+ *
+ *  Copyright 2011-2015 Jonathan Taylor. All rights reserved.
  *
  *  Class to handle complex numbers, derived from std::complex.
  *	There is very little to this derived class - it just adds a few extra

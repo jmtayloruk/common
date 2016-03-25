@@ -1,6 +1,8 @@
 /*
  *	jComplex.cpp
  *
+ *  Copyright 2011-2015 Jonathan Taylor. All rights reserved.
+ *
  *  A few utility functions for complex numbers.
  */
 
@@ -16,22 +18,26 @@
 
 #include "jComplex.h"
 
-void Print(jComplex z)
+void Print(jComplex z, const char *suffix)
 {
-	printf("{%.12le, %.12le}", z.real(), z.imag());
+	printf("{%.12le, %.12le}%s", z.real(), z.imag(), suffix);
 }
 
 #ifdef USE_JREAL
-void Print(jComplexR z)
+void Print(jComplexR z, const char *suffix)
 {
-	printf("{%.12le, %.12le}", AllowPrecisionLossReadingValue(z.real()), AllowPrecisionLossReadingValue(z.imag()));
+//	printf("{%.12le, %.12le}", AllowPrecisionLossReadingValue(z.real()), AllowPrecisionLossReadingValue(z.imag()));
+	printf("{");
+	::Print(real(z), ",");
+	::Print(imag(z), "}");
+	printf("%s", suffix);
 }
 #endif
 
 #if COMPILE_JCOMPLEX_GSL_INTERFACE
-void Print(gsl_complex z)
+void Print(gsl_complex z, const char *suffix)
 {
-	printf("{%le, %le}", GSL_REAL(z), GSL_IMAG(z));
+	printf("{%le, %le}%s", GSL_REAL(z), GSL_IMAG(z), suffix);
 }
 
 template<> jComplexAsStdBase<double>::jComplexAsStdBase(const gsl_complex &z) : complex<double>(GSL_REAL(z), GSL_IMAG(z))

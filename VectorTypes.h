@@ -1,3 +1,12 @@
+/*
+ *	VectorTypes.h
+ *
+ *	Copyright 2010-2015 Jonathan Taylor. All rights reserved.
+ *
+ *  Platform-independent definitions of basic CPU vector types
+ *
+ */
+
 #ifndef __VECTOR_TYPES_H__
 #define __VECTOR_TYPES_H__
 
