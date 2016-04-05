@@ -48,7 +48,7 @@ class jBigNum
 
   public:
 
-	jBigNum() { _detail = jreal(0.0); _exponent = 0; }
+	jBigNum() { _detail = jreal(0); _exponent = 0; }
 	explicit jBigNum(jreal inVal) { _detail = inVal; _exponent = 0; }
 	explicit jBigNum(jComplexR inVal) { _detail = inVal; _exponent = 0; }
 	jBigNum(jComplexR inVal, long inExponent) { _detail = inVal; _exponent = inExponent; }
@@ -192,7 +192,7 @@ class jBigNum
 		absDetail *= invExpTable[i];
 
 		// Increase the detail part if it's too large
-		if (absDetail != jreal(0.0))
+		if (absDetail != jreal(0))
 		{
 			for (i = 0; absDetail < invExpTable[i+1]; i++)
 			{
