@@ -51,7 +51,7 @@ jreal gsl_sf_lnpoch(const jreal &a, const jreal &x)
 }
 int gsl_sf_legendre_sphPlm_array(const int lmax, int m, const jreal &x, jreal * result_array)
 {
-	double resultDouble[lmax+1];
+	JHPF_TYPE resultDouble[lmax+1];
 	int gslResult = gsl_sf_legendre_sphPlm_array(lmax, m, AllowPrecisionLossReadingValue(x), resultDouble);
 	for (int i = 0; i <= lmax; i++)
 		result_array[i] = AllowPrecisionLossOnParam(resultDouble[i]);
@@ -67,7 +67,7 @@ int gsl_sf_bessel_Jn_array(int nmin, int nmax, jreal &x, jreal *result_array)
 {
 	// TODO: when I implement this fully myself I should probably make it so that it handles underflow gracefully and silently.
 	// I should then check everywhere I call this, because it looks like there are hacks in several different places!
-	double resultDouble[nmax+1];
+	JHPF_TYPE resultDouble[nmax+1];
 	int gslResult = gsl_sf_bessel_Jn_array(nmin, nmax, AllowPrecisionLossReadingValue(x), resultDouble);
 	ALWAYS_ASSERT(nmin == 0);
 	for (int i = 0; i <= nmax; i++)
@@ -77,7 +77,7 @@ int gsl_sf_bessel_Jn_array(int nmin, int nmax, jreal &x, jreal *result_array)
 
 int gsl_sf_bessel_jl_array(const int lmax, const jreal &x, jreal *result_array)
 {
-	double resultDouble[lmax+1];
+	JHPF_TYPE resultDouble[lmax+1];
 	int gslResult = gsl_sf_bessel_jl_array(lmax, AllowPrecisionLossReadingValue(x), resultDouble);
 	for (int i = 0; i <= lmax; i++)
 		result_array[i] = AllowPrecisionLossOnParam(resultDouble[i]);

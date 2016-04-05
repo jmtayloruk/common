@@ -40,3 +40,8 @@ jComplexR AllowPrecisionLossOnParam(jComplex val) { return jComplexR(AllowPrecis
 coord3 AllowPrecisionLossReadingValue(coord3R val) { return coord3(AllowPrecisionLossReadingValue(val.x), AllowPrecisionLossReadingValue(val.y), AllowPrecisionLossReadingValue(val.z)); }
 coordC3 AllowPrecisionLossReadingValue(coordC3R val) { return coordC3(AllowPrecisionLossReadingValue(val.x), AllowPrecisionLossReadingValue(val.y), AllowPrecisionLossReadingValue(val.z)); }
 jComplex AllowPrecisionLossReadingValue(jComplexR val) { return jComplex(AllowPrecisionLossReadingValue(val.real()), AllowPrecisionLossReadingValue(val.imag())); }
+
+void Print(double x, const char *suffix)
+{
+    printf("%.16le%s", x, suffix);
+}

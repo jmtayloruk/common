@@ -76,6 +76,9 @@ double AllowPrecisionLossReadingValue(jreal val);
 double AllowPrecisionLossReadingValue_mayAlreadyBeDouble(jreal val);
 double AllowPrecisionLossReadingValue_mayAlreadyBeDouble(double val);
 jreal AllowPrecisionLossOnParam(double val);
+#ifdef USE_JREAL
 void Print(jreal x, const char *suffix = "");
+#endif
+void Print(double x, const char *suffix = "");
 
 #endif

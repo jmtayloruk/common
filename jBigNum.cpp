@@ -17,14 +17,14 @@ void Print(jBigNum z)
 
 void MakeScientificNotation(jreal &x, long &exponent)
 {
-	while (fabs(x) >= jreal(10.0))
+	while (fabs(x) >= jreal(10))
 	{
 		x *= jreal(0.1);
 		exponent++;
 	}
-	while (fabs(x) < jreal(1.0))
+	while (fabs(x) < jreal(1))
 	{
-		x *= jreal(10.0);
+		x *= jreal(10);
 		exponent--;
 	}
 }
@@ -35,7 +35,7 @@ void PrintOneComponent(jreal detail, long exponent)
 	long decimalExponent = 0;
 	long i;
 
-	if (detail == jreal(0.0))
+	if (detail == jreal(0))
 	{
 		printf("0.000000e+00");
 		return;

@@ -16,6 +16,13 @@
 
 #define HIGH_PRECISION_REAL 1
 
+/*  This next macro was an attempt to support floats as well as doubles in jHighPrecisionFloat,
+    with the aim of being able to do this much more quickly than with MPFR.
+    Main issue currently is that we call through to GSL calls that work with double-precision,
+    so there is a risk that we might get "too accurate" a result back from those, since rounding
+    errors for float will not take place    */
+#define JHPF_TYPE double
+
 // **** all these need redefining once I have a proper high precision implementation
 #define J_DBL_EPSILON jreal(GSL_DBL_EPSILON)
 #define J_SQRT_DBL_EPSILON jreal(GSL_SQRT_DBL_EPSILON)
@@ -38,7 +45,7 @@ class jHighPrecisionFloat
 	// This class represents a high-precision floating-point number, with associated error on accuracy
 	// However at present the error propagation is not properly implemented
 protected:
-	double __val, __err;
+	JHPF_TYPE __val, __err;
 	
 public:
 	static const long precision;
@@ -48,12 +55,13 @@ public:
 	double doubleVal(void) const { return __val; }
 	double doubleErr(void) const { return __err; }
 	
-	explicit jHighPrecisionFloat(double inVal) { __val = inVal; __err = GSL_DBL_EPSILON * inVal; }
-	explicit jHighPrecisionFloat(double inVal, double inErr) { __val = inVal; __err = inErr; }
+	explicit jHighPrecisionFloat(JHPF_TYPE inVal) { __val = inVal; __err = GSL_DBL_EPSILON * inVal; }
+    explicit jHighPrecisionFloat(double inVal) { __val = inVal; __err = GSL_DBL_EPSILON * inVal; }
+	explicit jHighPrecisionFloat(JHPF_TYPE inVal, JHPF_TYPE inErr) { __val = inVal; __err = inErr; }
 	jHighPrecisionFloat(int inVal) { __val = inVal; __err = 0.0; }
 	jHighPrecisionFloat(long inVal) { __val = inVal; __err = 0.0; }
 	jHighPrecisionFloat(long long inVal) { __val = inVal; __err = 0.0; }
-	jHighPrecisionFloat(const char *numString, double inErr) { __val = strtod(numString, NULL); __err = inErr; }
+	jHighPrecisionFloat(const char *numString, JHPF_TYPE inErr) { __val = strtod(numString, NULL); __err = inErr; }
 	
 	jHighPrecisionFloat& operator += (const jHighPrecisionFloat &n) { __val += n.doubleVal(); return *this; }
 	jHighPrecisionFloat operator + (const jHighPrecisionFloat &n) const { return jHighPrecisionFloat(*this) += n; }
@@ -75,7 +83,7 @@ public:
 
 	void Print(const char *suffix = "") const
 	{
-		printf("%lg%s", __val, suffix);
+		printf("%.16lg%s", __val, suffix);
 	}
 };
 

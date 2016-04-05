@@ -10,6 +10,13 @@
 #include "jHighPrecisionFloat_mpfr.h"
 
 const mpfr_rnd_t jHighPrecisionFloat_mpfr::rounding = MPFR_RNDN;
+/*  Define the precision. It would be nice to be able to switch between precisions on the fly,
+    but this is not trivial given the way I have set my code up. I have included assertions
+    checking that we assign a variable with the same precision it had previously.
+    This is violated when we call SetNMax after changing the precision - lookup tables have
+    previously been initialized with a different precision.
+    I can't see an immediate easy but safe solution to this, so for now I will leave this variable
+    as a compile-time constant  */
 const mpfr_prec_t jHighPrecisionFloat_mpfr::precision = 128;
 
 bool IsExactIntegerValueWithZeroError(const jHighPrecisionFloat_mpfr &a)
@@ -264,10 +271,12 @@ jHighPrecisionFloat_mpfr acos(const jHighPrecisionFloat_mpfr &val)
 	double doubleErr;
 	if (fabs(doubleVal) == 1.0)
 	{
-		// These asserts are not guaranteed, but if our values are precisely ±1 then unless there
-		// has been a staggering coincidence we should expect the errors to be zero (values initialized as exactly zero)
-		// If these asserts are failed then we have a problem - the error diverges at this point
-		ALWAYS_ASSERT(val.doubleErr() == 0);
+		/*  This is a difficult scenario to handle. If our values are precisely ±1 but there is a genuine uncertainty
+            on them, then we have a problem - the error diverges at this point.
+            We can encounter this in practice though - e.g. when calculating a spherical translation vector between
+            two spheres on the z axis.
+            Although this solution is a little unsatisfactory, I am going to assume that (barring a staggering coincidence!)
+            if the value comes out as exactly ±1 then the error is 0    */
 		doubleErr = 0.0;
 	}
 	else
