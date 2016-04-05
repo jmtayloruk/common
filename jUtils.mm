@@ -194,8 +194,8 @@ NSString *MetadataPathFromImagePath(NSString *fileName)
 
 id MetadataKeyValueForFramePath(NSString *path, NSString *key)
 {
-    NSMutableDictionary *metadata = [NSMutableDictionary dictionaryWithContentsOfFile:MetadataPathFromImagePath(path)];
-    return [metadata objectForKey:key];
+    NSDictionary *metadata = [NSDictionary dictionaryWithContentsOfFile:MetadataPathFromImagePath(path)];
+    return [metadata valueForKeyPath:key];      // Using valueForKeyPath instead of objectForKey allows for recursive addressing e.g. of toplevel.sublevel.key
 }
 
 void CopyMetadataForImageFile(NSString *sourceFilePath, NSString *destDirPath, NSString *destFileName)
