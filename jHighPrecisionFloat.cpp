@@ -33,7 +33,8 @@ double AllowPrecisionLossReadingValue(jreal val) { return val; }
 double AllowPrecisionLossReadingValue_mayAlreadyBeDouble(jreal val) { return val; }
 jreal AllowPrecisionLossOnParam(double val) { return val; }
 
-void Print(jreal x, const char *suffix) { printf("%.17le%s", x, suffix); }
+// (Disabling this next line because it should be covered by the Print(double) variant defined below
+//void Print(jreal x, const char *suffix) { printf("%.17le%s", x, suffix); }
 
 #endif
 
