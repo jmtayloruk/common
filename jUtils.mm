@@ -71,6 +71,33 @@ NSInteger frameSortOrder(id string1, id string2, void *)
 	return [(NSString *)string1 caseInsensitiveCompare:(NSString *)string2];
 }
 
+NSInteger frameSortOrderUsingTimestamps(id string1, id string2, void *pathStem)
+{
+	// This is slower than sorting on the name alone,
+	// but is the best way of handling some strangely-named old datasets
+	NSString *stem = @"";
+	if (pathStem != nil)
+	{
+		ALWAYS_ASSERT([(id)pathStem isKindOfClass:[NSString class]]);
+		stem = [SWF:@"%@/", pathStem];
+	}
+	NSNumber *timestamp1 = MetadataKeyValueForFramePath([SWF:@"%@%@", stem, string1], @"timestamp");
+	NSNumber *timestamp2 = MetadataKeyValueForFramePath([SWF:@"%@%@", stem, string2], @"timestamp");
+	if ((timestamp1 != nil) && (timestamp2 != nil))
+	{
+		double t1 = timestamp1.doubleValue;
+		double t2 = timestamp2.doubleValue;
+		if (t1 < t2)
+			return NSOrderedAscending;
+		else if (t1 > t2)
+			return NSOrderedDescending;
+		else
+			return NSOrderedSame;
+	}
+	// If we get here then there is presumably not metadata available
+	return frameSortOrder(string1, string2, nil);
+}
+
 NSInteger frameSortOrderForURLs(id url1, id url2, void *)
 {
 	return frameSortOrder(((NSURL *)url1).path, ((NSURL *)url2).path, nil);
@@ -88,7 +115,7 @@ bool IsImageFile(NSString *theFilename)
 			[theFilename hasSuffix:@".eps"]);
 }
 
-NSArray *ListImageFilesInDirectory(NSString *dir, bool sorted)
+NSArray *ListImageFilesInDirectory(NSString *dir, bool sorted, bool useTimestamps)
 {
 	// Returns an array containing NSStrings for each image file in a directory
 #if 0
@@ -134,7 +161,12 @@ NSArray *ListImageFilesInDirectory(NSString *dir, bool sorted)
 
 	// Sort after filtering (let's make the array as small as possible before we sort it!)
 	if (sorted)
-		return [dirContents2 sortedArrayUsingFunction:frameSortOrder context:nil];
+	{
+		if (useTimestamps)
+			return [dirContents2 sortedArrayUsingFunction:frameSortOrderUsingTimestamps context:dir];
+		else
+			return [dirContents2 sortedArrayUsingFunction:frameSortOrder context:nil];
+	}
 	return dirContents2;
 #endif
 }
