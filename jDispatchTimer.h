@@ -11,7 +11,7 @@
 @interface JDispatchTimer : NSObject
 {
 	dispatch_source_t	timerSource;
-	uint64_t			interval, repeatInterval;
+	uint64_t			intervalNs, repeatIntervalNs;
 	bool				firedOneShot;
     double             _oneoffTimeDue;  // I have not implemented this for repeating timers just because it would be a little more complicated, and I haven't needed that feature
 }
@@ -23,6 +23,7 @@
 -(void)restart;
 -(void)cancel;
 -(void)restartOneShotTimer;
+-(void)restartOneShotTimerWithIntervalInSecsFromNow:(double)newIntervalFromNow;
 -(void)fireOneShotTimerNow;
 -(void)adjustNextInterval:(double)newInterval;
 

@@ -16,16 +16,16 @@
 
 -(void)startTimer		// private
 {
-//	printf("Start timer %p, source %p with %lld %lld\n", self, timerSource, interval, repeatInterval);
-    self.oneoffTimeDue = GetTime() + interval * 1e-9;
-	dispatch_source_set_timer(timerSource, dispatch_time(DISPATCH_TIME_NOW, interval), repeatInterval, 0);
+//	printf("Start timer %p, source %p with %lld %lld\n", self, timerSource, intervalNs, repeatIntervalNs);
+    self.oneoffTimeDue = GetTime() + intervalNs * 1e-9;
+	dispatch_source_set_timer(timerSource, dispatch_time(DISPATCH_TIME_NOW, intervalNs), repeatIntervalNs, 0);
 }
 
 -(void)fireOneShotTimerNow
 {
-    CHECK(repeatInterval == DISPATCH_TIME_FOREVER);     // I have only implemented this for one-shot timers
+    CHECK(repeatIntervalNs == DISPATCH_TIME_FOREVER);     // I have only implemented this for one-shot timers
     self.oneoffTimeDue = GetTime();
-	dispatch_source_set_timer(timerSource, dispatch_time(DISPATCH_TIME_NOW, 0.0), repeatInterval, 0);
+	dispatch_source_set_timer(timerSource, dispatch_time(DISPATCH_TIME_NOW, 0.0), repeatIntervalNs, 0);
 }
 
 #if 0
@@ -79,7 +79,7 @@
 			Block_release(handlerCopy);
 		});
 		dispatch_source_set_event_handler(timerSource, ^{
-			if (firedOneShot)
+ 			if (firedOneShot)
 			{
 				/*	I currently don't have a solution to the problem where a call to restartOneShotTimer can
 					occur after the timer has *actually* fired, but before this handler has been called.
@@ -104,8 +104,8 @@
 			}
 		});
 	}
-	interval = (uint64_t)(dt * NSEC_PER_SEC);
-	repeatInterval = repeat ? interval : DISPATCH_TIME_FOREVER;
+	intervalNs = (uint64_t)(dt * NSEC_PER_SEC);
+	repeatIntervalNs = repeat ? intervalNs : DISPATCH_TIME_FOREVER;
 
 	[self startTimer];
 	dispatch_resume(timerSource);
@@ -135,7 +135,7 @@
 {
 	// Suspend firing of the timer (it will not fire until -restart is called)
 //	printf("Suspend %p\n", self);
-	ALWAYS_ASSERT(repeatInterval != DISPATCH_TIME_FOREVER);		// Not supported for one-shot fire-and-forget timers
+	ALWAYS_ASSERT(repeatIntervalNs != DISPATCH_TIME_FOREVER);		// Not supported for one-shot fire-and-forget timers
 	dispatch_source_set_timer(timerSource, DISPATCH_TIME_FOREVER, DISPATCH_TIME_FOREVER, 0);
 }
 
@@ -143,29 +143,40 @@
 {
 	// Resume repeated firing after a previous call to -suspend.
 //	printf("Restart %p (source %p)\n", self, timerSource);
-	ALWAYS_ASSERT(repeatInterval != DISPATCH_TIME_FOREVER);		// Not supported for one-shot fire-and-forget timers
+	ALWAYS_ASSERT(repeatIntervalNs != DISPATCH_TIME_FOREVER);		// Not supported for one-shot fire-and-forget timers
 	[self startTimer];
 }
 
 -(void)adjustNextInterval:(double)newInterval
 {
-//	printf("Adjust %p\n", self);
+//	printf("Adjust %p, interval %lf\n", self, newInterval);
 	[self suspend];
-	interval = repeatInterval = (uint64_t)(newInterval * NSEC_PER_SEC);
+	intervalNs = repeatIntervalNs = (uint64_t)(newInterval * NSEC_PER_SEC);
 	[self startTimer];
 }
 
 -(void)restartOneShotTimer
 {
+    [self restartOneShotTimerWithIntervalInNsFromNow:intervalNs];
+}
+
+-(void)restartOneShotTimerWithIntervalInSecsFromNow:(double)newIntervalFromNow
+{
+    [self restartOneShotTimerWithIntervalInNsFromNow:uint64_t(newIntervalFromNow * 1e9)];
+}
+
+-(void)restartOneShotTimerWithIntervalInNsFromNow:(uint64_t)newIntervalNs
+{
 	// This has a different name as a reminder that it must only be called *before* the timer has fired.
 	// A one shot timer cannot be restarted when it has already fired
 	// Note that thought is required here from the caller - the restart must occur on the same queue that
 	// the callback will run on, or window conditions are possible.
-//	printf("restart one-shot %p (source %p)\n", self, timerSource);
+//	printf("restart one-shot %p (source %p) at interval %lfs from now\n", self, timerSource, newIntervalNs*1e-9);
 	ALWAYS_ASSERT(!firedOneShot);
 	if (timerSource != nil)
 	{
-		dispatch_source_set_timer(timerSource, DISPATCH_TIME_FOREVER, DISPATCH_TIME_FOREVER, 0);
+		dispatch_source_set_timer(timerSource, DISPATCH_TIME_FOREVER, DISPATCH_TIME_FOREVER, 0); // Suspend momentarily while we mess with things
+        intervalNs = newIntervalNs;
 		[self startTimer];
 	}
 	else
