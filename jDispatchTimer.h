@@ -16,9 +16,9 @@
     double             _oneoffTimeDue;  // I have not implemented this for repeating timers just because it would be a little more complicated, and I haven't needed that feature
 }
 
-+(id)oneShotTimerOnQueue:(dispatch_queue_t)queue afterInterval:(double)dt withHandler:(dispatch_block_t)handler;
-+(id)newOneShotTimerOnQueue:(dispatch_queue_t)queue afterInterval:(double)dt withHandler:(dispatch_block_t)handler;
-+(id)allocRepeatingTimerOnQueue:(dispatch_queue_t)queue atInterval:(double)dt withHandler:(dispatch_block_t)handler;
++(id)oneShotTimerOnQueue:(dispatch_queue_t)queue afterInterval:(double)dt critical:(bool)critical withHandler:(dispatch_block_t)handler;
++(id)newOneShotTimerOnQueue:(dispatch_queue_t)queue afterInterval:(double)dt critical:(bool)critical withHandler:(dispatch_block_t)handler;
++(id)allocRepeatingTimerOnQueue:(dispatch_queue_t)queue atInterval:(double)dt critical:(bool)critical withHandler:(dispatch_block_t)handler;
 -(void)suspend;
 -(void)restart;
 -(void)cancel;

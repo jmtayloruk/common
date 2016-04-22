@@ -56,14 +56,14 @@
 }
 #endif
 
--(id)initForQueue:(dispatch_queue_t)queue withInterval:(double)dt repeat:(bool)repeat withHandler:(dispatch_block_t)handler
+-(id)initForQueue:(dispatch_queue_t)queue withInterval:(double)dt repeat:(bool)repeat timeCritical:(bool)timeCritical withHandler:(dispatch_block_t)handler
 {
 	// Initialize a timer object running on the specified GCD queue, that will execute the block 'handler' when it fires
 	if (!(self = [super init]))
 		return nil;
 	
 	firedOneShot = false;	
-	timerSource = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, queue);
+    timerSource = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, timeCritical ? DISPATCH_TIMER_STRICT : 0, queue);
 	
 	if (repeat)
 	{
@@ -113,22 +113,22 @@
 	return self;
 }
 
-+(id)newOneShotTimerOnQueue:(dispatch_queue_t)queue afterInterval:(double)dt withHandler:(dispatch_block_t)handler
++(id)newOneShotTimerOnQueue:(dispatch_queue_t)queue afterInterval:(double)dt critical:(bool)critical withHandler:(dispatch_block_t)handler
 {
 	// Caller gets a retained object that they must release from their one shot callback.
 	// Note that we do an *extra* retain here to balance the release that we do from our own event hander above.
-	return [[[JDispatchTimer alloc] initForQueue:queue withInterval:dt repeat:false withHandler:handler] retain];
+	return [[[JDispatchTimer alloc] initForQueue:queue withInterval:dt repeat:false timeCritical:critical withHandler:handler] retain];
 }
 
-+(id)oneShotTimerOnQueue:(dispatch_queue_t)queue afterInterval:(double)dt withHandler:(dispatch_block_t)handler 
++(id)oneShotTimerOnQueue:(dispatch_queue_t)queue afterInterval:(double)dt critical:(bool)critical withHandler:(dispatch_block_t)handler
 {
 	// Will release itself after firing
-	return [[JDispatchTimer alloc] initForQueue:queue withInterval:dt repeat:false withHandler:handler];
+	return [[JDispatchTimer alloc] initForQueue:queue withInterval:dt repeat:false timeCritical:critical withHandler:handler];
 }
 
-+(id)allocRepeatingTimerOnQueue:(dispatch_queue_t)queue atInterval:(double)dt withHandler:(dispatch_block_t)handler
++(id)allocRepeatingTimerOnQueue:(dispatch_queue_t)queue atInterval:(double)dt critical:(bool)critical withHandler:(dispatch_block_t)handler
 {
-	return [[JDispatchTimer alloc] initForQueue:queue withInterval:dt repeat:true withHandler:handler];
+    return [[JDispatchTimer alloc] initForQueue:queue withInterval:dt repeat:true timeCritical:critical withHandler:handler];
 }
 
 -(void)suspend
