@@ -18,14 +18,14 @@
 {
 //	printf("Start timer %p, source %p with %lld %lld\n", self, timerSource, intervalNs, repeatIntervalNs);
     self.oneoffTimeDue = GetTime() + intervalNs * 1e-9;
-	dispatch_source_set_timer(timerSource, dispatch_time(DISPATCH_TIME_NOW, intervalNs), repeatIntervalNs, 0);
+	dispatch_source_set_timer(timerSource, dispatch_time(DISPATCH_TIME_NOW, intervalNs), repeatIntervalNs, flexibilityNs);
 }
 
 -(void)fireOneShotTimerNow
 {
     CHECK(repeatIntervalNs == DISPATCH_TIME_FOREVER);     // I have only implemented this for one-shot timers
     self.oneoffTimeDue = GetTime();
-	dispatch_source_set_timer(timerSource, dispatch_time(DISPATCH_TIME_NOW, 0.0), repeatIntervalNs, 0);
+	dispatch_source_set_timer(timerSource, dispatch_time(DISPATCH_TIME_NOW, 0.0), repeatIntervalNs, flexibilityNs);
 }
 
 #if 0
@@ -56,7 +56,7 @@
 }
 #endif
 
--(id)initForQueue:(dispatch_queue_t)queue withInterval:(double)dt repeat:(bool)repeat timeCritical:(bool)timeCritical withHandler:(dispatch_block_t)handler
+-(id)initForQueue:(dispatch_queue_t)queue withInterval:(double)dt flex:(double)flexibility repeat:(bool)repeat timeCritical:(bool)timeCritical withHandler:(dispatch_block_t)handler
 {
 	// Initialize a timer object running on the specified GCD queue, that will execute the block 'handler' when it fires
 	if (!(self = [super init]))
@@ -105,6 +105,7 @@
 		});
 	}
 	intervalNs = (uint64_t)(dt * NSEC_PER_SEC);
+	flexibilityNs = (uint64_t)(flexibility * NSEC_PER_SEC);
 	repeatIntervalNs = repeat ? intervalNs : DISPATCH_TIME_FOREVER;
 
 	[self startTimer];
@@ -113,22 +114,22 @@
 	return self;
 }
 
-+(id)newOneShotTimerOnQueue:(dispatch_queue_t)queue afterInterval:(double)dt critical:(bool)critical withHandler:(dispatch_block_t)handler
++(id)newOneShotTimerOnQueue:(dispatch_queue_t)queue afterInterval:(double)dt flex:(double)flexibility critical:(bool)critical withHandler:(dispatch_block_t)handler
 {
 	// Caller gets a retained object that they must release from their one shot callback.
 	// Note that we do an *extra* retain here to balance the release that we do from our own event hander above.
-	return [[[JDispatchTimer alloc] initForQueue:queue withInterval:dt repeat:false timeCritical:critical withHandler:handler] retain];
+	return [[[JDispatchTimer alloc] initForQueue:queue withInterval:dt flex:(double)flexibility repeat:false timeCritical:critical withHandler:handler] retain];
 }
 
-+(id)oneShotTimerOnQueue:(dispatch_queue_t)queue afterInterval:(double)dt critical:(bool)critical withHandler:(dispatch_block_t)handler
++(id)oneShotTimerOnQueue:(dispatch_queue_t)queue afterInterval:(double)dt flex:(double)flexibility critical:(bool)critical withHandler:(dispatch_block_t)handler
 {
 	// Will release itself after firing
-	return [[JDispatchTimer alloc] initForQueue:queue withInterval:dt repeat:false timeCritical:critical withHandler:handler];
+	return [[JDispatchTimer alloc] initForQueue:queue withInterval:dt flex:(double)flexibility repeat:false timeCritical:critical withHandler:handler];
 }
 
-+(id)allocRepeatingTimerOnQueue:(dispatch_queue_t)queue atInterval:(double)dt critical:(bool)critical withHandler:(dispatch_block_t)handler
++(id)allocRepeatingTimerOnQueue:(dispatch_queue_t)queue atInterval:(double)dt flex:(double)flexibility critical:(bool)critical withHandler:(dispatch_block_t)handler
 {
-    return [[JDispatchTimer alloc] initForQueue:queue withInterval:dt repeat:true timeCritical:critical withHandler:handler];
+    return [[JDispatchTimer alloc] initForQueue:queue withInterval:dt flex:(double)flexibility repeat:true timeCritical:critical withHandler:handler];
 }
 
 -(void)suspend
