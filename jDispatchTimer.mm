@@ -64,6 +64,14 @@
 	
 	firedOneShot = false;	
     timerSource = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, timeCritical ? DISPATCH_TIMER_STRICT : 0, queue);
+	if (timerSource == NULL)
+	{
+		/*	Not all OS versions support DISPATCH_TIMER_STRICT, and there's no totally obvious way of
+			knowing which do and which do not (although I suspect it is first supported on 10.9.something).
+			As a result, if the first call fails then I just retry with no flags	*/
+		timerSource = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, queue);
+	}
+	ALWAYS_ASSERT(timerSource != NULL);
 	
 	if (repeat)
 	{
