@@ -133,7 +133,7 @@ NSArray *ListImageFilesInDirectory(NSString *dir, bool sorted, bool useTimestamp
 #else
 	// It will hopefully be faster to use lower-level APIs as follows.
 	// Get a pointer to the first in a tree of structures representing the contents of the directory
-	int len = strlen(dir.UTF8String) + 1;
+	size_t len = strlen(dir.UTF8String) + 1;
 	char pathBuffer[len];
 	snprintf(pathBuffer, len, "%s", dir.UTF8String);
 	char * const pathArray[2] = { pathBuffer, NULL };
@@ -251,7 +251,7 @@ void PrintCompleteFolderPath(NSString *basePath, int indentationLevel, int leadi
     double recursionTime = 0;
     
     if (indentationLevel == 0)
-        leadingCharsToSkip = strlen(basePath.UTF8String)+1;     // +1 for the '/' character...
+        leadingCharsToSkip = (int)strlen(basePath.UTF8String)+1;     // +1 for the '/' character...
     
     for (NSString *theFilename in dirContents)
     {

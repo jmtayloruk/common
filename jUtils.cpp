@@ -109,7 +109,7 @@ void *void_aligned_malloc(size_t size, size_t align_size)
 	// e.g. if align_size is 32 then we guarantee the address we return
 	// is a multiple of 32.
 	char *ptr,*ptr2,*aligned_ptr;
-	int align_mask = align_size - 1;
+	size_t align_mask = align_size - 1;
 
 	ptr=(char *)malloc(size + align_size + sizeof(int));
 	if(ptr==NULL)
@@ -189,4 +189,26 @@ bool FileExists(const char *theFile)
 	if (fileExists)
 		fclose(checkExists);
 	return fileExists;
+}
+
+void LinearFit(std::vector<double> &x, std::vector<double> &y, double *alpha, double *beta)
+{
+	// Perform a linear fit to a set of x/y values provided.
+	double xyMean = 0, xMean = 0, yMean = 0, x2Mean = 0;
+	ALWAYS_ASSERT(x.size() == y.size());
+	size_t n = x.size();
+	for (size_t i = 0; i < n; i++)
+	{
+		xMean += x[i];
+		yMean += y[i];
+		x2Mean += x[i] * x[i];
+		xyMean += x[i] * y[i];
+	}
+	xMean /= n;
+	yMean /= n;
+	x2Mean /= n;
+	xyMean /= n;
+	
+	*beta = (xyMean - xMean * yMean) / (x2Mean - SQUARE(xMean));
+	*alpha = yMean - *beta * xMean;
 }

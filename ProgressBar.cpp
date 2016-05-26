@@ -85,7 +85,7 @@ void BaseProgressBar::EstimateTimeRemaining(int *hours, int *mins, double *secs)
 }
 
 const char *TextualProgressBar::kTextProgressBarSpaces = "                                                  ";
-const int TextualProgressBar::kTextProgressBarWidth = strlen(TextualProgressBar::kTextProgressBarSpaces);
+const int TextualProgressBar::kTextProgressBarWidth = (int)strlen(TextualProgressBar::kTextProgressBarSpaces);
 
 TextualProgressBar::TextualProgressBar(const char *title, double inLength, ...) : BaseProgressBar(inLength)
 {
@@ -124,7 +124,7 @@ void TextualProgressBar::SetTitle(const char *title, va_list argList)
 		while (strchr(lastTitleLine, '\n') != NULL)
 			lastTitleLine = strchr(lastTitleLine, '\n') + 1;
 			
-		for (int i = strlen(lastTitleLine) + 2; i > 0; i--)
+		for (size_t i = strlen(lastTitleLine) + 2; i > 0; i--)
 			printf(" ");
 		drawnTitle = true;
 	}

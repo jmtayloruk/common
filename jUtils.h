@@ -87,6 +87,8 @@ char *NewCopyOfString(const char *inString);
 bool FileExists(const char *theFile);
 FILE *fopenf(const char * RESTRICT format, const char * RESTRICT mode, ...) PRINTFLIKE(1, 3);
 
+void LinearFit(std::vector<double> &x, std::vector<double> &y, double *alpha, double *beta);
+
 #if __OBJC__
 	#import <Cocoa/Cocoa.h>
     NSURL *PathToURL(NSString *path, NSURL *relativeTo);

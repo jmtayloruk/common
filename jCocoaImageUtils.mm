@@ -23,15 +23,15 @@ bool /*sizes matched*/ PopulateArrayFromBitmap(const NSBitmapImageRep *bitmap, d
         sizeMismatch = true;
     if (assertOnSizeMismatch)
         ALWAYS_ASSERT(!sizeMismatch);
-    int width = MIN(destWidth, bitmap.pixelsWide/downsampleFactor);
-    int height = MIN(destHeight, bitmap.pixelsHigh/downsampleFactor);
+    int width = MIN(destWidth, (int)bitmap.pixelsWide/downsampleFactor);
+    int height = MIN(destHeight, (int)bitmap.pixelsHigh/downsampleFactor);
     int x0 = 0, y0 = 0;
     if (sizeMismatch)
     {
         if (bitmap.pixelsWide / downsampleFactor < destWidth)
-            x0 = (destWidth - bitmap.pixelsWide / downsampleFactor) / 2;
+            x0 = (destWidth - (int)bitmap.pixelsWide / downsampleFactor) / 2;
         if (bitmap.pixelsHigh / downsampleFactor < destHeight)
-            y0 = (destHeight - bitmap.pixelsHigh / downsampleFactor) / 2;
+            y0 = (destHeight - (int)bitmap.pixelsHigh / downsampleFactor) / 2;
     }
     
     // For now we expect an 8- or 16-bit greyscale image
@@ -219,7 +219,6 @@ NSPoint FractionalCoordWithinImageView(const NSPoint &thePoint, const NSImageVie
 	float imageAspectRatio = theView.image.size.width / theView.image.size.height, imageWidthInView;
 	NSPoint viewCentre = { [theView bounds].size.width / 2,
 						   [theView bounds].size.height / 2 };
-	printf("Fractional coord for point %f %f\n", thePoint.x, thePoint.y);
 	if (theView.bounds.size.width / theView.bounds.size.height > imageAspectRatio)
 	{
 		// Whitespace on left and right
@@ -232,7 +231,6 @@ NSPoint FractionalCoordWithinImageView(const NSPoint &thePoint, const NSImageVie
 	}
 
 	NSPoint result = (thePoint - viewCentre) / imageWidthInView;
-	printf(" %f %f\n", result.x, result.y);
 	return result;
 }
 
