@@ -163,8 +163,8 @@ NSPoint ImageViewCoordToImageCoord(const NSPoint &thePoint, const NSImageView *t
 		in the image that is being shown in the view.
 		This makes (hopefully reasonable!) assumptions about how the NSImageView draws the NSImage.
 		Note that we have to allow for whitespace due to aspect ratio mismatches	*/
-	float imageAspectRatio = theView.image.size.width / theView.image.size.height;
-	float scaleFactor;
+	double imageAspectRatio = theView.image.size.width / theView.image.size.height;
+	double scaleFactor;
 	NSPoint viewOrigin;
 
 	if (theView.bounds.size.width / theView.bounds.size.height > imageAspectRatio)
@@ -191,8 +191,8 @@ NSPoint ImageCoordToImageViewCoord(const NSPoint &thePoint, const NSImageView *t
 		that is displaying the image.
 		This makes (hopefully reasonable!) assumptions about how the NSImageView draws the NSImage.
 		Note that we have to allow for whitespace due to aspect ratio mismatches	*/
-	float imageAspectRatio = theView.image.size.width / theView.image.size.height;
-	float scaleFactor;
+	double imageAspectRatio = theView.image.size.width / theView.image.size.height;
+	double scaleFactor;
 	NSPoint viewOrigin;
 
 	if (theView.bounds.size.width / theView.bounds.size.height > imageAspectRatio)
