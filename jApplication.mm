@@ -16,6 +16,7 @@ JApplication *baseApp = nil;
 @interface JApplication()
 	@property (readwrite, retain) NSString *buildVersionString;
 	@property (readwrite, retain) NSString *configFilename;
+	@property (readwrite) bool terminating;
 @end
 
 @implementation JApplication
@@ -25,7 +26,7 @@ JApplication *baseApp = nil;
 	if (!(self = [super init]))
 		return nil;
 
-	terminating = false;
+	self.terminating = false;
     
     return self;
 }
@@ -77,7 +78,7 @@ JApplication *baseApp = nil;
 
 -(void)terminate:(id)sender
 {
-	terminating = true;
+	self.terminating = true;
     [[NSNotificationCenter defaultCenter] removeObserver:self];
 	SendImmediateNotificationOnThisThread(CloseSheetsForTermination, self);
 
@@ -106,7 +107,7 @@ JApplication *baseApp = nil;
 
 -(void)alertWithText:(NSString *)mainText andExplanation:(NSString *)text2 iconName:(NSString*)iconName
 {
-	if (terminating)
+	if (self.terminating)
 		printf("Suppress alert as we are terminating. %s. %s\n", mainText.UTF8String, text2.UTF8String);
 	else
 	{
@@ -179,5 +180,6 @@ JApplication *baseApp = nil;
 
 @synthesize buildVersionString = _buildVersionString;
 @synthesize configFilename = _configFilename;
+@synthesize terminating = _terminating;
 
 @end

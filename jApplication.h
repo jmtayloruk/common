@@ -10,7 +10,7 @@
 
 @interface JApplication : NSApplication
 {
-	bool		terminating;
+	bool		_terminating;
 	NSString	*_buildVersionString;
 	NSString            *_configFilename;
 }
@@ -32,6 +32,7 @@
 @property (readonly, retain) NSString *configFilename;
 @property (readonly, retain) NSString *buildVersionString;
 @property (readonly) bool debugBuild;
+@property (readonly) bool terminating;
 
 @end
 
