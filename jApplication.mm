@@ -76,13 +76,11 @@ JApplication *baseApp = nil;
 	}];
 }
 
--(void)terminate:(id)sender
+-(void)applicationWillTerminate:(NSNotification *)notification
 {
 	self.terminating = true;
     [[NSNotificationCenter defaultCenter] removeObserver:self];
 	SendImmediateNotificationOnThisThread(CloseSheetsForTermination, self);
-
-	[super terminate:sender];
 }
 
 -(bool)debugBuild
