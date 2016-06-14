@@ -75,6 +75,7 @@ NSInteger frameSortOrderUsingTimestamps(id string1, id string2, void *pathStem)
 {
 	// This is slower than sorting on the name alone,
 	// but is the best way of handling some strangely-named old datasets
+    // However, better than this is the code in FasterSortFramesByTimestamp that caches the timestamps rather than reading them repeatedly
 	NSString *stem = @"";
 	if (pathStem != nil)
 	{
@@ -101,6 +102,54 @@ NSInteger frameSortOrderUsingTimestamps(id string1, id string2, void *pathStem)
 NSInteger frameSortOrderForURLs(id url1, id url2, void *)
 {
 	return frameSortOrder(((NSURL *)url1).path, ((NSURL *)url2).path, nil);
+}
+
+struct TimestampedFrame
+{
+    NSString *filename;
+    double timestamp;
+    
+    static bool Compare(const TimestampedFrame &a, const TimestampedFrame &b)
+    {
+        if (a.timestamp != b.timestamp)
+            return (a.timestamp < b.timestamp);
+        return (frameSortOrder(a.filename, b.filename, nil) == NSOrderedAscending);
+    }
+};
+
+NSArray *FasterSortFramesByTimestamp(NSArray *filenames, NSString *pathStem)
+{
+    /*  We get terrible performance if we just use frameSortOrderUsingTimestamps naively,
+        because of the number of times it reads the entire metadata dictionary just to get one value!
+        Although it makes the code longer, it's worth reading the timestamps once and caching them.
+        At this point, the shortest code is going to be using C++, not ObjC I think...
+     
+        Note that of course the strings are not retained by the C++ code, so we are careful to
+        insert the strings into a new array rather than messing with the old one, just in case
+        that leads to string objects being released prematurely or anything like that.
+    */
+    NSString *stem = @"";
+    if (pathStem != nil)
+    {
+        ALWAYS_ASSERT([(id)pathStem isKindOfClass:[NSString class]]);
+        stem = [SWF:@"%@/", pathStem];
+    }
+    std::vector<TimestampedFrame> ts(filenames.count);
+    size_t i = 0;
+    for (NSString *s in filenames)
+    {
+        NSNumber *timestamp = MetadataKeyValueForFramePath([SWF:@"%@%@", stem, s], @"timestamp");
+        if (timestamp != nil)
+            ts[i++] = (TimestampedFrame){s, timestamp.doubleValue};
+        else
+            ts[i++] = (TimestampedFrame){s, -1.0};
+    }
+    std::sort(ts.begin(), ts.end(), TimestampedFrame::Compare);
+    
+    NSMutableArray *result = [NSMutableArray new];
+    for (i = 0; i < ts.size(); i++)
+        [result addObject:ts[i].filename];
+    return result;
 }
 
 bool IsImageFile(NSString *theFilename)
@@ -163,7 +212,10 @@ NSArray *ListImageFilesInDirectory(NSString *dir, bool sorted, bool useTimestamp
 	if (sorted)
 	{
 		if (useTimestamps)
-			return [dirContents2 sortedArrayUsingFunction:frameSortOrderUsingTimestamps context:dir];
+        {
+//			return [dirContents2 sortedArrayUsingFunction:frameSortOrderUsingTimestamps context:dir];
+            return FasterSortFramesByTimestamp(dirContents2, dir);
+        }
 		else
 			return [dirContents2 sortedArrayUsingFunction:frameSortOrder context:nil];
 	}
