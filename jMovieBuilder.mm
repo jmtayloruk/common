@@ -25,6 +25,7 @@ void GetDestinationDetailsUsingSheetOnWindow(NSWindow *sheetOnWindow, void (^han
 	 }];
 }
 
+#if !defined(__x86_64__)
 CVPixelBufferRef FastImageFromNSImage(const NSImage *image, const _NSRect cropRect)
 {
     CVPixelBufferRef buffer = NULL;
@@ -80,3 +81,4 @@ void JMovieBuilder::AddFrame(const NSImage *frameImage, const _NSRect *cropRect,
 	CVPixelBufferRelease(pixelBuffer);
 	frameCounter++;
 }
+#endif
