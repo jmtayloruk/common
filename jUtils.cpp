@@ -196,6 +196,7 @@ void LinearFit(std::vector<double> &x, std::vector<double> &y, double *alpha, do
 	// Perform a linear fit to a set of x/y values provided.
 	double xyMean = 0, xMean = 0, yMean = 0, x2Mean = 0;
 	ALWAYS_ASSERT(x.size() == y.size());
+    ALWAYS_ASSERT(x.size() > 1);
 	size_t n = x.size();
 	for (size_t i = 0; i < n; i++)
 	{

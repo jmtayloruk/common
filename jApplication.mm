@@ -164,10 +164,26 @@ JApplication *baseApp = nil;
 	return result;
 }
 
+-(NSString *)stringForDefault:(NSString *)key usingIfAbsent:(NSString *)def
+{
+    NSString *result = [self getObjectForDefault:key requiringClass:[NSString class] mayBeAbsent:true];
+    if (result == nil)
+        return def;
+    return result;
+}
+
 -(int)intForDefault:(NSString *)key
 {
 	NSNumber *num = [self getObjectForDefault:key requiringClass:[NSNumber class] mayBeAbsent:false];
 	return num.intValue;
+}
+
+-(int)intForDefault:(NSString *)key usingIfAbsent:(int)def
+{
+    NSNumber *num = [self getObjectForDefault:key requiringClass:[NSNumber class] mayBeAbsent:true];
+    if (num == nil)
+        return def;
+    return num.intValue;
 }
 
 -(double)doubleForDefault:(NSString *)key
