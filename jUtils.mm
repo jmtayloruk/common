@@ -164,7 +164,7 @@ bool IsImageFile(NSString *theFilename)
 			[theFilename hasSuffix:@".eps"]);
 }
 
-NSArray *ListImageFilesInDirectory(NSString *dir, bool sorted, bool useTimestamps)
+NSArray *ListImageFilesInDirectory(NSString *dir, bool sorted, bool useTimestamps, bool fullPath)
 {
 	// Returns an array containing NSStrings for each image file in a directory
 #if 0
@@ -209,17 +209,32 @@ NSArray *ListImageFilesInDirectory(NSString *dir, bool sorted, bool useTimestamp
 	fts_close(ftsHandle);
 
 	// Sort after filtering (let's make the array as small as possible before we sort it!)
+	NSArray *dirContents3;
 	if (sorted)
 	{
 		if (useTimestamps)
         {
 //			return [dirContents2 sortedArrayUsingFunction:frameSortOrderUsingTimestamps context:dir];
-            return FasterSortFramesByTimestamp(dirContents2, dir);
+            dirContents3 = FasterSortFramesByTimestamp(dirContents2, dir);
         }
 		else
-			return [dirContents2 sortedArrayUsingFunction:frameSortOrder context:nil];
+			dirContents3 = [dirContents2 sortedArrayUsingFunction:frameSortOrder context:nil];
 	}
-	return dirContents2;
+	else
+		dirContents3 = dirContents2;
+	
+	if (fullPath)
+	{
+		NSMutableArray *dirContents4 = [NSMutableArray new];
+		for (int i = 0; i < (int)dirContents2.count; i++)
+		{
+			NSString *theFullPath = [dir stringByAppendingPathComponent:[dirContents3 objectAtIndex:i]];
+			[dirContents4 addObject:theFullPath];
+		}
+		return dirContents4;
+	}
+	else
+		return dirContents3;
 #endif
 }
 
