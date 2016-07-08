@@ -50,7 +50,7 @@ JApplication *baseApp = nil;
 
 	// Identify a config file to use
     self.configFilename = [ConfigSelector determineConfigFileToUse];
-	if (self.configFilename != nil)
+	if ((self.configFilename != nil) && (self.configFilename.length > 0))
 	{
 		// Register that config dictionary with NSUserDefaults
 		NSString *configPath = [[NSBundle mainBundle] pathForResource:self.configFilename ofType:@"plist"];
