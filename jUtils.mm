@@ -146,7 +146,7 @@ NSArray *FasterSortFramesByTimestamp(NSArray *filenames, NSString *pathStem)
     }
     std::sort(ts.begin(), ts.end(), TimestampedFrame::Compare);
     
-    NSMutableArray *result = [NSMutableArray new];
+    NSMutableArray *result = [NSMutableArray array];
     for (i = 0; i < ts.size(); i++)
         [result addObject:ts[i].filename];
     return result;
@@ -195,7 +195,7 @@ NSArray *ListImageFilesInDirectory(NSString *dir, bool sorted, bool useTimestamp
 	FTSENT *child = fts_children(ftsHandle, FTS_NAMEONLY);
 
 	// Transfer the linked list into a mutable array
-	NSMutableArray *dirContents2 = [NSMutableArray new];
+	NSMutableArray *dirContents2 = [NSMutableArray array];
 	while (child != NULL)
 	{
 		// Add any image filenames to our array.
@@ -225,7 +225,7 @@ NSArray *ListImageFilesInDirectory(NSString *dir, bool sorted, bool useTimestamp
 	
 	if (fullPath)
 	{
-		NSMutableArray *dirContents4 = [NSMutableArray new];
+		NSMutableArray *dirContents4 = [NSMutableArray array];
 		for (int i = 0; i < (int)dirContents2.count; i++)
 		{
 			NSString *theFullPath = [dir stringByAppendingPathComponent:[dirContents3 objectAtIndex:i]];
