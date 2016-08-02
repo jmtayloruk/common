@@ -11,18 +11,19 @@
 @interface JDispatchTimer : NSObject
 {
 	dispatch_source_t	timerSource;
-	uint64_t			interval, repeatInterval;
+	uint64_t			intervalNs, repeatIntervalNs, flexibilityNs;
 	bool				firedOneShot;
     double             _oneoffTimeDue;  // I have not implemented this for repeating timers just because it would be a little more complicated, and I haven't needed that feature
 }
 
-+(id)oneShotTimerOnQueue:(dispatch_queue_t)queue afterInterval:(double)dt withHandler:(dispatch_block_t)handler;
-+(id)newOneShotTimerOnQueue:(dispatch_queue_t)queue afterInterval:(double)dt withHandler:(dispatch_block_t)handler;
-+(id)allocRepeatingTimerOnQueue:(dispatch_queue_t)queue atInterval:(double)dt withHandler:(dispatch_block_t)handler;
++(id)oneShotTimerOnQueue:(dispatch_queue_t)queue afterInterval:(double)dt flex:(double)flexibility critical:(bool)critical withHandler:(dispatch_block_t)handler;
++(id)newOneShotTimerOnQueue:(dispatch_queue_t)queue afterInterval:(double)dt flex:(double)flexibility critical:(bool)critical withHandler:(dispatch_block_t)handler;
++(id)allocRepeatingTimerOnQueue:(dispatch_queue_t)queue atInterval:(double)dt flex:(double)flexibility critical:(bool)critical withHandler:(dispatch_block_t)handler;
 -(void)suspend;
 -(void)restart;
 -(void)cancel;
 -(void)restartOneShotTimer;
+-(void)restartOneShotTimerWithIntervalInSecsFromNow:(double)newIntervalFromNow;
 -(void)fireOneShotTimerNow;
 -(void)adjustNextInterval:(double)newInterval;
 

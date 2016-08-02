@@ -59,7 +59,7 @@ class jBigNum
 	long exponent(void) const { return _exponent; }
 	jComplexR detail(void) const { return _detail; }
 	
-	bool	FitsInDouble(void) const { return (abs(_exponent) < (DBL_MAX_10_EXP - 10)); }
+	bool	FitsInDouble(void) const { return (abs((int)_exponent) < (DBL_MAX_10_EXP - 10)); }
 
 	jBigNum& operator += (const jBigNum &n)
 	{

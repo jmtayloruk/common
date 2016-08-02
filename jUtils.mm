@@ -71,9 +71,85 @@ NSInteger frameSortOrder(id string1, id string2, void *)
 	return [(NSString *)string1 caseInsensitiveCompare:(NSString *)string2];
 }
 
+NSInteger frameSortOrderUsingTimestamps(id string1, id string2, void *pathStem)
+{
+	// This is slower than sorting on the name alone,
+	// but is the best way of handling some strangely-named old datasets
+    // However, better than this is the code in FasterSortFramesByTimestamp that caches the timestamps rather than reading them repeatedly
+	NSString *stem = @"";
+	if (pathStem != nil)
+	{
+		ALWAYS_ASSERT([(id)pathStem isKindOfClass:[NSString class]]);
+		stem = [SWF:@"%@/", pathStem];
+	}
+	NSNumber *timestamp1 = MetadataKeyValueForFramePath([SWF:@"%@%@", stem, string1], @"timestamp");
+	NSNumber *timestamp2 = MetadataKeyValueForFramePath([SWF:@"%@%@", stem, string2], @"timestamp");
+	if ((timestamp1 != nil) && (timestamp2 != nil))
+	{
+		double t1 = timestamp1.doubleValue;
+		double t2 = timestamp2.doubleValue;
+		if (t1 < t2)
+			return NSOrderedAscending;
+		else if (t1 > t2)
+			return NSOrderedDescending;
+		else
+			return NSOrderedSame;
+	}
+	// If we get here then there is presumably not metadata available
+	return frameSortOrder(string1, string2, nil);
+}
+
 NSInteger frameSortOrderForURLs(id url1, id url2, void *)
 {
 	return frameSortOrder(((NSURL *)url1).path, ((NSURL *)url2).path, nil);
+}
+
+struct TimestampedFrame
+{
+    NSString *filename;
+    double timestamp;
+    
+    static bool Compare(const TimestampedFrame &a, const TimestampedFrame &b)
+    {
+        if (a.timestamp != b.timestamp)
+            return (a.timestamp < b.timestamp);
+        return (frameSortOrder(a.filename, b.filename, nil) == NSOrderedAscending);
+    }
+};
+
+NSArray *FasterSortFramesByTimestamp(NSArray *filenames, NSString *pathStem)
+{
+    /*  We get terrible performance if we just use frameSortOrderUsingTimestamps naively,
+        because of the number of times it reads the entire metadata dictionary just to get one value!
+        Although it makes the code longer, it's worth reading the timestamps once and caching them.
+        At this point, the shortest code is going to be using C++, not ObjC I think...
+     
+        Note that of course the strings are not retained by the C++ code, so we are careful to
+        insert the strings into a new array rather than messing with the old one, just in case
+        that leads to string objects being released prematurely or anything like that.
+    */
+    NSString *stem = @"";
+    if (pathStem != nil)
+    {
+        ALWAYS_ASSERT([(id)pathStem isKindOfClass:[NSString class]]);
+        stem = [SWF:@"%@/", pathStem];
+    }
+    std::vector<TimestampedFrame> ts(filenames.count);
+    size_t i = 0;
+    for (NSString *s in filenames)
+    {
+        NSNumber *timestamp = MetadataKeyValueForFramePath([SWF:@"%@%@", stem, s], @"timestamp");
+        if (timestamp != nil)
+            ts[i++] = (TimestampedFrame){s, timestamp.doubleValue};
+        else
+            ts[i++] = (TimestampedFrame){s, -1.0};
+    }
+    std::sort(ts.begin(), ts.end(), TimestampedFrame::Compare);
+    
+    NSMutableArray *result = [NSMutableArray array];
+    for (i = 0; i < ts.size(); i++)
+        [result addObject:ts[i].filename];
+    return result;
 }
 
 bool IsImageFile(NSString *theFilename)
@@ -88,7 +164,7 @@ bool IsImageFile(NSString *theFilename)
 			[theFilename hasSuffix:@".eps"]);
 }
 
-NSArray *ListImageFilesInDirectory(NSString *dir, bool sorted)
+NSArray *ListImageFilesInDirectory(NSString *dir, bool sorted, bool useTimestamps, bool fullPath)
 {
 	// Returns an array containing NSStrings for each image file in a directory
 #if 0
@@ -106,7 +182,7 @@ NSArray *ListImageFilesInDirectory(NSString *dir, bool sorted)
 #else
 	// It will hopefully be faster to use lower-level APIs as follows.
 	// Get a pointer to the first in a tree of structures representing the contents of the directory
-	int len = strlen(dir.UTF8String) + 1;
+	size_t len = strlen(dir.UTF8String) + 1;
 	char pathBuffer[len];
 	snprintf(pathBuffer, len, "%s", dir.UTF8String);
 	char * const pathArray[2] = { pathBuffer, NULL };
@@ -119,7 +195,7 @@ NSArray *ListImageFilesInDirectory(NSString *dir, bool sorted)
 	FTSENT *child = fts_children(ftsHandle, FTS_NAMEONLY);
 
 	// Transfer the linked list into a mutable array
-	NSMutableArray *dirContents2 = [NSMutableArray new];
+	NSMutableArray *dirContents2 = [NSMutableArray array];
 	while (child != NULL)
 	{
 		// Add any image filenames to our array.
@@ -133,9 +209,32 @@ NSArray *ListImageFilesInDirectory(NSString *dir, bool sorted)
 	fts_close(ftsHandle);
 
 	// Sort after filtering (let's make the array as small as possible before we sort it!)
+	NSArray *dirContents3;
 	if (sorted)
-		return [dirContents2 sortedArrayUsingFunction:frameSortOrder context:nil];
-	return dirContents2;
+	{
+		if (useTimestamps)
+        {
+//			return [dirContents2 sortedArrayUsingFunction:frameSortOrderUsingTimestamps context:dir];
+            dirContents3 = FasterSortFramesByTimestamp(dirContents2, dir);
+        }
+		else
+			dirContents3 = [dirContents2 sortedArrayUsingFunction:frameSortOrder context:nil];
+	}
+	else
+		dirContents3 = dirContents2;
+	
+	if (fullPath)
+	{
+		NSMutableArray *dirContents4 = [NSMutableArray array];
+		for (int i = 0; i < (int)dirContents2.count; i++)
+		{
+			NSString *theFullPath = [dir stringByAppendingPathComponent:[dirContents3 objectAtIndex:i]];
+			[dirContents4 addObject:theFullPath];
+		}
+		return dirContents4;
+	}
+	else
+		return dirContents3;
 #endif
 }
 
@@ -219,7 +318,7 @@ void PrintCompleteFolderPath(NSString *basePath, int indentationLevel, int leadi
     double recursionTime = 0;
     
     if (indentationLevel == 0)
-        leadingCharsToSkip = strlen(basePath.UTF8String)+1;     // +1 for the '/' character...
+        leadingCharsToSkip = (int)strlen(basePath.UTF8String)+1;     // +1 for the '/' character...
     
     for (NSString *theFilename in dirContents)
     {

@@ -19,6 +19,8 @@ double GetTimeAbsolute(void)
 {
 #if __MACH__
 	// I think this ought to give better resolution on OS X:
+	// Note that UpTime is deprecated - if I want to faff with replacing it then
+	// I can look at mach_absolute_time and mach_timebase_info... or just use gettimeofday!
 	Nanoseconds ns = AbsoluteToNanoseconds(UpTime());
 	return ns.lo * 1e-9 + ns.hi * (1e-9 * (1LL<<32));
 #else

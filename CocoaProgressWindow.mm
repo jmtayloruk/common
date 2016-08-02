@@ -106,7 +106,7 @@ void CocoaProgressWindowHelper::InternalUpdateProgress(double newProgress)
 
 -(void)dealloc
 {
-	printf("Dealloc progress window\n");
+	printf("Dealloc progress window %p\n", self);
 	CHECK(!sheetBegun);		// Owner should call closeSheetAndRelease
 	delete _base;
 	[super dealloc];

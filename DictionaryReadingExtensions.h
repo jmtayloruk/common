@@ -17,6 +17,7 @@
 -(double)getRequiredDoubleForKey:(NSString *)key;
 -(NSString *)getRequiredStringForKey:(NSString *)key;
 -(NSArray *)getRequiredArrayForKey:(NSString *)key ofLength:(int)length;
+-(NSArray *)getOptionalArrayForKey:(NSString *)key ofLength:(int)length defaultVal:(NSArray *)def;
 -(NSDictionary *)getRequiredDictionaryForKey:(NSString *)key;
 
 -(NSNumber *)getOptionalNumberForKey:(NSString *)key defaultVal:(NSNumber *)def;

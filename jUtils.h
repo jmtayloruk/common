@@ -87,13 +87,15 @@ char *NewCopyOfString(const char *inString);
 bool FileExists(const char *theFile);
 FILE *fopenf(const char * RESTRICT format, const char * RESTRICT mode, ...) PRINTFLIKE(1, 3);
 
+void LinearFit(std::vector<double> &x, std::vector<double> &y, double *alpha, double *beta);
+
 #if __OBJC__
 	#import <Cocoa/Cocoa.h>
     NSURL *PathToURL(NSString *path, NSURL *relativeTo);
     NSURL *PathToURL(NSString *path);
     bool IsDirectory(NSURL *fileURL);
 
-	NSArray *ListImageFilesInDirectory(NSString *dir, bool sorted = true);
+	NSArray *ListImageFilesInDirectory(NSString *dir, bool sorted = true, bool useTimestamps = false/* Default to false just because this is slower and didn't used to be what I did*/, bool fullPath = false);
 	void UpdateKeys(id owner, ...) NS_REQUIRES_NIL_TERMINATION;
 	bool StringIsInList(NSString *s, ...) NS_REQUIRES_NIL_TERMINATION;
 
@@ -112,6 +114,7 @@ FILE *fopenf(const char * RESTRICT format, const char * RESTRICT mode, ...) PRIN
     void PrintCompleteFolderPath(NSString *basePath, int indentationLevel, int leadingCharsToSkip);
 	NSInteger frameSortOrder(id string1, id string2, void *);
 	NSInteger frameSortOrderForURLs(id url1, id url2, void *);
+	NSInteger frameSortOrderUsingTimestamps(id string1, id string2, void *);
 #endif
 
 #endif

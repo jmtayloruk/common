@@ -65,6 +65,17 @@
 	return arr;
 }
 
+-(NSArray *)getOptionalArrayForKey:(NSString *)key ofLength:(int)length defaultVal:(NSArray *)def
+{
+	ALWAYS_ASSERT([self isKindOfClass:[NSDictionary class]]);
+	NSArray *arr = [self objectForKey:key];
+	if (arr == nil)
+		return def;
+	ALWAYS_ASSERT([arr isKindOfClass:[NSArray class]]);
+	if (length > 0)
+		ALWAYS_ASSERT(arr.count == (NSUInteger)length);
+	return arr;
+}
 -(NSDictionary *)getRequiredDictionaryForKey:(NSString *)key
 {
 	ALWAYS_ASSERT([self isKindOfClass:[NSDictionary class]]);
