@@ -7,3 +7,6 @@
 //
 
 void ProcessStacksIntoMIPs(void);
+void CalcMip(unsigned char *mipPixels, const unsigned char *otherPixels, size_t numPixels);
+void CalcMip(unsigned short *mipPixels, const unsigned short *otherPixels, size_t numPixels);
+void CalcMipForBPP(unsigned char *mipData, const unsigned char *otherData, size_t bytes, int bitsPerPixel);

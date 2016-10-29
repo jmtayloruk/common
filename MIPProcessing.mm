@@ -35,11 +35,33 @@ static inline __m128i _mm_cmple_epu16 (__m128i x, __m128i y)
 #define XZ_MIP 2
 #define MIP_TYPE XY_MIP
 
-void CalcMipScalar(unsigned short *mipPixels, const unsigned short *otherPixels, size_t numPixels)
+template<class PIX_TYPE> void CalcMipScalar(PIX_TYPE *mipPixels, const PIX_TYPE *otherPixels, size_t numPixels)
 {
 	// Old scalar code for reference
 	for (size_t x = 0; x < numPixels; x++)
 		mipPixels[x] = MAX(mipPixels[x], otherPixels[x]);
+}
+
+void CalcMip(unsigned char *mipPixels, const unsigned char *otherPixels, size_t numPixels)
+{
+#if 0
+	CalcMipScalar(mipPixels, otherPixels, numPixels);
+#else
+	/* Vectorized MIP code.
+	 
+	 Basically this is not normally the bottleneck when image files need to be loaded from disk.
+	 I'm not sure what scenario I had previously looked at, where this was a performance bottleneck!
+	 */
+	size_t i;
+	for (i = 0; i < numPixels; i += 16)
+	{
+		__m128i x = *(__m128i*)&mipPixels[i];
+		__m128i y = *(__m128i*)&otherPixels[i];
+		*((__m128i*)&mipPixels[i]) = _mm_max_epu8(x, y);
+	}
+	for (; i < numPixels; i++)
+		mipPixels[i] = MAX(mipPixels[i], otherPixels[i]);
+#endif
 }
 
 void CalcMip(unsigned short *mipPixels, const unsigned short *otherPixels, size_t numPixels)
@@ -73,9 +95,26 @@ void CalcMip(unsigned short *mipPixels, const unsigned short *otherPixels, size_
 		__m128i y = *(__m128i*)&otherPixels[i];
 		*((__m128i*)&mipPixels[i]) = _mm_blendv_si128(x, y, _mm_cmple_epu16(x, y));
 	}
-	for (; i < numPixels; i ++)
+	for (; i < numPixels; i++)
 		mipPixels[i] = MAX(mipPixels[i], otherPixels[i]);
 #endif
+}
+
+void CalcMipForBPP(unsigned char *mipData, const unsigned char *otherData, size_t bytes, int bitsPerPixel)
+{
+	switch (bitsPerPixel)
+	{
+		case 8:
+		case 32:
+			// In the case of 32-bit data, we can treat it just as if it's 8-bit greyscale, but with more pixels
+			CalcMip(mipData, otherData, bytes);
+			break;
+		case 16:
+			CalcMip((unsigned short *)mipData, (const unsigned short*)otherData, bytes/2);
+			break;
+		default:
+			ALWAYS_ASSERT(0);
+	};
 }
 
 void MakeMipFromImagesInFolder(NSString *sourceFolderPath, NSString *destFilename, CocoaProgressWindow *progress, double totalWork)
@@ -86,14 +125,13 @@ void MakeMipFromImagesInFolder(NSString *sourceFolderPath, NSString *destFilenam
 	int numImages = ListImageFilesInDirectory(sourceFolderPath).count;
 	NSBitmapImageRep *firstBitmap = RawBitmapFromImagePath(FirstImageFileNameInDirectory(sourceFolderPath));
 	printf(" First file: %s %p\n", FirstImageFileNameInDirectory(sourceFolderPath).UTF8String, firstBitmap);
-	if (!(CHECK(firstBitmap.bitsPerPixel == 16)))
-		return;
+
 	__block int counter = 0;
 	double shear = 0.0;//2.0;
 	int shearStart = 0;//-100 * shear;
 #if MIP_TYPE == XY_MIP
 	__block NSBitmapImageRep *mipBitmap = [firstBitmap retain];
-	unsigned short *mipData = (unsigned short *)mipBitmap.bitmapData;
+	unsigned char *mipData = mipBitmap.bitmapData;
 	memset(mipData, 0, mipBitmap.bytesPerRow * mipBitmap.pixelsHigh);
 	ForEveryImageFileInDirectory(sourceFolderPath,
 								 ^(NSString *filename){
@@ -103,8 +141,6 @@ void MakeMipFromImagesInFolder(NSString *sourceFolderPath, NSString *destFilenam
 										 if (!(CHECK(otherBitmap != nil)))
 											 return;
                                          ALWAYS_ASSERT(otherBitmap != nil);     // Redundant, but useful to silence spurious static analysis warning
-										 if (!(CHECK(otherBitmap.bitsPerPixel == 16)))
-											 return;
 										 if (!(CHECK(otherBitmap.bytesPerRow == mipBitmap.bytesPerRow)))
 											 return;
 										 if (!(CHECK(otherBitmap.pixelsHigh == mipBitmap.pixelsHigh)))
@@ -120,11 +156,16 @@ void MakeMipFromImagesInFolder(NSString *sourceFolderPath, NSString *destFilenam
 											 return;
 										 }
 #endif
-										 const unsigned short *otherData = (const unsigned short *)otherBitmap.bitmapData;
 										 if (shear == 0.0)
-											 CalcMip(mipData, otherData, size_t(mipBitmap.pixelsHigh * mipBitmap.bytesPerRow / 2));
+											 CalcMipForBPP(mipData, otherBitmap.bitmapData, size_t(mipBitmap.pixelsHigh * mipBitmap.bytesPerRow), mipBitmap.bitsPerPixel);
 										 else
 										 {
+											 if (!(CHECK(otherBitmap.bitsPerPixel == 16)))
+											 {
+												 // Not supported here yet.
+												 // To be honest, this shear code is probably obsolete now I am supporting rotation in StackViewer
+												 return;
+											 }
 											 for (int y = 0; y < otherBitmap.pixelsHigh; y++)
 											 {
 												 unsigned short *mipRow = (unsigned short *)(mipBitmap.bitmapData + mipBitmap.bytesPerRow * y);
