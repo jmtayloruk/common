@@ -9,7 +9,6 @@
 #import "MIPProcessing.h"
 #import "CocoaProgressWindow.h"
 #import <dispatch/dispatch.h>
-#import "GUIMovieBuilder.h"
 #import "jCocoaImageUtils.h"
 #ifdef __SSE4_1__
     #import <smmintrin.h>		// SSE4.1
@@ -122,7 +121,7 @@ void MakeMipFromImagesInFolder(NSString *sourceFolderPath, NSString *destFilenam
 	// TODO: this could be improved on - currently it just bails out if the files aren't in the format it expects
 	NSAutoreleasePool *pool = [NSAutoreleasePool new];
 
-	int numImages = ListImageFilesInDirectory(sourceFolderPath).count;
+	size_t numImages = ListImageFilesInDirectory(sourceFolderPath).count;
 	NSBitmapImageRep *firstBitmap = RawBitmapFromImagePath(FirstImageFileNameInDirectory(sourceFolderPath));
 	printf(" First file: %s %p\n", FirstImageFileNameInDirectory(sourceFolderPath).UTF8String, firstBitmap);
 
@@ -157,7 +156,7 @@ void MakeMipFromImagesInFolder(NSString *sourceFolderPath, NSString *destFilenam
 										 }
 #endif
 										 if (shear == 0.0)
-											 CalcMipForBPP(mipData, otherBitmap.bitmapData, size_t(mipBitmap.pixelsHigh * mipBitmap.bytesPerRow), mipBitmap.bitsPerPixel);
+											 CalcMipForBPP(mipData, otherBitmap.bitmapData, size_t(mipBitmap.pixelsHigh * mipBitmap.bytesPerRow), (int)mipBitmap.bitsPerPixel);
 										 else
 										 {
 											 if (!(CHECK(otherBitmap.bitsPerPixel == 16)))
@@ -231,7 +230,7 @@ void MakeMipFromImagesInFolder(NSString *sourceFolderPath, NSString *destFilenam
 	[pool drain];
 }
 
-void ProcessStacksIntoMIPsSavingAt(NSArray *inURLs, NSURL *destinationURL)
+void ProcessStacksIntoMIPsSavingAt(NSArray *inURLs, NSURL *destinationURL, void (^completionBlock)(int mipCounter, NSURL *destinationURL))
 {
 	// Sort filenames in chronological order
 	NSArray *urls = [inURLs sortedArrayUsingFunction:frameSortOrderForURLs context:nil];
@@ -328,29 +327,15 @@ void ProcessStacksIntoMIPsSavingAt(NSArray *inURLs, NSURL *destinationURL)
 					   }
 					   
 					   
-					   dispatch_async(dispatch_get_main_queue(),
-									  ^{
-										  if (!progress.userCancelled)
-										  {
-											  if (mipCounter > 0)
-											  {
-												  // Display MovieBuilder for the newly created MIP stack
-												  GUIMovieBuilder *builder = [GUIMovieBuilder  runSession];
-												  [builder addSequenceUsingDirectoryURL:destinationURL];
-											  }
-											  else
-											  {
-												  [baseApp alertWithText:@"No MIP files generated"
-														  andExplanation:@"No image files were found in the chosen folder or its immediate subfolders"];
-
-											  }
-										  }
-										  [progress closeWindowAndRelease];
-									  });
+					   dispatch_async(dispatch_get_main_queue(), ^{
+							   if (!progress.userCancelled)
+								   completionBlock(mipCounter, destinationURL);
+							   [progress closeWindowAndRelease];
+					   });
 				   });
 }
 
-void ProcessTheseStacksIntoMIPs(NSArray *stackURLs)
+void ProcessTheseStacksIntoMIPs(NSArray *stackURLs, void (^completionBlock)(int mipCounter, NSURL *destinationURL))
 {
 	NSOpenPanel *destinationPanel = [NSOpenPanel openPanel];
 	// Could use the following to set the starting directory for the save panel:
@@ -369,12 +354,12 @@ void ProcessTheseStacksIntoMIPs(NSArray *stackURLs)
 						^{
 							if (result != NSOKButton)
 								return;
-							ProcessStacksIntoMIPsSavingAt(stackURLs, destinationPanel.URL);
+							ProcessStacksIntoMIPsSavingAt(stackURLs, destinationPanel.URL, completionBlock);
 						});
 	 }];
 }
 
-void ProcessStacksIntoMIPs(void)
+void ProcessStacksIntoMIPs(void (^completionBlock)(int mipCounter, NSURL *destinationURL))
 {
 	NSOpenPanel *panel = [NSOpenPanel openPanel];
 	panel.allowsMultipleSelection = TRUE;
@@ -385,6 +370,6 @@ void ProcessStacksIntoMIPs(void)
 	[panel beginWithCompletionHandler:^(NSInteger result)
 	 {
 		 if (result == NSFileHandlingPanelOKButton)
-			 ProcessTheseStacksIntoMIPs(panel.URLs);
+			 ProcessTheseStacksIntoMIPs(panel.URLs, completionBlock);
 	 }];
 }
