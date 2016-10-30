@@ -1,3 +1,4 @@
+#define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
 #include "jPythonCommon.h"
 
 void RequireObjectType(PyObject *obj, PyTypeObject &type)
