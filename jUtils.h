@@ -95,7 +95,7 @@ void LinearFit(std::vector<double> &x, std::vector<double> &y, double *alpha, do
     NSURL *PathToURL(NSString *path);
     bool IsDirectory(NSURL *fileURL);
 
-	NSArray *ListImageFilesInDirectory(NSString *dir, bool sorted = true, bool useTimestamps = false/* Default to false just because this is slower and didn't used to be what I did*/);
+	NSArray *ListImageFilesInDirectory(NSString *dir, bool sorted = true, bool useTimestamps = false/* Default to false just because this is slower and didn't used to be what I did*/, bool fullPath = false);
 	void UpdateKeys(id owner, ...) NS_REQUIRES_NIL_TERMINATION;
 	bool StringIsInList(NSString *s, ...) NS_REQUIRES_NIL_TERMINATION;
 

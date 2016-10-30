@@ -302,6 +302,17 @@ namespace jIntegralPrivate
 	    TYPE	Evaluate (double dummy, double dummy2, double x) const { return theClass->METHOD(x, extra); } \
 	};
 	
+#define DEFINE_CLASS_FUNCTOR_2_EXTRA_PARAMS(TYPE, CLASS, METHOD, EXTRA_PARAM_TYPE1, EXTRA_PARAM_TYPE2, NAME) \
+    class NAME \
+    { \
+        const CLASS	*const theClass; \
+        EXTRA_PARAM_TYPE1 extra1; \
+        EXTRA_PARAM_TYPE2 extra2; \
+      public: \
+        NAME(const CLASS * const in, EXTRA_PARAM_TYPE1 inExtra1, EXTRA_PARAM_TYPE2 inExtra2) : theClass(in) { extra1 = inExtra1; extra2 = inExtra2; } \
+        TYPE	Evaluate (double dummy, double dummy2, double x) const { return theClass->METHOD(x, extra1, extra2); } \
+};
+
 #define DEFINE_CLASS_2D_FUNCTOR(TYPE, CLASS, METHOD, NAME) \
 	class NAME \
 	{ \

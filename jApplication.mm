@@ -16,6 +16,7 @@ JApplication *baseApp = nil;
 @interface JApplication()
 	@property (readwrite, retain) NSString *buildVersionString;
 	@property (readwrite, retain) NSString *configFilename;
+	@property (readwrite) bool terminating;
 @end
 
 @implementation JApplication
@@ -25,7 +26,7 @@ JApplication *baseApp = nil;
 	if (!(self = [super init]))
 		return nil;
 
-	terminating = false;
+	self.terminating = false;
     
     return self;
 }
@@ -49,7 +50,7 @@ JApplication *baseApp = nil;
 
 	// Identify a config file to use
     self.configFilename = [ConfigSelector determineConfigFileToUse];
-	if (self.configFilename != nil)
+	if ((self.configFilename != nil) && (self.configFilename.length > 0))
 	{
 		// Register that config dictionary with NSUserDefaults
 		NSString *configPath = [[NSBundle mainBundle] pathForResource:self.configFilename ofType:@"plist"];
@@ -75,13 +76,11 @@ JApplication *baseApp = nil;
 	}];
 }
 
--(void)terminate:(id)sender
+-(void)applicationWillTerminate:(NSNotification *)notification
 {
-	terminating = true;
+	self.terminating = true;
     [[NSNotificationCenter defaultCenter] removeObserver:self];
 	SendImmediateNotificationOnThisThread(CloseSheetsForTermination, self);
-
-	[super terminate:sender];
 }
 
 -(bool)debugBuild
@@ -106,7 +105,7 @@ JApplication *baseApp = nil;
 
 -(void)alertWithText:(NSString *)mainText andExplanation:(NSString *)text2 iconName:(NSString*)iconName
 {
-	if (terminating)
+	if (self.terminating)
 		printf("Suppress alert as we are terminating. %s. %s\n", mainText.UTF8String, text2.UTF8String);
 	else
 	{
@@ -165,10 +164,26 @@ JApplication *baseApp = nil;
 	return result;
 }
 
+-(NSString *)stringForDefault:(NSString *)key usingIfAbsent:(NSString *)def
+{
+    NSString *result = [self getObjectForDefault:key requiringClass:[NSString class] mayBeAbsent:true];
+    if (result == nil)
+        return def;
+    return result;
+}
+
 -(int)intForDefault:(NSString *)key
 {
 	NSNumber *num = [self getObjectForDefault:key requiringClass:[NSNumber class] mayBeAbsent:false];
 	return num.intValue;
+}
+
+-(int)intForDefault:(NSString *)key usingIfAbsent:(int)def
+{
+    NSNumber *num = [self getObjectForDefault:key requiringClass:[NSNumber class] mayBeAbsent:true];
+    if (num == nil)
+        return def;
+    return num.intValue;
 }
 
 -(double)doubleForDefault:(NSString *)key
@@ -179,5 +194,6 @@ JApplication *baseApp = nil;
 
 @synthesize buildVersionString = _buildVersionString;
 @synthesize configFilename = _configFilename;
+@synthesize terminating = _terminating;
 
 @end
