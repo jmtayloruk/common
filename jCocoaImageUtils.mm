@@ -157,6 +157,85 @@ void BrightenNSImage(NSImage *image, int factor)
 	[image unlockFocus];
 }
 
+NSBitmapImageRep *TintBitmap(NSBitmapImageRep *srcBitmap, NSColor *tint, NSColor *saturation, double exposureOnScreen)
+{
+	// Takes a greyscale input image and returns a colour result image
+	// that has been tinted according to the input colours
+	ALWAYS_ASSERT(srcBitmap.samplesPerPixel == 1);
+	int width = srcBitmap.pixelsWide, height = srcBitmap.pixelsHigh;
+	NSBitmapImageRep *destBitmap = [[NSBitmapImageRep alloc]
+									initWithBitmapDataPlanes:NULL		// Bitmap allocates and releases the necessary memory for us
+									pixelsWide:width
+									pixelsHigh:height
+									bitsPerSample:8
+									samplesPerPixel:4
+									hasAlpha:YES
+									isPlanar:NO
+									colorSpaceName:NSCalibratedRGBColorSpace
+									bytesPerRow:4*width
+									bitsPerPixel:0];
+	// We are going to fill in the bitmap data by hand, but first we need to know what the colours are.
+	// There's no simple way of querying the RGB components of an arbitrary NSColor, so we do it the
+	// empirical way by seeing how they come out when drawn into the bitmap!
+	[NSGraphicsContext saveGraphicsState];
+	NSGraphicsContext *newContext = [NSGraphicsContext graphicsContextWithBitmapImageRep:destBitmap];
+	[NSGraphicsContext setCurrentContext:newContext];
+	[tint setFill];
+	NSBezierPath* drawingPath = [NSBezierPath bezierPath];
+	[drawingPath appendBezierPathWithRect:NSMakeRect(0, height-1, 1, 1)];
+	[drawingPath fill];
+	[saturation setFill];
+	drawingPath = [NSBezierPath bezierPath];
+	[drawingPath appendBezierPathWithRect:NSMakeRect(1, height-1, 1, 1)];
+	[drawingPath fill];
+	[NSGraphicsContext restoreGraphicsState];
+	void *srcData = [srcBitmap bitmapData];
+	unsigned char *destData = [destBitmap bitmapData];
+	double tintRGB[3] = { destData[0], destData[1], destData[2] };
+	unsigned char saturatedRGB[3] = { destData[4], destData[5], destData[6] };
+	
+	// Fill in the bitmap data
+	int sizeInBytes = width * height * 4;
+	double invMaxVal = 1.0 / ((1 << srcBitmap.bitsPerPixel) - 1);
+	bool sixteenBit = (srcBitmap.bitsPerPixel == 16) ? true : false;
+	ALWAYS_ASSERT([destBitmap bytesPerPlane] == sizeInBytes);
+	for (int pos = 0; pos < width * height; pos++)
+	{
+		double val;
+		if (sixteenBit)
+			val = ((unsigned short*)srcData)[pos] * invMaxVal;
+		else
+			val = ((unsigned char*)srcData)[pos] * invMaxVal;
+		if (val == 1.0)
+		{
+			destData[pos*4] = saturatedRGB[0];
+			destData[pos*4+1] = saturatedRGB[1];
+			destData[pos*4+2] = saturatedRGB[2];
+			destData[pos*4+3] = 255;
+		}
+		else
+		{
+			val *= exposureOnScreen;
+			val = MAX(val, 0.0);
+			val = MIN(val, 1.0);
+			destData[pos*4] = (unsigned char)(val * tintRGB[0]);
+			destData[pos*4+1] = (unsigned char)(val * tintRGB[1]);
+			destData[pos*4+2] = (unsigned char)(val * tintRGB[2]);
+			destData[pos*4+3] = 255;
+		}
+	}
+	
+	return [destBitmap autorelease];
+}
+
+NSImage *TintImage(NSImage *srcImage, NSColor *tint, NSColor *saturation, double exposureOnScreen)
+{
+	NSBitmapImageRep *destBitmap = TintBitmap(RawBitmapFromImage(srcImage), tint, saturation, exposureOnScreen);
+	NSImage *result = [[NSImage alloc] initWithSize:NSMakeSize(destBitmap.pixelsWide, destBitmap.pixelsHigh)];
+	[result addRepresentation:destBitmap];
+	return [result autorelease];
+}
+
 NSPoint ImageViewCoordToImageCoord(const NSPoint &thePoint, const NSImageView *theView)
 {
 	/*	Converts from a point in an NSImageView (e.g. a mouse click) to the equivalent pixel coord
