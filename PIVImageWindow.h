@@ -49,6 +49,31 @@ template<class TYPE> struct ImageWindow
 	}
 #endif
 	
+	void ReallocateImageWithPadding(int paddingX, int paddingY)
+	{
+		// Add black padding around the perimeter of the image.
+		// If we previously had a view into an actual NSBitmap, we will now instead have a padded copy
+		size_t newSize = (width+2*paddingX) * (height+2*paddingY);
+		TYPE *newBaseAddr = new TYPE[newSize];
+		memset(newBaseAddr, 0, newSize * sizeof(TYPE));
+		for (int j = 0; j < height; j++)
+            for (int i = 0; i < width; i++)
+				newBaseAddr[(j+paddingY)*(width+2*paddingX) + i+paddingX] = PixelXY(i, j);
+		
+#if __OBJC__
+		if (retainedBitmap != NULL)
+			[retainedBitmap release];
+        retainedBitmap = NULL;
+#endif
+        if (baseAddrAllocated)
+            delete[] baseAddr;
+		baseAddr = newBaseAddr;
+        baseAddrAllocated = true;
+		width = width + 2*paddingX;
+		height = height + 2*paddingY;
+        elementsPerRow = width;
+	}
+	
     template<class SRC_TYPE> void AllocateCopyOf(const ImageWindow<SRC_TYPE> &srcWindow)
     {
         ALWAYS_ASSERT(baseAddr == NULL);
@@ -66,6 +91,15 @@ template<class TYPE> struct ImageWindow
                 SetXY(i, j, srcWindow.PixelXY(i, j));
     }
 		
+    template<class SRC_TYPE> void MipWith(const ImageWindow<SRC_TYPE> &otherWindow)
+    {
+		ALWAYS_ASSERT(width == otherWindow.width);
+		ALWAYS_ASSERT(height == otherWindow.height);
+        for (int j = 0; j < height; j++)
+            for (int i = 0; i < width; i++)
+                SetXY(i, j, MAX(PixelXY(i, j), otherWindow.PixelXY(i, j)));
+    }
+	
 	ImageWindow(const ImageWindow<TYPE> &inVal) : baseAddr(NULL), baseAddrAllocated(false), width(0), height(0), elementsPerRow(0), retainedBitmap(NULL)
 	{
 		AllocateCopyOf(inVal);
@@ -187,7 +221,7 @@ template<class TYPE> struct ImageWindow
 		return [result autorelease];
 	}
 	
-	NSBitmapImageRep *NormalizedBitmap(void)
+	NSBitmapImageRep *NormalizedBitmap(double normalization = 0)
 	{
 		NSBitmapImageRep *result = [[NSBitmapImageRep alloc]
 									initWithBitmapDataPlanes:NULL
@@ -206,7 +240,8 @@ template<class TYPE> struct ImageWindow
 		for (int y = 0; y < height; y++)
 			for (int x = 0; x < width; x++)
 				maxVal = MAX(maxVal, PixelXY(x, y));
-		
+		if (normalization == 0)
+			normalization = maxVal;
 		for (int y = 0; y < height; y++)
 			for (int x = 0; x < width; x++)
 				destData[y*width+x] = (unsigned short)(PixelXY(x, y) / maxVal * 65535);
