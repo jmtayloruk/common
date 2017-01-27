@@ -16,6 +16,7 @@
 #include <sys/errno.h>
 #include <algorithm>
 
+#include "jOSMacros.h"		// Defines the macro OS_X, among other things!
 #if OS_X
 	// This should be a proper conditional (from ./configure script...), but for now I'll just use it for parameter checking
 	// on my OS X machines without worrying about availability on other machines.
@@ -25,7 +26,6 @@
 #endif
 #define RESTRICT __restrict
 
-#include "jOSMacros.h"
 #include "jAssert.h"
 #include "jHighPrecisionFloat.h"      // Will just define jreal as double, unless compile-time flag specifically set
 
