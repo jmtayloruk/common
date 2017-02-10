@@ -12,13 +12,14 @@
 NSURL *PathToURL(NSString *path, NSURL *relativeTo)
 {
 	// Convert a path into an NSURL object, relative to another specified URL
-	return [NSURL URLWithString:[path stringByAddingPercentEscapesUsingEncoding:NSASCIIStringEncoding] relativeToURL:relativeTo];
+    // Note that there is no need to worry about specifying a scheme in my string, since this is a relative URL
+    return [NSURL URLWithString:[path stringByAddingPercentEscapesUsingEncoding:NSASCIIStringEncoding] relativeToURL:relativeTo];
 }
 
 NSURL *PathToURL(NSString *path)
 {
 	// Convert a path into an NSURL object, as an absolute path
-	return [NSURL URLWithString:[path stringByAddingPercentEscapesUsingEncoding:NSASCIIStringEncoding]];
+	return [NSURL fileURLWithPath:path];
 }
 
 bool IsDirectory(NSURL *fileURL)
