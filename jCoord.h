@@ -57,6 +57,9 @@ struct coord2
 		if (angle < -PI) angle += 2.0 * PI;
 		return angle;
 	}
+    coord2 RotateByRadians(double radians);
+    coord2 RotateByDegrees(double degrees) { return RotateByRadians(degrees / 180.0 * PI); }
+
 	inline double LengthSquared(void) const { return SQUARE(x) + SQUARE(y); }
 	inline double Length(void) const { return sqrt(LengthSquared()); }
 	double Angle(void) const { return atan2(y, x); }

@@ -7,6 +7,7 @@
 //	Most of the functions here are for coordinate transformations.
 //
 #include "jCoord.h"
+#include "jUtils.h"
 
 template<> void coord3T<double>::Print(const char *suffix) const
 {
@@ -177,6 +178,13 @@ coord3 CylindricalToCartesian(coord3 source)
 	return coord3(cartX, cartY, cartZ);
 }
 
+coord2 coord2::RotateByRadians(double radians)
+{
+    double newX = x * cos(radians) - y * sin(radians);
+    double newY = x * sin(radians) + y * cos(radians);
+    return coord2(newX, newY);
+}
+
 #ifdef __GSL_COMPLEX_H__
 template<> gsl_vector *coord3T<double>::AllocGSLVector(void) const
 {
@@ -200,5 +208,6 @@ template<> coord3T<double>::coord3T(gsl_vector *inVector, int offset)
 	y = gsl_vector_get(inVector, offset+1);
 	z = gsl_vector_get(inVector, offset+2);
 }
+
 #endif
 
