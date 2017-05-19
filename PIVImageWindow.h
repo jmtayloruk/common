@@ -15,6 +15,7 @@
 #else
 	typedef void NSBitmapImageRep;
 #endif
+#include "GeometryObjects.h"
 #include <complex>
 #include "jCoord.h"
 
@@ -161,6 +162,8 @@ template<class TYPE> struct ImageWindow
     }
 	
 	coord2 CalculateFlowPeak(void) const;
+    IntegerPoint CalculateFlowPeakInteger(void) const;
+    double CalculateSNR(int threshold) const;
     
     void InitWithGaussianAt(double x, double y, double amp, double w)
     {

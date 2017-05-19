@@ -17,16 +17,16 @@ template<> int SadFunc<int>(int a, int b) { return abs(a - b); }
 template<> unsigned char SadFunc<unsigned char>(unsigned char a, unsigned char b) { return (unsigned char)abs(int(a) - int(b)); }
 template<> unsigned short SadFunc<unsigned short>(unsigned short a, unsigned short b) { return (unsigned short)abs(int(a) - int(b)); }
 
-template<> coord2 ImageWindow<double>::CalculateFlowPeak(void) const
+template<> IntegerPoint ImageWindow<double>::CalculateFlowPeakInteger(void) const
 {
-	// Look for a minimum (positive-valued...) value in the correlation array
+	// Look for the location of the minimum (positive-valued...) value in the correlation array
 	// We insist on an odd-dimensioned correlation matrix in order to make things simpler
 	ALWAYS_ASSERT(width & 1);
 	ALWAYS_ASSERT(height & 1);
 	ALWAYS_ASSERT(width == elementsPerRow);
 	double minVal = DBL_MAX;
 	int minX = -1, minY = -1;
-	coord2 result(-1,-1);
+	IntegerPoint result(-1,-1);
 	for (int y = 0; y < height; y++)
 		for (int x = 0; x < width; x++)
 		{
@@ -35,10 +35,18 @@ template<> coord2 ImageWindow<double>::CalculateFlowPeak(void) const
 				minVal = PixelXY(x, y);
 				minX = x;
 				minY = y;
-				result = coord2(x - width/2, y - height/2);
+				result = IntegerPoint(x, y);
 			}
 		}
+    return result;
+}
 	
+template<> coord2 ImageWindow<double>::CalculateFlowPeak(void) const
+{
+    IntegerPoint resultInt = CalculateFlowPeakInteger();
+    int minX = resultInt.x, minY = resultInt.y;
+    coord2 result(minX-width/2, minY-height/2);
+
     // Sub-pixel parabolic fit
     // This code is taken from the python code in openPIV
 	if ((minX > 0) && (minX < width-1))
@@ -57,6 +65,30 @@ template<> coord2 ImageWindow<double>::CalculateFlowPeak(void) const
 	}
     
 	return result;
+}
+
+template<> double ImageWindow<double>::CalculateSNR(int threshold) const
+{
+    // First determine the integer location of the peak value (minimum of SAD)
+    IntegerPoint peakPos = CalculateFlowPeakInteger();
+    
+    // Look for the smallest value outside a region around that point
+    double nextMinVal = DBL_MAX;
+    for (int y = 0; y < height; y++)
+        for (int x = 0; x < width; x++)
+        {
+            if ((abs(x-peakPos.x) > threshold) ||
+                (abs(y-peakPos.y) > threshold))
+            {
+                if (PixelXY(x, y) < nextMinVal)
+                    nextMinVal = PixelXY(x, y);
+            }
+        }
+    
+    // Calculate the ratio of values.
+    // Due to our use of SAD, we cannot interpret this the same way as would be done in standard PIV,
+    // but it should at least be reasonable to say that a larger difference is good!
+    return nextMinVal / PixelXY(peakPos.x, peakPos.y);
 }
 
 #pragma mark -
@@ -165,15 +197,23 @@ template<> void CrossCorrelateImageWindows<kCorrelationSAD, unsigned short>(Imag
 #endif
 	
 #if 1
+    /*  There may be specific circumstances where I want to force the IWs to be smaller in size, but to still be centered
+        in the same places as they would be if they were larger. Under those circumstances it is not trivial to provide
+        the correct PIV settings to make that happen, and it's easier to leave the PIV settings as they are but to hack
+        this function to reduce the actual area over which we do the processing.
+        To do that, set inset to a positive value.  */
+    const int inset = 0;
+    
+    // Do the main comparison loop
 	for (int dy = 0; dy <= maxDY; dy++)
         for (int dx = 0; dx <= maxDX; dx++)
         {
             double sum = 0;
             __m128i sumVec = (__m128i)_mm_setzero_ps();
-            for (int y = 0; y < w1Height; y++)
+            for (int y = inset; y < w1Height-inset; y++)
             {
-                int x = 0;
-                for (; x <= w1Width - 8; x += 8)
+                int x = inset;
+                for (; x <= w1Width - 8-inset; x += 8)
 				{
 					__m128i a = _mm_loadu_si128((__m128i*)window1.PixelXYAddr(x, y));
 					__m128i b = _mm_loadu_si128((__m128i*)window2.PixelXYAddr(x+dx, y+dy));
@@ -190,7 +230,7 @@ template<> void CrossCorrelateImageWindows<kCorrelationSAD, unsigned short>(Imag
 					sad = _mm_abs_epi32(_mm_sub_epi32(evenA, evenB));
 					sumVec = _mm_add_epi32(sumVec, sad);
 				}
-				for (; x < w1Width; x++)
+				for (; x < w1Width-inset; x++)
                     sum += abs(window1.PixelXY(x, y) - window2.PixelXY(x+dx, y+dy));
             }
             sum += SumOver32BitInts(&sumVec);
