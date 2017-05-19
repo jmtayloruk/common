@@ -51,6 +51,7 @@ JMovieBuilder::JMovieBuilder(OSType inCodec, const char *destPath, const BoundsR
 
 void JMovieBuilder::DoInit(OSType inCodec, const BoundsRect &bounds, double frameRate, Handle outputMovieDataRef, OSType outputMovieDataRefType, OSStatus *outErr, int inQuality)
 {
+    pixelBufferAttributes = NULL;
 	width = bounds.w;
 	height = bounds.h;
 	codecType = inCodec;
@@ -103,7 +104,8 @@ JMovieBuilder::~JMovieBuilder()
 		ALWAYS_ASSERT_NOERR(result);
 		ICMCompressionSessionRelease(compressionSession);
 	}
-	CFRelease(pixelBufferAttributes);
+    if (pixelBufferAttributes != NULL)
+        CFRelease(pixelBufferAttributes);
 	
 	if (outputMovie)
 		FinishOutputMovie();
