@@ -15,7 +15,7 @@
 #else
 	typedef void NSBitmapImageRep;
 #endif
-#include "GeometryObjects.h"
+#include "GeometryObjectsC.h"
 #include <complex>
 #include "jCoord.h"
 
