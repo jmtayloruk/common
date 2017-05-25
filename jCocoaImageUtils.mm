@@ -162,7 +162,7 @@ NSBitmapImageRep *TintBitmap(NSBitmapImageRep *srcBitmap, NSColor *tint, NSColor
 	// Takes a greyscale input image and returns a colour result image
 	// that has been tinted according to the input colours
 	ALWAYS_ASSERT(srcBitmap.samplesPerPixel == 1);
-	int width = srcBitmap.pixelsWide, height = srcBitmap.pixelsHigh;
+	int width = (int)srcBitmap.pixelsWide, height = (int)srcBitmap.pixelsHigh;
 	NSBitmapImageRep *destBitmap = [[NSBitmapImageRep alloc]
 									initWithBitmapDataPlanes:NULL		// Bitmap allocates and releases the necessary memory for us
 									pixelsWide:width
@@ -191,7 +191,7 @@ NSBitmapImageRep *TintBitmap(NSBitmapImageRep *srcBitmap, NSColor *tint, NSColor
 	[NSGraphicsContext restoreGraphicsState];
 	void *srcData = [srcBitmap bitmapData];
 	unsigned char *destData = [destBitmap bitmapData];
-	double tintRGB[3] = { destData[0], destData[1], destData[2] };
+	double tintRGB[3] = { (double)destData[0], (double)destData[1], (double)destData[2] };
 	unsigned char saturatedRGB[3] = { destData[4], destData[5], destData[6] };
 	
 	// Fill in the bitmap data

@@ -51,10 +51,10 @@ template<class TYPE> struct ImageWindow
 	void Construct(NSBitmapImageRep *srcBitmap)
 	{
 		retainedBitmap = [srcBitmap retain];
-		width = retainedBitmap.pixelsWide;
-		height = retainedBitmap.pixelsHigh;
+		width = (int)retainedBitmap.pixelsWide;
+		height = (int)retainedBitmap.pixelsHigh;
 		ALWAYS_ASSERT(retainedBitmap.bitsPerPixel == 8*sizeof(TYPE));
-		elementsPerRow = retainedBitmap.bytesPerRow / sizeof(TYPE);
+		elementsPerRow = (int)(retainedBitmap.bytesPerRow / sizeof(TYPE));
 		baseAddr = (TYPE*)retainedBitmap.bitmapData;
         baseAddrAllocated = false;
 	}
