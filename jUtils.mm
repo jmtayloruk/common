@@ -239,6 +239,17 @@ NSArray *ListImageFilesInDirectory(NSString *dir, bool sorted, bool useTimestamp
 #endif
 }
 
+void ForEverySubdirectoryInDirectory(NSURL *dir, void (^callback)(NSURL *))
+{
+	NSArray *dirContents = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:dir.path error:nil];
+	for (NSString *filename in dirContents)
+	{
+		NSURL *subdirectoryURL = PathToURL(filename, dir);
+		if (IsDirectory(subdirectoryURL))
+			callback(subdirectoryURL);
+	}
+}
+
 void ForEveryImageFileInDirectory(NSString *dir, void (^callback)(NSString *))
 {
 	// Iterate over every image file in the specified directory sequentially,
@@ -289,7 +300,7 @@ NSString *FirstImageFileNameInDirectory(NSString *dir)
 
 NSString *MetadataPathFromImagePath(NSString *fileName)
 {
-	return [[fileName stringByDeletingPathExtension] stringByAppendingPathExtension:@"plist"];
+	return [fileName.stringByDeletingPathExtension stringByAppendingPathExtension:@"plist"];
 }
 
 id MetadataKeyValueForFramePath(NSString *path, NSString *key)

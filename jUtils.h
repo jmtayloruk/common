@@ -104,6 +104,7 @@ void LinearFit(std::vector<double> &x, std::vector<double> &y, double *alpha, do
 	id ResurrectWeakRef(MAZeroingWeakRef *&ref, BlockReturningObject resurrectionBlock);
 	id ResurrectAndShowWeakWindowRef(MAZeroingWeakRef *&ref, BlockReturningObject resurrectionBlock);
   #ifdef __BLOCKS__
+		void ForEverySubdirectoryInDirectory(NSURL *dir, void (^callback)(NSURL *));
         void ForEveryImageFileInDirectory(NSString *dir, void (^callback)(NSString *));
         void ForEveryImageFileInDirectoryConcurrent(NSString *dir, void (^callback)(NSString *));
   #endif

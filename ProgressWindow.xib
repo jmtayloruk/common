@@ -2,7 +2,7 @@
 <archive type="com.apple.InterfaceBuilder3.Cocoa.XIB" version="8.00">
 	<data>
 		<int key="IBDocument.SystemTarget">1060</int>
-		<string key="IBDocument.SystemVersion">12F45</string>
+		<string key="IBDocument.SystemVersion">12F2560</string>
 		<string key="IBDocument.InterfaceBuilderVersion">5056</string>
 		<string key="IBDocument.AppKitVersion">1187.40</string>
 		<string key="IBDocument.HIToolboxVersion">626.00</string>
@@ -38,7 +38,7 @@
 			<object class="NSWindowTemplate" id="1005">
 				<int key="NSWindowStyleMask">1</int>
 				<int key="NSWindowBacking">2</int>
-				<string key="NSWindowRect">{{196, 404}, {298, 106}}</string>
+				<string key="NSWindowRect">{{196, 404}, {350, 106}}</string>
 				<int key="NSWTFlags">1618478080</int>
 				<string key="NSWindowTitle"/>
 				<string key="NSWindowClass">NSWindow</string>
@@ -51,18 +51,20 @@
 						<object class="NSProgressIndicator" id="766276897">
 							<reference key="NSNextResponder" ref="1006"/>
 							<int key="NSvFlags">1292</int>
-							<string key="NSFrame">{{18, 66}, {262, 20}}</string>
+							<string key="NSFrame">{{18, 66}, {312, 20}}</string>
 							<reference key="NSSuperview" ref="1006"/>
 							<reference key="NSWindow"/>
+							<reference key="NSNextKeyView" ref="443021384"/>
 							<int key="NSpiFlags">16394</int>
 							<double key="NSMaxValue">100</double>
 						</object>
 						<object class="NSTextField" id="443021384">
 							<reference key="NSNextResponder" ref="1006"/>
 							<int key="NSvFlags">268</int>
-							<string key="NSFrame">{{17, 45}, {80, 17}}</string>
+							<string key="NSFrame">{{17, 45}, {124, 17}}</string>
 							<reference key="NSSuperview" ref="1006"/>
 							<reference key="NSWindow"/>
+							<reference key="NSNextKeyView" ref="244400302"/>
 							<bool key="NSEnabled">YES</bool>
 							<object class="NSTextFieldCell" key="NSCell" id="488378671">
 								<int key="NSCellFlags">68157504</int>
@@ -98,9 +100,10 @@
 						<object class="NSTextField" id="244400302">
 							<reference key="NSNextResponder" ref="1006"/>
 							<int key="NSvFlags">268</int>
-							<string key="NSFrame">{{99, 45}, {80, 17}}</string>
+							<string key="NSFrame">{{149, 45}, {80, 17}}</string>
 							<reference key="NSSuperview" ref="1006"/>
 							<reference key="NSWindow"/>
+							<reference key="NSNextKeyView" ref="47802370"/>
 							<bool key="NSEnabled">YES</bool>
 							<object class="NSTextFieldCell" key="NSCell" id="464656599">
 								<int key="NSCellFlags">68157504</int>
@@ -116,9 +119,10 @@
 						<object class="NSTextField" id="47802370">
 							<reference key="NSNextResponder" ref="1006"/>
 							<int key="NSvFlags">268</int>
-							<string key="NSFrame">{{181, 45}, {100, 17}}</string>
+							<string key="NSFrame">{{233, 45}, {100, 17}}</string>
 							<reference key="NSSuperview" ref="1006"/>
 							<reference key="NSWindow"/>
+							<reference key="NSNextKeyView" ref="3572057"/>
 							<bool key="NSEnabled">YES</bool>
 							<object class="NSTextFieldCell" key="NSCell" id="76904812">
 								<int key="NSCellFlags">68157504</int>
@@ -134,9 +138,10 @@
 						<object class="NSTextField" id="282170546">
 							<reference key="NSNextResponder" ref="1006"/>
 							<int key="NSvFlags">268</int>
-							<string key="NSFrame">{{181, 20}, {100, 17}}</string>
+							<string key="NSFrame">{{233, 20}, {100, 17}}</string>
 							<reference key="NSSuperview" ref="1006"/>
 							<reference key="NSWindow"/>
+							<reference key="NSNextKeyView"/>
 							<bool key="NSEnabled">YES</bool>
 							<object class="NSTextFieldCell" key="NSCell" id="146959553">
 								<int key="NSCellFlags">68157504</int>
@@ -152,9 +157,10 @@
 						<object class="NSTextField" id="3572057">
 							<reference key="NSNextResponder" ref="1006"/>
 							<int key="NSvFlags">268</int>
-							<string key="NSFrame">{{99, 20}, {80, 17}}</string>
+							<string key="NSFrame">{{149, 20}, {80, 17}}</string>
 							<reference key="NSSuperview" ref="1006"/>
 							<reference key="NSWindow"/>
+							<reference key="NSNextKeyView" ref="282170546"/>
 							<bool key="NSEnabled">YES</bool>
 							<object class="NSTextFieldCell" key="NSCell" id="214325463">
 								<int key="NSCellFlags">68157504</int>
@@ -168,9 +174,10 @@
 							<bool key="NSAllowsLogicalLayoutDirection">NO</bool>
 						</object>
 					</array>
-					<string key="NSFrameSize">{298, 106}</string>
+					<string key="NSFrameSize">{350, 106}</string>
 					<reference key="NSSuperview"/>
 					<reference key="NSWindow"/>
+					<reference key="NSNextKeyView" ref="766276897"/>
 				</object>
 				<string key="NSScreenRect">{{0, 0}, {1440, 878}}</string>
 				<string key="NSMaxSize">{10000000000000, 10000000000000}</string>
@@ -409,7 +416,6 @@
 						<string key="elapsed">NSTextField</string>
 						<string key="fraction">NSTextField</string>
 						<string key="indicator">NSProgressIndicator</string>
-						<string key="progressTextField">NSTextField</string>
 						<string key="remaining">NSTextField</string>
 					</dictionary>
 					<dictionary class="NSMutableDictionary" key="toOneOutletInfosByName">
@@ -424,10 +430,6 @@
 						<object class="IBToOneOutletInfo" key="indicator">
 							<string key="name">indicator</string>
 							<string key="candidateClassName">NSProgressIndicator</string>
-						</object>
-						<object class="IBToOneOutletInfo" key="progressTextField">
-							<string key="name">progressTextField</string>
-							<string key="candidateClassName">NSTextField</string>
 						</object>
 						<object class="IBToOneOutletInfo" key="remaining">
 							<string key="name">remaining</string>
@@ -458,7 +460,7 @@
 		</object>
 		<object class="NSMutableDictionary" key="IBDocument.PluginDeclaredDependencyDefaults">
 			<string key="NS.key.0">com.apple.InterfaceBuilder.CocoaPlugin.macosx</string>
-			<real value="1070" key="NS.object.0"/>
+			<real value="1080" key="NS.object.0"/>
 		</object>
 		<object class="NSMutableDictionary" key="IBDocument.PluginDeclaredDevelopmentDependencies">
 			<string key="NS.key.0">com.apple.InterfaceBuilder.CocoaPlugin.InterfaceBuilder3</string>

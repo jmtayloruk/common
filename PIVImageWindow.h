@@ -40,7 +40,17 @@ template<class TYPE> struct ImageWindow
 #if __OBJC__
 	ImageWindow(const NSImage *srcImage)
 	{
-		retainedBitmap = [RawBitmapFromImage(srcImage) retain];
+		Construct(RawBitmapFromImage(srcImage));
+	}
+	
+	ImageWindow(NSBitmapImageRep *srcBitmap)
+	{
+		Construct(srcBitmap);
+	}
+	
+	void Construct(NSBitmapImageRep *srcBitmap)
+	{
+		retainedBitmap = [srcBitmap retain];
 		width = retainedBitmap.pixelsWide;
 		height = retainedBitmap.pixelsHigh;
 		ALWAYS_ASSERT(retainedBitmap.bitsPerPixel == 8*sizeof(TYPE));
@@ -177,7 +187,8 @@ template<class TYPE> struct ImageWindow
     
     bool TileOffsetValid(int i, int j, int tileWidth, int tileHeight, int tileOffsetX, int tileOffsetY)
 	{
-		return ((i*tileOffsetX+tileWidth <= width) && (j*tileOffsetY+tileHeight <= height));
+		return ((i >= 0) && (j >= 0) &&
+				(i*tileOffsetX+tileWidth <= width) && (j*tileOffsetY+tileHeight <= height));
 	}
 	
     ImageWindow<TYPE> &operator+=(ImageWindow<TYPE> &other)

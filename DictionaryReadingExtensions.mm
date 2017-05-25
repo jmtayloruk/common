@@ -15,7 +15,7 @@
 	// Obtain the NSNumber associated with the specified key.
 	// Will fail assertion if the key value is absent or is not an NSNumber.
 	ALWAYS_ASSERT([self isKindOfClass:[NSDictionary class]]);
-	NSNumber *num = [self objectForKey:key];
+	NSNumber *num = [self valueForKeyPath:key];
 	ALWAYS_ASSERT([num isKindOfClass:[NSNumber class]]);
 	return num;
 }
@@ -26,7 +26,7 @@
 	// If the key is not present in the dictionary, return the supplied default value instead.
 	// Will fail assertion if the key value is present but is not an NSNumber.
 	ALWAYS_ASSERT([self isKindOfClass:[NSDictionary class]]);
-	NSNumber *num = [self objectForKey:key];
+	NSNumber *num = [self valueForKeyPath:key];
     if (num == nil)
         return def;
 	ALWAYS_ASSERT([num isKindOfClass:[NSNumber class]]);
@@ -51,7 +51,7 @@
 -(NSString *)getRequiredStringForKey:(NSString *)key
 {
 	ALWAYS_ASSERT([self isKindOfClass:[NSDictionary class]]);
-	NSString *str = [self objectForKey:key];
+	NSString *str = [self valueForKeyPath:key];
 	ALWAYS_ASSERT([str isKindOfClass:[NSString class]]);
 	return str;
 }
@@ -59,7 +59,7 @@
 -(NSArray *)getRequiredArrayForKey:(NSString *)key ofLength:(int)length
 {
 	ALWAYS_ASSERT([self isKindOfClass:[NSDictionary class]]);
-	NSArray *arr = [self objectForKey:key];
+	NSArray *arr = [self valueForKeyPath:key];
 	ALWAYS_ASSERT([arr isKindOfClass:[NSArray class]]);
 	ALWAYS_ASSERT(arr.count == (NSUInteger)length);
 	return arr;
@@ -68,7 +68,7 @@
 -(NSArray *)getOptionalArrayForKey:(NSString *)key ofLength:(int)length defaultVal:(NSArray *)def
 {
 	ALWAYS_ASSERT([self isKindOfClass:[NSDictionary class]]);
-	NSArray *arr = [self objectForKey:key];
+	NSArray *arr = [self valueForKeyPath:key];
 	if (arr == nil)
 		return def;
 	ALWAYS_ASSERT([arr isKindOfClass:[NSArray class]]);
@@ -79,7 +79,7 @@
 -(NSDictionary *)getRequiredDictionaryForKey:(NSString *)key
 {
 	ALWAYS_ASSERT([self isKindOfClass:[NSDictionary class]]);
-	NSDictionary *dict = [self objectForKey:key];
+	NSDictionary *dict = [self valueForKeyPath:key];
 	ALWAYS_ASSERT([dict isKindOfClass:[NSDictionary class]]);
 	return dict;
 }
@@ -105,7 +105,7 @@
 -(NSString *)getOptionalStringForKey:(NSString *)key defaultVal:(NSString *)def
 {
 	ALWAYS_ASSERT([self isKindOfClass:[NSDictionary class]]);
-    NSString *str = [self objectForKey:key];
+    NSString *str = [self valueForKeyPath:key];
     if (str == nil)
         return def;
 	ALWAYS_ASSERT([str isKindOfClass:[NSString class]]);
