@@ -34,13 +34,6 @@ static inline __m128i _mm_cmple_epu16 (__m128i x, __m128i y)
 #define XZ_MIP 2
 #define MIP_TYPE XY_MIP
 
-template<class PIX_TYPE> void CalcMipScalar(PIX_TYPE *mipPixels, const PIX_TYPE *otherPixels, size_t numPixels)
-{
-	// Old scalar code for reference
-	for (size_t x = 0; x < numPixels; x++)
-		mipPixels[x] = MAX(mipPixels[x], otherPixels[x]);
-}
-
 void CalcMip(unsigned char *mipPixels, const unsigned char *otherPixels, size_t numPixels)
 {
 #if 0
