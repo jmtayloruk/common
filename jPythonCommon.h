@@ -7,6 +7,11 @@
 void RequireObjectType(PyObject *obj, PyTypeObject &type);
 bool ObjectIsNone(PyObject *obj);
 
+#if PY_MAJOR_VERSION >= 3
+    #define PyInt_Type PyLong_Type
+    #define PyInt_AsLong PyLong_AsLong
+#endif
+
 #include "jPythonList.h"
 #include "jPythonArray.h"
 
