@@ -18,6 +18,8 @@
 
 -(id)initWithRect:(const NSRect)r
 {
+    if (!(self = [super init]))
+        return nil;
 	self.ns = r;
 	return self;
 }
@@ -64,6 +66,8 @@
 
 -(id)initWithPoint:(const NSPoint)p
 {
+    if (!(self = [super init]))
+        return nil;
 	self.ns = p;
 	return self;
 }
@@ -88,6 +92,45 @@
 	else
 		set = [set setByAddingObjectsFromSet:[NSSet setWithObjects:@"ns", nil]];
 	return set;
+}
+
+@end
+
+@implementation JIntegerPoint
+
++(JIntegerPoint*)pointWithIntegerPoint:(const IntegerPoint &)p
+{
+    return [[[JIntegerPoint alloc] initWithPoint:p] autorelease];
+}
+
+-(id)initWithPoint:(const IntegerPoint &)p
+{
+    if (!(self = [super init]))
+        return nil;
+    self.ip = p;
+    return self;
+}
+
+-(float)x { return point.x; }
+-(float)y { return point.y; }
+-(IntegerPoint)ip { return point; }
+
+-(void)setX:(float)val { point.x = val; }
+-(void)setY:(float)val { point.y = val; }
+-(void)setIp:(const IntegerPoint)ip { point = ip; }
+
+-(int)everything { return 1; }
+
++(NSSet*)keyPathsForValuesAffectingValueForKey:(NSString*)inKey
+{
+    NSSet* set = [super keyPathsForValuesAffectingValueForKey:inKey];
+    if ([inKey isEqualToString:@"ip"])
+        set = [set setByAddingObjectsFromSet:[NSSet setWithObjects:@"x", @"y", nil]];
+    else if ([inKey isEqualToString:@"everything"])
+        set = [set setByAddingObjectsFromSet:[NSSet setWithObjects:@"ip", @"x", @"y", nil]];
+    else
+        set = [set setByAddingObjectsFromSet:[NSSet setWithObjects:@"ip", nil]];
+    return set;
 }
 
 @end

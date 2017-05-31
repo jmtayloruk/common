@@ -8,6 +8,8 @@
  *
  */
 
+#import "GeometryObjectsC.h"
+
 @interface JRect : NSObject
 {
 	NSRect rect;
@@ -41,4 +43,19 @@
 
 @end
 
-#import "GeometryObjectsC.h"
+// This class is named to be consistent with the others above, but it's a bit of a misnomer
+// since IntegerPoint is also one of my own classes.
+@interface JIntegerPoint : NSObject
+{
+    IntegerPoint point;
+}
+
++(JIntegerPoint*)pointWithIntegerPoint:(const IntegerPoint&)r;
+-(id)initWithPoint:(const IntegerPoint&)r;
+
+@property (readwrite) float x;
+@property (readwrite) float y;
+@property (readwrite) IntegerPoint ip;
+@property (readonly) int everything;	// Can be monitored using KVO to see if any variable changes
+
+@end
