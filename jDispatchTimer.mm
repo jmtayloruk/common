@@ -37,19 +37,19 @@
 	@synchronized(self)
 	{
 	NSArray *symbols = [NSThread callStackSymbols];
-	NSLog(@"JDispatchTimer retain %p (will be %d)\n", self, self.retainCount+1);
+	NSLog(@"JDispatchTimer retain %p (will be %d)\n", self, (int)self.retainCount+1);
 	NSLog(@"%@", symbols);
 	result = [super retain];
 	}
 	return result;
 }
--(void)release
+-(oneway void)release
 {
 //	printf("JDispatchTimer release %p (will be %d)\n", self, self.retainCount-1);
 	@synchronized(self)
 	{
 		NSArray *symbols = [NSThread callStackSymbols];
-		printf("JDispatchTimer release %p (will be %d)\n", self, self.retainCount-1);
+		printf("JDispatchTimer release %p (will be %d)\n", self, (int)self.retainCount-1);
 		NSLog(@"%@", symbols);
 		[super release];
 	}
