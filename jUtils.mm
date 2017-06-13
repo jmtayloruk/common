@@ -11,9 +11,18 @@
 
 NSURL *PathToURL(NSString *path, NSURL *relativeTo)
 {
-	// Convert a path into an NSURL object, relative to another specified URL
-    // Note that there is no need to worry about specifying a scheme in my string, since this is a relative URL
-    return [NSURL URLWithString:[path stringByAddingPercentEscapesUsingEncoding:NSASCIIStringEncoding] relativeToURL:relativeTo];
+	/*  Convert a path into an NSURL object, relative to another specified URL
+        Note that there is no need to worry about specifying a scheme in my string, since this is a relative URL
+    
+        Note: with NSASCIIStringEncoding this would fail (and return nil) when processing a filename containing certain characters (such as a "smart quote")
+        I guess this is because that's a non-ASCII character. NSUTF8StringEncoding seems to work, but I have asked cocoa-dev in case I am storing up problems for later!
+        Note that
+            fileURLWithFileSystemRepresentation: isDirectory: relativeToURL:
+        works, but is ruled out because it is only available on 10.9 or later.
+     
+        NSUnicodeStringEncoding does not work because even for regular filenames it makes URL.path nil, and I rely on that in quite a few places in my code
+     */
+    return [NSURL URLWithString:[path stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding] relativeToURL:relativeTo];
 }
 
 NSURL *PathToURL(NSString *path)
@@ -183,6 +192,7 @@ NSArray *ListImageFilesInDirectory(NSString *dir, bool sorted, bool useTimestamp
 #else
 	// It will hopefully be faster to use lower-level APIs as follows.
 	// Get a pointer to the first in a tree of structures representing the contents of the directory
+    ALWAYS_ASSERT(dir != nil);
 	size_t len = strlen(dir.UTF8String) + 1;
 	char pathBuffer[len];
 	snprintf(pathBuffer, len, "%s", dir.UTF8String);
@@ -245,8 +255,13 @@ void ForEverySubdirectoryInDirectory(NSURL *dir, void (^callback)(NSURL *))
 	for (NSString *filename in dirContents)
 	{
 		NSURL *subdirectoryURL = PathToURL(filename, dir);
-		if (IsDirectory(subdirectoryURL))
-			callback(subdirectoryURL);
+        /*  I have had PathToURL fail before on unusual filenames.
+            I think I have fixed that, but am putting in this check out of paranoia in case of future issues    */
+        if (CHECK(subdirectoryURL != nil))
+        {
+            if (IsDirectory(subdirectoryURL))
+                callback(subdirectoryURL);
+        }
 	}
 }
 
