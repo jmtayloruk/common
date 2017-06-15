@@ -43,6 +43,14 @@ bool IsDirectory(NSURL *fileURL)
 	return false;
 } 
 
+NSString *GetUserDocumentDirectory(void)
+{
+	NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+	if (!CHECK(paths.count >= 1))
+		return nil;		// Surely should never happen...?
+	return [paths objectAtIndex:0];
+}
+
 NSInteger alphabeticalOrder(id string1, id string2, void *)
 {
     return [(NSString *)string1 caseInsensitiveCompare:(NSString *)string2];
