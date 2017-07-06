@@ -88,9 +88,14 @@
 		if (CHECK(val != nil))
 			[dict setObject:val forKey:key];
 		else
-			printf("Unrecognised key %s\n", key.UTF8String);
+		{
+			// This is rather unsatisfactory - if a text field is empty then we will get nil back.
+			// This messes things up! I am not sure if there is a good way of distinguishing between
+			// those two scenarios. For now I will just print this out - I don't think we will end
+			// up spamming the console too much like this...
+			DebugPrintf("Unrecognised key %s (or perhaps the key value was nil)\n", key.UTF8String);
+		}
 	}
-//	[dict writeToFile:@"/Users/jonny/temp.plist" atomically:NO];
 	[theDefaults setObject:dict forKey:self.defaultsKey];
 	[theDefaults synchronize];
 }
@@ -105,11 +110,16 @@
 	{
 		id val = [theDefaults objectForKey:key];
 		/*	We will fail the following check first time we run on a new computer,
-		 and if I ever add new keys to the list. Aside from that, it should be passed.	*/
+			and if I ever add new keys to the list. Aside from that, it should be passed.	
+			In addition, NSUserDefaults is a bit weird about empty strings. It seems to 
+			not even list a key in allKeys if it is an empty string. Weird and annoying!
+			As a result, I cannot tell if an empty string is present - it behaves as if
+			the key is absent. We will therefore get spurious warnings here.
+			I think I will leave it for now, and hopefully there won't be too much console spam. */
 		if (CHECK(val != nil))
 			[self.target.target setValue:val forKeyPath:key];
 		else
-			printf("Missing key in defaults %s\n", key.UTF8String);
+			DebugPrintf("Missing key in defaults %s\n", key.UTF8String);
 	}
 }
 
