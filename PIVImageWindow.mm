@@ -221,11 +221,11 @@ template<> void CrossCorrelateImageWindows<kCorrelationSAD, unsigned short>(Imag
 					 Note that I don't believe we can do this in one go, on 16-bit ints all the way.
 					 The _mm_madd_epi16 instruction is handy, but subtracting two 16-bit ints will
 					 overflow a 16-bit int	*/
-					__m128i oddA = _mm_unpacklo_epi16(a, zeros);		// Check this is the right byte order. I think it is...
+					__m128i oddA = _mm_unpacklo_epi16(a, zeros);
 					__m128i oddB = _mm_unpacklo_epi16(b, zeros);
 					__m128i sad = _mm_abs_epi32(_mm_sub_epi32(oddA, oddB));
 					sumVec = _mm_add_epi32(sumVec, sad);
-					__m128i evenA = _mm_unpackhi_epi16(a, zeros);		// Check this is the right byte order. I think it is...
+					__m128i evenA = _mm_unpackhi_epi16(a, zeros);
 					__m128i evenB = _mm_unpackhi_epi16(b, zeros);
 					sad = _mm_abs_epi32(_mm_sub_epi32(evenA, evenB));
 					sumVec = _mm_add_epi32(sumVec, sad);
@@ -262,11 +262,11 @@ template<> void CrossCorrelateImageWindows<kCorrelationSAD, unsigned short>(Imag
 					 Note that I don't believe we can do this in one go, on 16-bit ints all the way.
 					 The _mm_madd_epi16 instruction is handy, but subtracting two 16-bit ints will
 					 overflow a 16-bit int	*/
-					__m128i oddA = _mm_unpacklo_epi16(a, zeros);		// Check this is the right byte order. I think it is...
+					__m128i oddA = _mm_unpacklo_epi16(a, zeros);
 					__m128i oddB = _mm_unpacklo_epi16(b, zeros);
 					__m128i sad = _mm_abs_epi32(_mm_sub_epi32(oddA, oddB));
 					sumVec = _mm_add_epi32(sumVec, sad);
-					__m128i evenA = _mm_unpackhi_epi16(a, zeros);		// Check this is the right byte order. I think it is...
+					__m128i evenA = _mm_unpackhi_epi16(a, zeros);
 					__m128i evenB = _mm_unpackhi_epi16(b, zeros);
 					sad = _mm_abs_epi32(_mm_sub_epi32(evenA, evenB));
 					sumVec = _mm_add_epi32(sumVec, sad);
