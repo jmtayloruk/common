@@ -1,12 +1,12 @@
 //
-//  JNSView.m
+//  jNSView.m
 //  Spim Interface
 //
 //  Created by Jonathan Taylor on 22/05/2015.
 //
 //
 
-#import "JNSView.h"
+#import "jNSView.h"
 
 @implementation JNSView
 
