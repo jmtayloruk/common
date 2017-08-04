@@ -10,6 +10,7 @@
 #ifndef __J_COCOA_IMAGE_UTILS_H__
 #define __J_COCOA_IMAGE_UTILS_H__ 1
 
+NSArray *AllRawBitmapsFromImage(const NSImage *image);
 NSBitmapImageRep *RawBitmapFromImage(const NSImage *image);
 NSBitmapImageRep *RawBitmapFromImagePath(NSString *imagePath);
 bool /*sizes matched*/ PopulateArrayFromBitmap(const NSBitmapImageRep *bitmap, double *destArray, int destWidth, int destHeight, int downsampleFactor, bool assertOnSizeMismatch);
