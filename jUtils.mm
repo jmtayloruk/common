@@ -51,6 +51,18 @@ NSString *GetUserDocumentDirectory(void)
 	return [paths objectAtIndex:0];
 }
 
+NSString *CreateTemporaryDirectory(void)
+{
+    NSString *guid = [[NSProcessInfo processInfo] globallyUniqueString];
+    NSString *destPath = [SWF:@"%@/%@", NSTemporaryDirectory(), guid];
+    BOOL ok = [[NSFileManager defaultManager] createDirectoryAtPath:destPath
+                                        withIntermediateDirectories:YES
+                                                         attributes:nil
+                                                              error:nil];
+    ALWAYS_ASSERT(ok);
+    return destPath;
+}
+
 NSInteger alphabeticalOrder(id string1, id string2, void *)
 {
     return [(NSString *)string1 caseInsensitiveCompare:(NSString *)string2];

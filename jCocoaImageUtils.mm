@@ -80,6 +80,22 @@ bool /*sizes matched*/ PopulateArrayFromBitmap(const char *bitmapPath, double *d
     return result;
 }
 
+NSArray *AllRawBitmapsFromImage(const NSImage *image)
+{
+    // Returns an array of NSBitmapImageReps from the NSImage that is passed in.
+    // It is expected that the NSImage represents a multi-page TIFF
+    if (!CHECK(image != nil))
+        return nil;
+    
+    NSMutableArray      *result = [NSMutableArray new];
+    for (NSObject *imageRepresentation in image.representations)
+    {
+        if ([imageRepresentation isKindOfClass:[NSBitmapImageRep class]])
+            [result addObject:(NSBitmapImageRep*)imageRepresentation];
+    }
+    return [result autorelease];
+}
+
 NSBitmapImageRep *RawBitmapFromImage(const NSImage *image)
 {
 	// Returns an NSBitmapImageRep from the NSImage that is passed in.
@@ -112,7 +128,7 @@ NSBitmapImageRep *RawBitmapFromImage(const NSImage *image)
 	if (result == nil)
 	{
 		// It is possible to end up with a representation of type NSCGImageSnapshotRep under some circumstances
-		// In that case I have to explicitly draw it into a bitmap
+		// In that case I have to explicitly draw it into a bitmap as follows
 		[image lockFocus];
 		result = [[[NSBitmapImageRep alloc] initWithFocusedViewRect:NSMakeRect(0.0, 0.0, [image size].width, [image size].height)] autorelease];
 		[image unlockFocus];

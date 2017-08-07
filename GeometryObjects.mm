@@ -64,6 +64,11 @@
 	return [[[JPoint2 alloc] initWithPoint:p] autorelease];
 }
 
++(JPoint2*)pointWithCoord2:(const coord2)r
+{
+	return [[[JPoint2 alloc] initWithPoint:NSMakePoint(r.x, r.y)] autorelease];
+}
+
 -(id)initWithPoint:(const NSPoint)p
 {
     if (!(self = [super init]))

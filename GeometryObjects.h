@@ -34,6 +34,7 @@
 }
 
 +(JPoint2*)pointWithNSPoint:(const NSPoint)r;
++(JPoint2*)pointWithCoord2:(const coord2)r;
 -(id)initWithPoint:(const NSPoint)r;
 
 @property (readwrite) float x;
