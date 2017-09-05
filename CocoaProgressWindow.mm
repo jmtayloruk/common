@@ -43,9 +43,6 @@ void CocoaProgressWindowHelper::InternalUpdateProgress(double newProgress)
 
 -(id)initForItems:(double)inLength withTitle:(NSString *)title sheetOnWindow:(NSWindow *)win
 {
-	if (inLength == 0)
-		return [self initInitiallyIndeterminateWithTitle:title sheetOnWindow:win];
-	
 	if (!(self = [self initWithWindowNibName:(win ? @"ProgressPanel" : @"ProgressWindow")]))
 		return nil;
 	_base = new CocoaProgressWindowHelper(inLength, self);
@@ -113,6 +110,8 @@ void CocoaProgressWindowHelper::InternalUpdateProgress(double newProgress)
 -(void)upgradeToDeterminateLength:(double)inLength
 {
 	_base->UpdateLength(inLength);
+	_base->UpdateProgress(0);		// I imagine we will always want this, and doing this here
+									// allows us to use this function to "restart" with a second chunk of work if we want
 	[indicator setIndeterminate:(inLength == 0)];
 	[indicator setMaxValue:inLength];
 	[indicator startAnimation:nil];
