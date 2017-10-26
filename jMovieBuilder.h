@@ -14,6 +14,9 @@
 
 #if (!HAS_OS_X_GUI) || defined(__x86_64__)
 
+class NSImage;
+class NSRect;
+
 // Code not implemented except on 32-bit OS X
 // This first bit of code here is just dummy code to allow things to compile on other platforms, but without any functionality
 class JMovieBuilder
