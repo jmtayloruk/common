@@ -91,11 +91,14 @@ void LinearFit(std::vector<double> &x, std::vector<double> &y, double *alpha, do
 
 #if __OBJC__
 	#import <Cocoa/Cocoa.h>
+	@class CocoaProgressWindow;
     NSURL *PathToURL(NSString *path, NSURL *relativeTo);
     NSURL *PathToURL(NSString *path);
     bool IsDirectory(NSURL *fileURL);
+	NSString *GetUserDocumentDirectory(void);
+    NSString *CreateTemporaryDirectory(void);
 
-	NSArray *ListImageFilesInDirectory(NSString *dir, bool sorted = true, bool useTimestamps = false/* Default to false just because this is slower and didn't used to be what I did*/, bool fullPath = false);
+	NSArray *ListImageFilesInDirectory(NSString *dir, bool sorted = true, bool useTimestamps = false/* Default to false just because this is slower and didn't used to be what I did*/, bool fullPath = false, CocoaProgressWindow *progress = nil);
 	void UpdateKeys(id owner, ...) NS_REQUIRES_NIL_TERMINATION;
 	bool StringIsInList(NSString *s, ...) NS_REQUIRES_NIL_TERMINATION;
 

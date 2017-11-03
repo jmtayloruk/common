@@ -37,21 +37,24 @@ void CocoaProgressWindowHelper::InternalUpdateProgress(double newProgress)
 
 -(id)initForItems:(double)inLength withTitle:(NSString *)title
 {
+	// Convenience constructor for a standalone progress window
 	return [self initForItems:inLength withTitle:title sheetOnWindow:nil];
 }
 
 -(id)initForItems:(double)inLength withTitle:(NSString *)title sheetOnWindow:(NSWindow *)win
 {
-	if (inLength == 0)
-		return [self initIndeterminateWithTitle:title sheetOnWindow:win];
-	
-	if (!(self = [self initWithWindowNibName:@"ProgressPanel"]))
+	if (!(self = [self initWithWindowNibName:(win ? @"ProgressPanel" : @"ProgressWindow")]))
 		return nil;
-	self.window.title = title;
 	_base = new CocoaProgressWindowHelper(inLength, self);
 	self.progressCaption = title;
 	sheetBegun = false;
-	[indicator setMaxValue:inLength];
+	if (inLength == 0)
+	{
+		[indicator setIndeterminate:YES];
+		[indicator startAnimation:nil];
+	}
+	else
+		[indicator setMaxValue:inLength];
 
 	if (win != nil)
 		[self setUpSheetOnWindow:win];
@@ -61,27 +64,17 @@ void CocoaProgressWindowHelper::InternalUpdateProgress(double newProgress)
 
 -(id)initInitiallyIndeterminateWithTitle:(NSString *)title sheetOnWindow:(NSWindow *)win
 {
-	if (!(self = [self initWithWindowNibName:(win ? @"ProgressPanel" : @"ProgressWindow")]))
-		return nil;
-	self.window.title = title;
-	_base = new CocoaProgressWindowHelper(0, self);
-	self.progressCaption = title;
-
-	sheetBegun = false;
-	[indicator setIndeterminate:YES];
-	[indicator startAnimation:nil];
-	
-	if (win != nil)
-		[self setUpSheetOnWindow:win];
-	
-	return self;
+	// This constructor is intended for a window that will be later upgraded to a finite length
+	// once we know how much work there is to do. It's a convenience function that calls through to another constructor
+	return [self initForItems:0 withTitle:title sheetOnWindow:win];
 }
 
 -(id)initIndeterminateWithTitle:(NSString *)title sheetOnWindow:(NSWindow *)win
 {
+	// This constructor is intended for a panel that will always be indeterminate.
+	// It uses a simplified nib that does not include time estimates.
 	if (!(self = [self initWithWindowNibName:@"ProgressPanelIndeterminate"]))
 		return nil;
-	self.window.title = title;
 	_base = new CocoaProgressWindowHelper(0, self);
 	self.progressCaption = title;
 	sheetBegun = false;
@@ -94,6 +87,8 @@ void CocoaProgressWindowHelper::InternalUpdateProgress(double newProgress)
 
 -(id)initIndeterminateOverlayWithTitle:(NSString *)title withControl:(NSProgressIndicator *)inProgressIndicator
 {
+	// This constructor is for the case where a window provides its own overlay view indicating progress,
+	// which the current class will manage for its lifetime.
 	if (!(self = [self initWithWindow:nil]))
 		return nil;
 	_base = new CocoaProgressWindowHelper(0, self);
@@ -115,6 +110,8 @@ void CocoaProgressWindowHelper::InternalUpdateProgress(double newProgress)
 -(void)upgradeToDeterminateLength:(double)inLength
 {
 	_base->UpdateLength(inLength);
+	_base->UpdateProgress(0);		// I imagine we will always want this, and doing this here
+									// allows us to use this function to "restart" with a second chunk of work if we want
 	[indicator setIndeterminate:(inLength == 0)];
 	[indicator setMaxValue:inLength];
 	[indicator startAnimation:nil];

@@ -8,6 +8,7 @@
 
 #import <Cocoa/Cocoa.h>
 #include <fts.h>
+#import "CocoaProgressWindow.h"
 
 NSURL *PathToURL(NSString *path, NSURL *relativeTo)
 {
@@ -42,6 +43,26 @@ bool IsDirectory(NSURL *fileURL)
         return true;
 	return false;
 } 
+
+NSString *GetUserDocumentDirectory(void)
+{
+	NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+	if (!CHECK(paths.count >= 1))
+		return nil;		// Surely should never happen...?
+	return [paths objectAtIndex:0];
+}
+
+NSString *CreateTemporaryDirectory(void)
+{
+    NSString *guid = [[NSProcessInfo processInfo] globallyUniqueString];
+    NSString *destPath = [SWF:@"%@/%@", NSTemporaryDirectory(), guid];
+    BOOL ok = [[NSFileManager defaultManager] createDirectoryAtPath:destPath
+                                        withIntermediateDirectories:YES
+                                                         attributes:nil
+                                                              error:nil];
+    ALWAYS_ASSERT(ok);
+    return destPath;
+}
 
 NSInteger alphabeticalOrder(id string1, id string2, void *)
 {
@@ -127,7 +148,7 @@ struct TimestampedFrame
     }
 };
 
-NSArray *FasterSortFramesByTimestamp(NSArray *filenames, NSString *pathStem)
+NSArray *FasterSortFramesByTimestamp(NSArray *filenames, NSString *pathStem, CocoaProgressWindow *progress = nil)
 {
     /*  We get terrible performance if we just use frameSortOrderUsingTimestamps naively,
         because of the number of times it reads the entire metadata dictionary just to get one value!
@@ -146,6 +167,12 @@ NSArray *FasterSortFramesByTimestamp(NSArray *filenames, NSString *pathStem)
     }
     std::vector<TimestampedFrame> ts(filenames.count);
     size_t i = 0;
+	if (progress != nil)
+	{
+		// Caller has provided a progress window for us to take over
+		progress.progressCaption = @"Sorting frames...";
+		[progress upgradeToDeterminateLength:filenames.count];
+	}
     for (NSString *s in filenames)
     {
         NSNumber *timestamp = MetadataKeyValueForFramePath([SWF:@"%@%@", stem, s], @"timestamp");
@@ -153,6 +180,9 @@ NSArray *FasterSortFramesByTimestamp(NSArray *filenames, NSString *pathStem)
             ts[i++] = (TimestampedFrame){s, timestamp.doubleValue};
         else
             ts[i++] = (TimestampedFrame){s, -1.0};
+		// Crude flow control on the progress updates, since our unit of work is very small
+		if ((i % 100) == 0)
+			[progress deltaProgress:100];
     }
     std::sort(ts.begin(), ts.end(), TimestampedFrame::Compare);
     
@@ -174,7 +204,7 @@ bool IsImageFile(NSString *theFilename)
 			[theFilename hasSuffix:@".eps"]);
 }
 
-NSArray *ListImageFilesInDirectory(NSString *dir, bool sorted, bool useTimestamps, bool fullPath)
+NSArray *ListImageFilesInDirectory(NSString *dir, bool sorted, bool useTimestamps, bool fullPath, CocoaProgressWindow *progress)
 {
 	// Returns an array containing NSStrings for each image file in a directory
 #if 0
@@ -225,8 +255,7 @@ NSArray *ListImageFilesInDirectory(NSString *dir, bool sorted, bool useTimestamp
 	{
 		if (useTimestamps)
         {
-//			return [dirContents2 sortedArrayUsingFunction:frameSortOrderUsingTimestamps context:dir];
-            dirContents3 = FasterSortFramesByTimestamp(dirContents2, dir);
+            dirContents3 = FasterSortFramesByTimestamp(dirContents2, dir, progress);
         }
 		else
 			dirContents3 = [dirContents2 sortedArrayUsingFunction:frameSortOrder context:nil];
