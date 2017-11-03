@@ -8,6 +8,7 @@
 
 #include "PIVImageWindow.h"
 #include "tmmintrin.h"		// SSSE3 (supplemental SSE3)
+#include <stdint.h>         // Seems to be needed on some platforms
 
 template <class TYPE> TYPE SadFunc(TYPE a, TYPE b);
 template<> double SadFunc<double>(double a, double b) { return fabs(a - b); }
