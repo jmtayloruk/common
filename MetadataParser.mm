@@ -72,6 +72,7 @@
 
 @interface MetadataForFrame()
 	@property (readwrite, retain) FrameMetadataParser *parser;
+	@property (readwrite) size_t arrayIndex;
 @end
 
 @implementation MetadataForFrame
@@ -82,7 +83,7 @@
 		return nil;
 	
 	self.parser = inParser;
-	arrayIndex = inArrayIndex;
+	self.arrayIndex = inArrayIndex;
 	
 	return self;
 }
@@ -101,7 +102,7 @@
 
 -(id)valueForKeyPath:(NSString *)keyPath
 {
-	return [self.parser valueForKeyPath:keyPath arrayIndex:arrayIndex];
+	return [self.parser valueForKeyPath:keyPath arrayIndex:self.arrayIndex];
 }
 
 -(int)frameNumber
@@ -149,21 +150,21 @@
 
 -(NSBitmapImageRep *)frameBitmap
 {
-	return [self.parser frameBitmapForArrayIndex:arrayIndex];
+	return [self.parser frameBitmapForArrayIndex:self.arrayIndex];
 }
 
 -(NSString *)imageFileFullPath { return self.parser.imagePath; }
 -(NSString *)frameDescNoPath
 {
 	if (self.parser.frameCount > 1)
-		return [SWF:@"%@ [%zd]", self.parser.imagePath.lastPathComponent, arrayIndex];
+		return [SWF:@"%@ [%zd]", self.parser.imagePath.lastPathComponent, self.arrayIndex];
 	else
 		return self.parser.imagePath.lastPathComponent;
 }
 
 -(NSMutableDictionary *)frameSpecificMetadataDictionary
 {
-	return [self.parser frameSpecificMetadataDictionaryForArrayIndex:arrayIndex];
+	return [self.parser frameSpecificMetadataDictionaryForArrayIndex:self.arrayIndex];
 }
 
 -(NSDictionary *)commonMetadataDictionary
@@ -173,7 +174,7 @@
 
 -(void)setNewObject:(id)obj forFrameKey:(NSString *)key
 {
-	[self.parser setNewObject:obj forFrameKey:key arrayIndex:arrayIndex];
+	[self.parser setNewObject:obj forFrameKey:key arrayIndex:self.arrayIndex];
 }
 
 -(void)setNewObject:(id)obj forCommonKey:(NSString *)key
@@ -182,6 +183,7 @@
 }
 
 @synthesize parser = _parser;
+@synthesize arrayIndex = _arrayIndex;
 
 @end
 
