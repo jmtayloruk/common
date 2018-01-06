@@ -55,7 +55,7 @@ const int kCurrentMetadataVersion = kMultiTiffMetadataVersion;
 // The backing store for this may be a .plist file that contains information about multiple frames
 {
 	FrameMetadataParser *_parser;
-	size_t				arrayIndex;
+	size_t				_arrayIndex;
 }
 
 +(id)metadataForFirstFrameAtImagePath:(NSString *)path;
@@ -64,14 +64,18 @@ const int kCurrentMetadataVersion = kMultiTiffMetadataVersion;
 -(double)universalComputerTimestamp;
 -(NSPoint)driftOffset;
 -(NSBitmapImageRep *)frameBitmap;
--(NSString *)imageFileFullPath;		// Use sparingly - want to hide the underlying file structure as much as possible!
--(FrameMetadataParser *)parser;		// Use sparingly - very few cases where caller ought to need to know about the underlying file object and its parser
 -(NSString *)frameDescNoPath;
 -(int)frameNumber;		// Convenience accessor for information in metadata
 -(NSMutableDictionary *)frameSpecificMetadataDictionary;	// Useful if caller is writing out files to disk
 -(NSDictionary *)commonMetadataDictionary;	// Useful if caller is writing out files to disk
 -(void)setNewObject:(id)obj forFrameKey:(NSString *)key;
 -(void)setNewObject:(id)obj forCommonKey:(NSString *)key;
+
+// Use sparingly - we want to hide the underlying file structure as much as possible!
+// Very few cases where caller ought to need to know about the underlying file object and its parser
+-(NSString *)imageFileFullPath;
+@property (readonly) FrameMetadataParser *parser;
+@property (readonly) size_t arrayIndex;
 
 @end
 
