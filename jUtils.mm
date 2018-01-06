@@ -141,8 +141,8 @@ NSInteger frameSortOrderUsingTimestamps(id string1, id string2, void *pathStem)
 	}
 	MetadataForFrame *metadata1 = [MetadataForFrame metadataForFirstFrameAtImagePath:[SWF:@"%@%@", stem, string1]];
 	MetadataForFrame *metadata2 = [MetadataForFrame metadataForFirstFrameAtImagePath:[SWF:@"%@%@", stem, string2]];
-	NSNumber *timestamp1 = [metadata1 valueForKeyPath:@"timestamp"];
-	NSNumber *timestamp2 = [metadata2 valueForKeyPath:@"timestamp"];
+	NSNumber *timestamp1 = [metadata1 valueForKeyPath:@"frame.timestamp"];
+	NSNumber *timestamp2 = [metadata2 valueForKeyPath:@"frame.timestamp"];
 	if ((timestamp1 != nil) && (timestamp2 != nil))
 	{
 		double t1 = timestamp1.doubleValue;
@@ -210,7 +210,7 @@ NSArray *FasterSortFramesByTimestamp(NSArray *filenames, NSString *pathStem, Coc
 		// If metadata exists, this code will correctly handle both old-style metadata for a single frame,
 		// and new-style metadata that might be for multiple frames (in which case it will get the timestamp of the first frame in the file)
 		FrameMetadataParser *parser = [FrameMetadataParser parserForImageFilename:s inFolder:folderAlias];
-        NSNumber *timestamp = [parser valueForKeyPath:@"timestamp" arrayIndex:0];
+        NSNumber *timestamp = [parser valueForKeyPath:@"frame.timestamp" arrayIndex:0];
 		// Note down the timestamp (if we found one)
         if (timestamp != nil)
             ts[i++] = (TimestampedFrame){s, timestamp.doubleValue};
