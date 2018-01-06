@@ -48,18 +48,24 @@ void CocoaProgressWindowHelper::InternalUpdateProgress(double newProgress)
 	_base = new CocoaProgressWindowHelper(inLength, self);
 	self.progressCaption = title;
 	sheetBegun = false;
-	if (inLength == 0)
-	{
-		[indicator setIndeterminate:YES];
-		[indicator startAnimation:nil];
-	}
-	else
-		[indicator setMaxValue:inLength];
 
 	if (win != nil)
 		[self setUpSheetOnWindow:win];
 	
 	return self;
+}
+
+-(void)awakeFromNib
+{
+	if (_base->Length() == 0)
+	{
+		[indicator setIndeterminate:YES];
+		[indicator startAnimation:nil];
+	}
+	else
+		[indicator setMaxValue:_base->Length()];
+	
+	[super awakeFromNib];
 }
 
 -(id)initInitiallyIndeterminateWithTitle:(NSString *)title sheetOnWindow:(NSWindow *)win
@@ -104,6 +110,7 @@ void CocoaProgressWindowHelper::InternalUpdateProgress(double newProgress)
 	printf("Dealloc progress window %p\n", self);
 	CHECK(!sheetBegun);		// Owner should call closeSheetAndRelease
 	delete _base;
+	self.progressCaption = nil;
 	[super dealloc];
 }
 

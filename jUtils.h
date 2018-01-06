@@ -110,10 +110,12 @@ void LinearFit(std::vector<double> &x, std::vector<double> &y, double *alpha, do
 		void ForEverySubdirectoryInDirectory(NSURL *dir, void (^callback)(NSURL *));
         void ForEveryImageFileInDirectory(NSString *dir, void (^callback)(NSString *));
         void ForEveryImageFileInDirectoryConcurrent(NSString *dir, void (^callback)(NSString *));
+		@class MetadataForFrame;
+		void ForEveryFrameInDirectory(NSString *dir, void (^callback)(MetadataForFrame *));
+		void ForEveryFrameInDirectory(NSString *dir, void (^callback)(NSBitmapImageRep *, MetadataForFrame *));
   #endif
     NSString *FirstImageFileNameInDirectory(NSString *dir);
 	NSString *MetadataPathFromImagePath(NSString *fileName);
-    id MetadataKeyValueForFramePath(NSString *path, NSString *key);
 	void CopyMetadataForImageFile(NSString *sourceFilePath, NSString *destDirPath, NSString *destFileName = nil);
     void PrintCompleteFolderPath(NSString *basePath, int indentationLevel, int leadingCharsToSkip);
 	NSInteger frameSortOrder(id string1, id string2, void *);

@@ -16,6 +16,7 @@
 }
 
 -(void)applicationDidFinishLaunching:(NSNotification *)note;
+-(void)applicationWillTerminate:(NSNotification *)notification;
 -(void)alertWithText:(NSString *)mainText andExplanation:(NSString *)text2;
 -(void)alertWithText:(NSString *)mainText andExplanation:(NSString *)text2 iconName:(NSString*)iconName;
 

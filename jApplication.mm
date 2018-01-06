@@ -31,6 +31,13 @@ JApplication *baseApp = nil;
     return self;
 }
 
+-(void)dealloc
+{
+	self.buildVersionString = nil;
+	self.configFilename = nil;
+	[super dealloc];
+}
+
 -(void)applicationDidFinishLaunching:(NSNotification *)note
 {
 	// Determine the build version, e.g. for the about box and possibly for debug messages

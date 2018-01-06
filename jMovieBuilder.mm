@@ -8,7 +8,7 @@
 
 #include "jMovieBuilder.h"
 
-void GetDestinationDetailsUsingSheetOnWindow(NSWindow *sheetOnWindow, void (^handler)(NSInteger result, NSSavePanel *savePanel))
+void GetMovieDestinationDetailsUsingSheetOnWindow(NSWindow *sheetOnWindow, void (^handler)(NSInteger result, NSSavePanel *savePanel))
 {
 	NSSavePanel *spanel = [NSSavePanel savePanel];
 	// Could use the following to set the starting directory for the save panel:

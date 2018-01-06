@@ -86,7 +86,10 @@
 	{
 		id val = [self.target.target valueForKeyPath:key];
 		if (CHECK(val != nil))
+		{
+			ALWAYS_ASSERT(val != nil);		// Redundant, but silences static analysis warning (I haven't found a satisfactory way to get static analyzer to understand the that val!=nil in this branch (thanks to the CHECK macro)
 			[dict setObject:val forKey:key];
+		}
 		else
 		{
 			// This is rather unsatisfactory - if a text field is empty then we will get nil back.
