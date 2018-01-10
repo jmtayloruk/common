@@ -271,7 +271,7 @@ NSCache *imageCache = [NSCache new];
 			Unfortunately there's nothing we can do except access the image file in order to determine
 			how many images might be in it.
 			That's going to be really inefficient, but hopefully it won't happen too often,
-			since it won't happen with data we have previously recorded ourseves...	*/
+			since it won't happen with data we have previously recorded ourselves...	*/
 		self.frameCount = self.multiPageImage.representations.count;
 	}
 	
@@ -402,14 +402,20 @@ NSCache *imageCache = [NSCache new];
 	NSMutableDictionary *result = [NSMutableDictionary dictionaryWithDictionary:self.dict];
 	if (metadataVersion == kSingleFileMetadataVersion)
 	{
-		[result setObject:obj forKey:key];
+        if (obj == nil)
+            [result removeObjectForKey:key];
+        else
+            [result setObject:obj forKey:key];
 	}
 	else
 	{
 		// Edit down the frame array to only contain the one relevant object
 		NSMutableArray *frameArray = [NSMutableArray arrayWithArray:[result objectForKey:@"frames"]];
 		NSMutableDictionary *frameDictionary = [NSMutableDictionary dictionaryWithDictionary:[frameArray objectAtIndex:arrayIndex]];
-		[frameDictionary setObject:obj forKey:key];
+        if (obj == nil)
+            [frameDictionary removeObjectForKey:key];
+        else
+            [frameDictionary setObject:obj forKey:key];
 		[frameArray replaceObjectAtIndex:arrayIndex withObject:frameDictionary];
 		[result setObject:frameArray forKey:@"frames"];
 		self.frameMetadataArray = frameArray;
@@ -426,11 +432,18 @@ NSCache *imageCache = [NSCache new];
 	// for the one use-case that I currently have (camera.camera_properties.pixels_per_um)
 	ALWAYS_ASSERT([key isEqualToString:@"camera.camera_properties.pixels_per_um"]);
 	NSMutableDictionary *result = [NSMutableDictionary dictionaryWithDictionary:self.dict];
-	NSMutableDictionary *cam = [NSMutableDictionary dictionaryWithDictionary:[result getRequiredDictionaryForKey:@"camera"]];
-	NSMutableDictionary *prop = [NSMutableDictionary dictionaryWithDictionary:[cam getRequiredDictionaryForKey:@"camera_properties"]];
-	[prop setObject:obj forKey:@"pixels_per_um"];
-	[cam setObject:prop forKey:@"camera_properties"];
-	[result setObject:prop forKey:@"camera"];
+    if (metadataVersion == kSingleFileMetadataVersion)
+    {
+        [result setObject:obj forKey:@"pixels_per_um"];
+    }
+    else
+    {
+        NSMutableDictionary *cam = [NSMutableDictionary dictionaryWithDictionary:[result getRequiredDictionaryForKey:@"camera"]];
+        NSMutableDictionary *prop = [NSMutableDictionary dictionaryWithDictionary:[cam getRequiredDictionaryForKey:@"camera_properties"]];
+        [prop setObject:obj forKey:@"pixels_per_um"];
+        [cam setObject:prop forKey:@"camera_properties"];
+        [result setObject:prop forKey:@"camera"];
+    }
 	self.dict = result;
 	metadataWasEdited = true;
 }
