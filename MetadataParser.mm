@@ -344,12 +344,12 @@ NSCache *imageCache = [NSCache new];
 		ALWAYS_ASSERT(arrayIndex < self.frameMetadataArray.count);
 		NSDictionary *dictionaryToUse = [self.frameMetadataArray objectAtIndex:arrayIndex];
 		ALWAYS_ASSERT([dictionaryToUse isKindOfClass:[NSDictionary class]]);
-		return [dictionaryToUse valueForKeyPath:[keyPath substringFromIndex:6]];
+		return [dictionaryToUse valueForKeyPath:[keyPath substringFromIndex:6]];		// Skip the 'frame.' prefix
 	}
 	else
 	{
 		// Look directly in the dictionary for global metadata
-		return [self.dict valueForKeyPath:[keyPath substringFromIndex:6]];
+		return [self.dict valueForKeyPath:keyPath];
 	}
 }
 

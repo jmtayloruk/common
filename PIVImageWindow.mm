@@ -26,7 +26,6 @@ template<> IntegerPoint ImageWindow<double>::CalculateFlowPeakInteger(void) cons
 	ALWAYS_ASSERT(height & 1);
 	ALWAYS_ASSERT(width == elementsPerRow);
 	double minVal = DBL_MAX;
-	int minX = -1, minY = -1;
 	IntegerPoint result(-1,-1);
 	for (int y = 0; y < height; y++)
 		for (int x = 0; x < width; x++)
@@ -34,8 +33,6 @@ template<> IntegerPoint ImageWindow<double>::CalculateFlowPeakInteger(void) cons
 			if (PixelXY(x, y) < minVal)
 			{
 				minVal = PixelXY(x, y);
-				minX = x;
-				minY = y;
 				result = IntegerPoint(x, y);
 			}
 		}
