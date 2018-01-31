@@ -11,6 +11,7 @@
 #import "MetadataParser.h"
 #import "jCocoaImageUtils.h"
 #import "DictionaryReadingExtensions.h"
+#import "jCache.h"
 
 @implementation ParserBase
 
@@ -206,7 +207,7 @@
 	evicted from the cache! As a result I don't have total confidence that this will protect me
 	from using up all memory. However, I think I will try it and see if we encounter problems.	*/
 const NSUInteger kMaxCacheSizeInBytes = (NSUInteger)1e9;
-NSCache *imageCache = [NSCache new];
+JCache *imageCache = [JCache new];
 
 +(id)parserForImagePath:(NSString *)imagePath
 {
@@ -286,6 +287,12 @@ NSCache *imageCache = [NSCache new];
 
 -(void)dealloc
 {
+	/*	This might be a bit too dramatic a move, but I clear the associated path from the cache when
+		this parser is released (which will happen when all frame parsers that reference it are also deleted).
+		That should ensure the cache can do its job, but also prevents it being left full with stale data,
+		since I am worried about memory running low on 32-bit systems	*/
+	[imageCache removeObjectForKey:self.imagePath];
+	
 	self.frameMetadataArray = nil;
 	self.folderAlias = nil;
 	self.imageFilename = nil;

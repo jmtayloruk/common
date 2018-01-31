@@ -121,6 +121,9 @@ void LinearFit(std::vector<double> &x, std::vector<double> &y, double *alpha, do
 	NSInteger frameSortOrder(id string1, id string2, void *);
 	NSInteger frameSortOrderForURLs(id url1, id url2, void *);
 	NSInteger frameSortOrderUsingTimestamps(id string1, id string2, void *);
+
+	// NSComparisonResult must be 0, +1 or -1. These functions convert a difference (i.e. the value of a-b) into that form.
+	inline NSComparisonResult DiffToNSComparisonResult(double i) { return NSComparisonResult((i < 0) ? -1 : ((i > 0) ? 1 : 0)); }
 #endif
 
 #endif
