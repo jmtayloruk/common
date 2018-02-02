@@ -325,7 +325,7 @@ JCache *imageCache = [JCache new];
 		{
 			[newComponents replaceObjectAtIndex:0 withObject:@"program_info"];
 		}
-		// Catch camera.camera_properties, now that camera has been removed
+		// Catch camera.camera_properties, now that camera grouping has been removed
 		if ([newComponents.firstObject isEqualToString:@"camera_properties"])
 			[newComponents removeObjectAtIndex:0];
 	
@@ -449,7 +449,7 @@ JCache *imageCache = [JCache new];
         NSMutableDictionary *prop = [NSMutableDictionary dictionaryWithDictionary:[cam getRequiredDictionaryForKey:@"camera_properties"]];
         [prop setObject:obj forKey:@"pixels_per_um"];
         [cam setObject:prop forKey:@"camera_properties"];
-        [result setObject:prop forKey:@"camera"];
+        [result setObject:cam forKey:@"camera"];
     }
 	self.dict = result;
 	metadataWasEdited = true;
