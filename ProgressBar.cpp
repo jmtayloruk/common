@@ -70,18 +70,32 @@ void BaseProgressBar::ResetTimeEstimate(void)
 {
 	// Don't worry about how long it's taken to complete the items so far,
 	// and make future estimates based on the speed we are NOW getting through items
-	startTimeForEstimate = GetTime();
+	startTimeForEstimate = lastProgressUpdateTime = GetTime();
 	startingProgressForEstimate = currentProgress;
 }
 
 void BaseProgressBar::EstimateTimeRemaining(int *hours, int *mins, double *secs)
 {
-	double curTime = GetTime();
-	*secs = CalcElapsedSecs(startTimeForEstimate, curTime) * ((length - startingProgressForEstimate) / (currentProgress - startingProgressForEstimate) - 1.0);
-	*hours = (int)(*secs / 3600);
-	*secs -= *hours * 3600;
-	*mins = (int)(*secs / 60);
-	*secs -= *mins * 60;
+	*secs = CalcElapsedSecs(startTimeForEstimate, lastProgressUpdateTime) * ((length - startingProgressForEstimate) / (currentProgress - startingProgressForEstimate) - 1.0);
+    if (!std::isnormal(*secs))
+    {
+        // Divide by zero: we have no progress and so cannot make an estimate yet
+        *hours = 0;
+        *mins = 0;
+        *secs = 0;
+    }
+    else
+    {
+        // If we haven't had an update for a while and we are having to guess a bit, our estimated time remaining might become negative
+        // In that case, restrict it to zero
+        if (*secs < 0)
+            *secs = 0;
+        // Split out the result into hours, minutes and seconds
+        *hours = (int)(*secs / 3600);
+        *secs -= *hours * 3600;
+        *mins = (int)(*secs / 60);
+        *secs -= *mins * 60;
+    }
 }
 
 const char *TextualProgressBar::kTextProgressBarSpaces = "                                                  ";
@@ -133,18 +147,21 @@ void TextualProgressBar::SetTitle(const char *title, va_list argList)
 void TextualProgressBar::InternalUpdateProgress(double newProgress)
 {
 	newProgress = MIN(newProgress, length);
+    if (newProgress != currentProgress)
+    {
+        currentProgress = newProgress;
+        lastProgressUpdateTime = GetTime();
 	
-	if (Enabled())
-	{
-		int	numCharsRequired = (int)((newProgress / length) * kTextProgressBarWidth);
-		if (numCharsRequired > numCharsDrawn)
-		{
-			for (int i = 0; i < (numCharsRequired - numCharsDrawn); i++)
-				printf("-");
-			fflush(stdout);
-			numCharsDrawn = numCharsRequired;
-		}
-	}
-
-	currentProgress = newProgress;	
+        if (Enabled())
+        {
+            int	numCharsRequired = (int)((newProgress / length) * kTextProgressBarWidth);
+            if (numCharsRequired > numCharsDrawn)
+            {
+                for (int i = 0; i < (numCharsRequired - numCharsDrawn); i++)
+                    printf("-");
+                fflush(stdout);
+                numCharsDrawn = numCharsRequired;
+            }
+        }
+    }
 }

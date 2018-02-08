@@ -29,8 +29,10 @@ class CocoaProgressWindowHelper : public BaseProgressBar
 
 void CocoaProgressWindowHelper::InternalUpdateProgress(double newProgress)
 {
-	currentProgress = MIN(newProgress, length);	
-	[windowClass internalUpdateProgress:currentProgress];
+    if (newProgress != currentProgress)
+        lastProgressUpdateTime = GetTime();
+    currentProgress = MIN(newProgress, length);
+    [windowClass internalUpdateProgress:currentProgress];
 }
 
 @implementation CocoaProgressWindow
@@ -169,7 +171,10 @@ void CocoaProgressWindowHelper::InternalUpdateProgress(double newProgress)
 	_base->GetElapsedTime(&hours, &mins, &secs);
 	[elapsed setStringValue:[SWF:@"%dh%dm%.02lfs",hours, mins, secs]];
 	_base->EstimateTimeRemaining(&hours, &mins, &secs);
-	[remaining setStringValue:[SWF:@"%dh%dm%.02lfs",hours, mins, secs]];
+    if ((hours == 0) && (mins == 0) && (secs == 0))
+        [remaining setStringValue:[SWF:@"??"]];
+    else
+        [remaining setStringValue:[SWF:@"%dh%dm%.02lfs", hours, mins, secs]];
 	
 	[fraction setNeedsDisplay];
 	[elapsed setNeedsDisplay];

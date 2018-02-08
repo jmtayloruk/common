@@ -22,7 +22,7 @@ class BaseProgressBar
 	int				overrideEnabled;
 	JMutex				progressMutex;
 
-	double				startTime, startTimeForEstimate;
+	double				startTime, startTimeForEstimate, lastProgressUpdateTime;
 	double				startingProgressForEstimate;
 	bool				reportElapsedTime;
 	
