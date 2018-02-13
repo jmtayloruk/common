@@ -40,7 +40,7 @@ class BaseProgressBar
 
 	void				GetElapsedTime(int *hours, int *mins, double *secs);
 	void				ResetTimeEstimate(void);
-	void				EstimateTimeRemaining(int *hours, int *mins, double *secs);
+	bool/*estimate obtained*/	EstimateTimeRemaining(int *hours, int *mins, double *secs);
 	
 	static void			Disable(void) { disabled++; }
 	static void			Enable(void) { ALWAYS_ASSERT(disabled > 0); disabled--; }

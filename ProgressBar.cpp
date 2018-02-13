@@ -74,15 +74,16 @@ void BaseProgressBar::ResetTimeEstimate(void)
 	startingProgressForEstimate = currentProgress;
 }
 
-void BaseProgressBar::EstimateTimeRemaining(int *hours, int *mins, double *secs)
+bool/*estimate obtained*/ BaseProgressBar::EstimateTimeRemaining(int *hours, int *mins, double *secs)
 {
 	*secs = CalcElapsedSecs(startTimeForEstimate, lastProgressUpdateTime) * ((length - startingProgressForEstimate) / (currentProgress - startingProgressForEstimate) - 1.0);
-    if (!std::isnormal(*secs))
+    if (!std::isfinite(*secs))
     {
         // Divide by zero: we have no progress and so cannot make an estimate yet
         *hours = 0;
         *mins = 0;
         *secs = 0;
+        return false;
     }
     else
     {
@@ -95,6 +96,7 @@ void BaseProgressBar::EstimateTimeRemaining(int *hours, int *mins, double *secs)
         *secs -= *hours * 3600;
         *mins = (int)(*secs / 60);
         *secs -= *mins * 60;
+        return true;
     }
 }
 

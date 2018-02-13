@@ -10,6 +10,7 @@
 #import "CocoaProgressWindow.h"
 #import <dispatch/dispatch.h>
 #import "jCocoaImageUtils.h"
+#import "MetadataParser.h"
 #ifdef __SSE4_1__
     #import <smmintrin.h>		// SSE4.1
 #endif
@@ -30,9 +31,8 @@ static inline __m128i _mm_cmple_epu16 (__m128i x, __m128i y)
 }
 #endif
 
-#define XY_MIP 1
-#define XZ_MIP 2
-#define MIP_TYPE XY_MIP
+enum { kMipXY = 1, kMipXZ };
+const int gMipType = kMipXY;
 
 void CalcMip(unsigned char *mipPixels, const unsigned char *otherPixels, size_t numPixels)
 {
@@ -109,116 +109,142 @@ void CalcMipForBPP(unsigned char *mipData, const unsigned char *otherData, size_
 	};
 }
 
+void CalcMipScalarForBPP(unsigned char *mipData, const unsigned char *otherData, size_t bytes, int bitsPerPixel)
+{
+    switch (bitsPerPixel)
+    {
+        case 8:
+        case 32:
+            // In the case of 32-bit data, we can treat it just as if it's 8-bit greyscale, but with more pixels
+            CalcMipScalar(mipData, otherData, bytes);
+            break;
+        case 16:
+            CalcMipScalar((unsigned short *)mipData, (const unsigned short*)otherData, bytes/2);
+            break;
+        default:
+            ALWAYS_ASSERT(0);
+    };
+}
+
 void MakeMipFromImagesInFolder(NSString *sourceFolderPath, NSString *destFilename, CocoaProgressWindow *progress, double totalWork)
 {
 	// TODO: this could be improved on - currently it just bails out if the files aren't in the format it expects
 	NSAutoreleasePool *pool = [NSAutoreleasePool new];
 
-	size_t numImages = ListImageFilesInDirectory(sourceFolderPath).count;
-	NSBitmapImageRep *firstBitmap = RawBitmapFromImagePath(FirstImageFileNameInDirectory(sourceFolderPath));
+    /*  We first need to know how many frames there are in this folder, which is not trivial given the presence of multi-page TIFFs
+        We could get away without that for the xy MIP (it's only used for progress updates), but it's pretty essential for the xz MIP.
+        However, we can get it by parsing the metadata (trusting that all frames also have accompanying metadata).
+        This is not trivial from a performance point of view (parsing the xml takes a while), but it's not too bad. */
+    __block size_t numFrames = 0;
+    ForEveryFrameInDirectory(sourceFolderPath, ^(MetadataForFrame *frameMetadata) { numFrames++; });
+    
+    NSBitmapImageRep *firstBitmap = FirstBitmapInDirectory(sourceFolderPath);
 	printf(" First file: %s %p\n", FirstImageFileNameInDirectory(sourceFolderPath).UTF8String, firstBitmap);
 
 	__block int counter = 0;
 	double shear = 0.0;//2.0;
 	int shearStart = 0;//-100 * shear;
-#if MIP_TYPE == XY_MIP
-	__block NSBitmapImageRep *mipBitmap = [firstBitmap retain];
-	unsigned char *mipData = mipBitmap.bitmapData;
-	memset(mipData, 0, mipBitmap.bytesPerRow * mipBitmap.pixelsHigh);
-	ForEveryImageFileInDirectory(sourceFolderPath,
-								 ^(NSString *filename){
-									 if (!progress.userCancelled)		// Not sure we can break out of a block-based loop, but we can bail fairly quickly like this
-									 {
-										 NSBitmapImageRep *otherBitmap = RawBitmapFromImagePath(filename);
-										 if (!(CHECK(otherBitmap != nil)))
-											 return;
-                                         ALWAYS_ASSERT(otherBitmap != nil);     // Redundant, but useful to silence spurious static analysis warning
-										 if (!(CHECK(otherBitmap.bytesPerRow == mipBitmap.bytesPerRow)))
-											 return;
-										 if (!(CHECK(otherBitmap.pixelsHigh == mipBitmap.pixelsHigh)))
-											 return;
+    __block NSBitmapImageRep *mipBitmap;
+    if (gMipType == kMipXY)
+    {
+        mipBitmap = [firstBitmap retain];
+        unsigned char *mipData = mipBitmap.bitmapData;
+        memset(mipData, 0, mipBitmap.bytesPerRow * mipBitmap.pixelsHigh);
+        ForEveryFrameInDirectory(sourceFolderPath,
+            ^(NSBitmapImageRep *frameBitmap, MetadataForFrame *frameMetadata) {
+                 if (!progress.userCancelled)		// Not sure we can break out of a block-based loop, but we can bail fairly quickly like this
+                 {
+                     if (!(CHECK(frameBitmap != nil)))
+                         return;
+                     ALWAYS_ASSERT(frameBitmap != nil);     // Redundant, but useful to silence spurious static analysis warning
+                     if (!(CHECK(frameBitmap.bytesPerRow == mipBitmap.bytesPerRow)))
+                         return;
+                     if (!(CHECK(frameBitmap.pixelsHigh == mipBitmap.pixelsHigh)))
+                         return;
 #if 0
-										 // Optional compile-time feature:
-										 // check plist to see if a triggered frame is reasonably close to the target phase
-										 NSMutableDictionary *metadata = [NSMutableDictionary dictionaryWithContentsOfFile:MetadataPathFromImagePath(filename)];
-										 NSNumber *err = [metadata objectForKey:@"estimated_ref_frame_error"];
-										 if ((err != nil) &&
-											 (fabs(err.doubleValue) > 5.0))
-										 {
-											 return;
-										 }
+                     // Optional compile-time feature:
+                     // check plist to see if a triggered frame is reasonably close to the target phase
+                     NSMutableDictionary *metadata = [NSMutableDictionary dictionaryWithContentsOfFile:MetadataPathFromImagePath(filename)];
+                     NSNumber *err = [metadata objectForKey:@"estimated_ref_frame_error"];
+                     if ((err != nil) &&
+                         (fabs(err.doubleValue) > 5.0))
+                     {
+                         return;
+                     }
 #endif
-										 if (shear == 0.0)
-											 CalcMipForBPP(mipData, otherBitmap.bitmapData, size_t(mipBitmap.pixelsHigh * mipBitmap.bytesPerRow), (int)mipBitmap.bitsPerPixel);
-										 else
-										 {
-											 if (!(CHECK(otherBitmap.bitsPerPixel == 16)))
-											 {
-												 // Not supported here yet.
-												 // To be honest, this shear code is probably obsolete now I am supporting rotation in StackViewer
-												 return;
-											 }
-											 for (int y = 0; y < otherBitmap.pixelsHigh; y++)
-											 {
-												 unsigned short *mipRow = (unsigned short *)(mipBitmap.bitmapData + mipBitmap.bytesPerRow * y);
-												 int yToUse = y + shearStart + int(shear * counter);
-												 if ((yToUse >= 0) && (yToUse < otherBitmap.pixelsHigh))
-												 {
-													 const unsigned short *otherRow = (const unsigned short *)(otherBitmap.bitmapData + otherBitmap.bytesPerRow * yToUse);
-													 // No obvious way to do non-scalar, due to the fact that bytesPerRow may not be sufficiently aligned
-													 // for the SSE instructions we would use for a vectorized implementation.
-													 CalcMipScalar(mipRow, otherRow, otherBitmap.pixelsWide);
-												 }
-											 }
-										 }
-										 counter++;
-										 dispatch_async(dispatch_get_main_queue(), ^{ [progress deltaProgress:(totalWork / double(numImages))]; });
-									 }
-								 });
-#elif MIP_TYPE == XZ_MIP
-	__block NSBitmapImageRep *mipBitmap = [[NSBitmapImageRep alloc]
-											initWithBitmapDataPlanes:NULL		// Bitmap allocates and releases the necessary memory for us
-											pixelsWide:firstBitmap.pixelsWide
-											pixelsHigh:numImages
-											bitsPerSample:16
-											samplesPerPixel:1
-											hasAlpha:NO
-											isPlanar:NO
-											colorSpaceName:NSCalibratedWhiteColorSpace
-											bytesPerRow:firstBitmap.bytesPerRow
-											bitsPerPixel:0];
-	ForEveryImageFileInDirectory(sourceFolderPath,
-								 ^(NSString *filename){
-									 if (!progress.userCancelled)		// Not sure we can break out of a block-based loop, but we can bail fairly quickly like this
-									 {
-										 NSBitmapImageRep *otherBitmap = RawBitmapFromImagePath(filename);
-										 if (!(CHECK(otherBitmap != nil)))
-											 return;
-										 if (!(CHECK(otherBitmap.bitsPerPixel == 16)))
-											 return;
-										 if (!(CHECK(otherBitmap.bytesPerRow == mipBitmap.bytesPerRow)))
-											 return;
-										 ALWAYS_ASSERT(counter < mipBitmap.pixelsHigh);
-										 unsigned short *mipRow = (unsigned short *)(mipBitmap.bitmapData + mipBitmap.bytesPerRow * counter);
-										 for (int y = 0; y < otherBitmap.pixelsHigh; y++)
-										 {
-											 int yToUse = y + shearStart + int(shear * counter);
-											 if ((yToUse >= 0) && (yToUse < otherBitmap.pixelsHigh))
-											 {
-												 const unsigned short *otherRow = (const unsigned short *)(otherBitmap.bitmapData + otherBitmap.bytesPerRow * yToUse);
-												 // No obvious way to do non-scalar, due to the fact that bytesPerRow may not be sufficiently aligned
-												 // for the SSE instructions we would use for a vectorized implementation.
-												 CalcMipScalar(mipRow, otherRow, otherBitmap.pixelsWide);
-											 }
-										 }
-										 counter++;
-										 dispatch_async(dispatch_get_main_queue(), ^{ [progress deltaProgress:(totalWork / double(numImages))]; });
-									 }
-								 });
-#endif
+                     if (shear == 0.0)
+                         CalcMipForBPP(mipData, frameBitmap.bitmapData, size_t(mipBitmap.pixelsHigh * mipBitmap.bytesPerRow), (int)mipBitmap.bitsPerPixel);
+                     else
+                     {
+                         if (!(CHECK(frameBitmap.bitsPerPixel == 16)))
+                         {
+                             // Other bit depths (with shear) are not supported here yet.
+                             // To be honest, this shear code is probably obsolete now I am supporting rotation in StackViewer
+                             return;
+                         }
+                         for (int y = 0; y < frameBitmap.pixelsHigh; y++)
+                         {
+                             unsigned short *mipRow = (unsigned short *)(mipBitmap.bitmapData + mipBitmap.bytesPerRow * y);
+                             int yToUse = y + shearStart + int(shear * counter);
+                             if ((yToUse >= 0) && (yToUse < frameBitmap.pixelsHigh))
+                             {
+                                 const unsigned short *otherRow = (const unsigned short *)(frameBitmap.bitmapData + frameBitmap.bytesPerRow * yToUse);
+                                 // No obvious way to do non-scalar, due to the fact that bytesPerRow may not be sufficiently aligned
+                                 // for the SSE instructions we would use for a vectorized implementation.
+                                 CalcMipScalar(mipRow, otherRow, frameBitmap.pixelsWide);
+                             }
+                         }
+                     }
+                     counter++;
+                     dispatch_async(dispatch_get_main_queue(), ^{ [progress deltaProgress:(totalWork / double(numFrames))]; });
+                 }
+             });
+    }
+    else
+    {
+        ALWAYS_ASSERT(gMipType == kMipXZ);
+        mipBitmap = [[NSBitmapImageRep alloc]
+                        initWithBitmapDataPlanes:NULL		// Bitmap allocates and releases the necessary memory for us
+                        pixelsWide:firstBitmap.pixelsWide
+                        pixelsHigh:numFrames
+                        bitsPerSample:firstBitmap.bitsPerSample
+                        samplesPerPixel:1
+                        hasAlpha:NO
+                        isPlanar:NO
+                        colorSpaceName:NSCalibratedWhiteColorSpace
+                        bytesPerRow:firstBitmap.bytesPerRow
+                        bitsPerPixel:0];
+        ForEveryFrameInDirectory(sourceFolderPath,
+            ^(NSBitmapImageRep *frameBitmap, MetadataForFrame *frameMetadata) {
+                 if (!progress.userCancelled)		// Not sure we can break out of a block-based loop, but we can bail fairly quickly like this
+                 {
+                     if (!(CHECK(frameBitmap != nil)))
+                         return;
+                     if (!(CHECK(frameBitmap.bytesPerRow == mipBitmap.bytesPerRow)))
+                         return;
+                     ALWAYS_ASSERT(counter < mipBitmap.pixelsHigh);
+                     for (int y = 0; y < frameBitmap.pixelsHigh; y++)
+                     {
+                         int yToUse = y + shearStart + int(shear * counter);
+                         if ((yToUse >= 0) && (yToUse < frameBitmap.pixelsHigh))
+                         {
+                             // No obvious way to do non-scalar, due to the fact that bytesPerRow may not be sufficiently aligned
+                             // for the SSE instructions we would use for a vectorized implementation.
+                             unsigned char *mipRow = (unsigned char *)(mipBitmap.bitmapData + mipBitmap.bytesPerRow * counter);
+                             const unsigned char *otherRow = (const unsigned char *)(frameBitmap.bitmapData + frameBitmap.bytesPerRow * yToUse);
+                             CalcMipScalarForBPP(mipRow, otherRow, frameBitmap.bytesPerRow, (int)mipBitmap.bitsPerPixel);
+                         }
+                     }
+                     counter++;
+                     dispatch_async(dispatch_get_main_queue(), ^{ [progress deltaProgress:(totalWork / double(numFrames))]; });
+                 }
+             });
+    }
 	
-	[[mipBitmap TIFFRepresentation] writeToFile:destFilename atomically:NO];
-	printf(" Saving as %s\n", destFilename.UTF8String);
+    /*  For now I save the MIPs as individual files, despite everything else being in multi-page TIFFs.
+        This shouldn't be a huge issue in terms of bloated number of files, but TODO: I could change it in future.  */
+    printf(" Saving as %s\n", destFilename.UTF8String);
+    [[mipBitmap TIFFRepresentation] writeToFile:destFilename atomically:NO];
 	[mipBitmap release];
 	[pool drain];
 }
@@ -284,9 +310,10 @@ void ProcessStacksIntoMIPsSavingAt(NSArray *inURLs, NSURL *destinationURL, void 
 								   CHECK(ok);
 								   
 								   NSString *destFilename = [SWF:@"%@/%@", destDirPath, mipFilename];
-								   NSString *destMetadataName = [SWF:@"%@.plist", destFilename.lastPathComponent.stringByDeletingPathExtension];
+								   NSString *destMetadataPath = [SWF:@"%@/%@.plist", destDirPath, destFilename.lastPathComponent.stringByDeletingPathExtension];
 								   MakeMipFromImagesInFolder(contentsURL.path, destFilename, progress, 1.0 / numCamFolders);
-								   CopyMetadataForImageFile(FirstImageFileNameInDirectory(contentsURL.path), destDirPath, destMetadataName);
+                                   MetadataForFrame *temp = [MetadataForFrame metadataForFirstFrameAtImagePath:FirstImageFileNameInDirectory(contentsURL.path)];
+                                   [temp saveStandaloneMetadataFileAtPath:destMetadataPath];
 								   mipCounter++;
 								   if (progress.userCancelled)
 									   break;

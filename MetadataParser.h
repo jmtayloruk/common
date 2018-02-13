@@ -58,7 +58,7 @@ const int kCurrentMetadataVersion = kMultiTiffMetadataVersion;
 	size_t				_arrayIndex;
 }
 
-+(id)metadataForFirstFrameAtImagePath:(NSString *)path;
++(MetadataForFrame *)metadataForFirstFrameAtImagePath:(NSString *)path;
 -(id)initForParser:(FrameMetadataParser *)inParser arrayIndex:(size_t)inArrayIndex;
 -(id)valueForKeyPath:(NSString *)keyPath;
 -(double)universalComputerTimestamp;
@@ -70,6 +70,7 @@ const int kCurrentMetadataVersion = kMultiTiffMetadataVersion;
 -(NSDictionary *)commonMetadataDictionary;	// Useful if caller is writing out files to disk
 -(void)setNewObject:(id)obj forFrameKey:(NSString *)key;
 -(void)setNewObject:(id)obj forCommonKey:(NSString *)key;
+-(void)saveStandaloneMetadataFileAtPath:(NSString *)destPath;
 
 // Use sparingly - we want to hide the underlying file structure as much as possible!
 // Very few cases where caller ought to need to know about the underlying file object and its parser
@@ -109,4 +110,3 @@ const int kCurrentMetadataVersion = kMultiTiffMetadataVersion;
 @property (readwrite) bool deferMetadataSaving;
 
 @end
-

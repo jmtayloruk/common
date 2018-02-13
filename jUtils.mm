@@ -35,21 +35,19 @@ NSURL *PathToURL(NSString *path, NSURL *relativeTo)
 		running to produce those log errors, perhaps?
 		When the error appeared, there did not seem to be anything controversial about the URL path, it just had some spaces in it.
      */
-	if (false)//selectorAvailable)
-	{
-		// I was experimenting with this code branch, but I am doubtful about whether I am
-		// handling the path an an appropriate way for all encodings.
-		// It's also rather disappointing that I need to specify whether the object is a directory or not.
-		bool isDirectory = IsDirectory(PathToURL([relativeTo.path stringByAppendingPathComponent:path]));
-		return [NSURL fileURLWithFileSystemRepresentation:path.UTF8String//[path stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding].UTF8String
-											  isDirectory:isDirectory
-											relativeToURL:relativeTo];
-	}
-	else
-	{
-		return [NSURL URLWithString:[path stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding]
-					  relativeToURL:relativeTo];
-	}
+    CHECK(relativeTo != nil);       // Otherwise should call PathToURL(path)
+    if (false)//selectorAvailable)
+    {
+        // I was experimenting with this code branch, but I am doubtful about whether I am
+        // handling the path in an appropriate way for all encodings.
+        // It's also rather disappointing that I need to specify whether the object is a directory or not.
+        bool isDirectory = IsDirectory(PathToURL([relativeTo.path stringByAppendingPathComponent:path]));
+        return [NSURL fileURLWithFileSystemRepresentation:path.UTF8String//[path stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding].UTF8String
+                                              isDirectory:isDirectory
+                                            relativeToURL:relativeTo];
+    }
+    else
+        return [NSURL URLWithString:[path stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding] relativeToURL:relativeTo];
 }
 
 NSURL *PathToURL(NSString *path)
@@ -430,6 +428,12 @@ NSString *FirstImageFileNameInDirectory(NSString *dir)
 		return [SWF:@"%@/%@", dir, [dirContents objectAtIndex:0]];
 	else
 		return nil;
+}
+
+NSBitmapImageRep *FirstBitmapInDirectory(NSString *dirPath)
+{
+    FrameMetadataParser *parser = [FrameMetadataParser parserForImagePath:FirstImageFileNameInDirectory(dirPath)];
+    return [parser metadataForFrame:0].frameBitmap;
 }
 
 // These next three functions are really designed for the Spim GUI codebase, but I am including them

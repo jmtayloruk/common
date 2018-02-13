@@ -65,7 +65,10 @@ void CocoaProgressWindowHelper::InternalUpdateProgress(double newProgress)
 		[indicator startAnimation:nil];
 	}
 	else
+    {
+        [indicator setIndeterminate:NO];
 		[indicator setMaxValue:_base->Length()];
+    }
 	
 	[super awakeFromNib];
 }
@@ -170,8 +173,7 @@ void CocoaProgressWindowHelper::InternalUpdateProgress(double newProgress)
 	double secs;
 	_base->GetElapsedTime(&hours, &mins, &secs);
 	[elapsed setStringValue:[SWF:@"%dh%dm%.02lfs",hours, mins, secs]];
-	_base->EstimateTimeRemaining(&hours, &mins, &secs);
-    if ((hours == 0) && (mins == 0) && (secs == 0))
+	if (!_base->EstimateTimeRemaining(&hours, &mins, &secs))
         [remaining setStringValue:[SWF:@"??"]];
     else
         [remaining setStringValue:[SWF:@"%dh%dm%.02lfs", hours, mins, secs]];
