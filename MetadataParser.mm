@@ -518,7 +518,18 @@ JCache *imageCache = [JCache new];
 
 -(NSBitmapImageRep *)frameBitmapForArrayIndex:(size_t)arrayIndex
 {
-	NSBitmapImageRep *result = (NSBitmapImageRep *)[self.multiPageImage.representations objectAtIndex:arrayIndex];
+	NSArray *reps = self.multiPageImage.representations;
+	if (!CHECK(arrayIndex < reps.count))
+	{
+		/*	I have seen this crash in Edinburgh, though I am not sure why.
+			I imagine it might happen with a corrupted or half-written tiff file,
+			although I'd expect the metadata to be written *after* the image.
+			This logging should hopefully help pin down what dataset it occurs for
+			(and protect against an outright crash).		*/
+		NSLog(@"Check failed when reading %zd from %@", arrayIndex, self.imageFilename);
+		return nil;
+	}
+	NSBitmapImageRep *result = (NSBitmapImageRep *)[reps objectAtIndex:arrayIndex];
 	if (!CHECK([result isKindOfClass:[NSBitmapImageRep class]]))
 		return nil;
 	return result;
