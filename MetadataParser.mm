@@ -185,10 +185,13 @@
 
 -(void)saveStandaloneMetadataFileAtPath:(NSString *)destPath
 {
-    NSMutableDictionary *metadataToWrite = [NSMutableDictionary dictionaryWithDictionary:self.commonMetadataDictionary];
-    [metadataToWrite setObject:[NSArray arrayWithObject:self.frameSpecificMetadataDictionary] forKey:@"frames"];
-    bool ok = [metadataToWrite writeToFile:destPath atomically:NO];
-    CHECK(ok);
+    if (self.frameSpecificMetadataDictionary != nil)        // Catch case where we have no metadata associated with the image
+    {
+        NSMutableDictionary *metadataToWrite = [NSMutableDictionary dictionaryWithDictionary:self.commonMetadataDictionary];
+        [metadataToWrite setObject:[NSArray arrayWithObject:self.frameSpecificMetadataDictionary] forKey:@"frames"];
+        bool ok = [metadataToWrite writeToFile:destPath atomically:NO];
+        CHECK(ok);
+    }
 }
 
 @synthesize parser = _parser;
