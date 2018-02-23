@@ -340,8 +340,13 @@ JCache *imageCache = [JCache new];
 		if ([newComponents.firstObject isEqualToString:@"camera_properties"])
 			[newComponents removeObjectAtIndex:0];
 	
-		// Everything is presented as being in frame-specific metadata
-		return [@"frame." stringByAppendingString:[newComponents componentsJoinedByString:@"."]];
+        if (metadataVersion == kArrayAggregatedMetadataVersion)
+        {
+            // Everything is presented as being in the frame-specific metadata
+            return [@"frame." stringByAppendingString:[newComponents componentsJoinedByString:@"."]];
+        }
+        else
+            return [newComponents componentsJoinedByString:@"."];
 	}
 	else
 		return keyPath;
