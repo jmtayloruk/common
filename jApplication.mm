@@ -131,6 +131,32 @@ JApplication *baseApp = nil;
 {
 }
 
+-(NSString *)dateTimeStringForDate:(NSDate *)date
+{
+    // It might seem silly to have a dedicated function for this, but it allows us
+    // to just define the format in one place only.
+    NSDateFormatter *outputFormatter = [[[NSDateFormatter alloc] init] autorelease];
+    [outputFormatter setDateFormat:@"yyyy-MM-dd HH.mm.ss"];
+    return [outputFormatter stringFromDate:date];
+}
+
+-(NSString *)currentDateTimeString
+{
+    return [self dateTimeStringForDate:[NSDate date]];
+}
+
+-(NSString *)timestampedLogFilePathWithIdentifier:(NSString *)identifier
+{
+    NSString *basePath = GetUserDocumentDirectory();
+    return [SWF:@"%@/%@.%@.txt", basePath, self.currentDateTimeString, identifier];
+}
+
+-(FILE *)timestampedLogFileWithIdentifier:(NSString *)identifier
+{
+    FILE *outFile = fopen([self timestampedLogFilePathWithIdentifier:identifier].UTF8String, "w");
+    return outFile;
+}
+
 #pragma mark -
 #pragma mark Defaults
 
