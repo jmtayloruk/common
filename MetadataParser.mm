@@ -493,17 +493,28 @@ JCache *imageCache = [JCache new];
 		return result;
 	}
 	
-	// Image for this file is not in cache - load it
-	NSImage *theImage = [[[NSImage alloc] initWithContentsOfFile:self.imagePath] autorelease];
+	/*	Image for this file is not in cache - load it.
+		The standard NSImage loading code seems to require 3x as much virtual memory as the actual image on disk!
+		(It appears to mmap the file, separately load the data into memory, and then provide separate memory for each bitmap(!?))
+		The upshot is that this has a big memory footprint on 32-bit systems.
+		Because of this I just load the damn thing myself using libtiff!	*/
+	NSImage *theImage;
+	if ([self.imagePath hasSuffix:@".tif"] ||
+		[self.imagePath hasSuffix:@".tiff"])
+	{
+		theImage = NSImageFromTiffFile(self.imagePath);
+	}
+	else
+		theImage = [[[NSImage alloc] initWithContentsOfFile:self.imagePath] autorelease];
 	if (theImage == nil)
 	{
 		/*	In the past (some time before Jan 2018) I've encountered problems where we occasionally fail to load
 			an image, and I have a suspicion that may be due to something related to spotlight indexing.
 			I wanted to see if an immediate second try helps or not.
 			(I suspect we are much less likely to encounter that problem anyway, nowadays, since I am encouraging
-		 people to disable spotlight indexing in folders where they are saving video files, for performance reasons)	*/
+			people to disable spotlight indexing in folders where they are saving video files, for performance reasons)	*/
 		NSLog(@"File not found at %@. Trying again\n", self.imagePath);
-		theImage = [[NSImage alloc] initWithContentsOfFile:self.imagePath];
+		theImage = [[[NSImage alloc] initWithContentsOfFile:self.imagePath] autorelease];
 		if (theImage == nil)
 			NSLog(@"Retry failed\n");
 		else
