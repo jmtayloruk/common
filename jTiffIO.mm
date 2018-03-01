@@ -43,7 +43,7 @@ NSImage *NSImageFromTiffFile(NSString *tiffPath)
 										  pixelsHigh:height
 										  bitsPerSample:bitsPerSample
 										  samplesPerPixel:samplesPerPixel
-										  hasAlpha:(bitsPerSample == 32)
+										  hasAlpha:(samplesPerPixel == 4)
 										  isPlanar:NO
 										  colorSpaceName:(samplesPerPixel > 1) ? NSCalibratedRGBColorSpace : NSCalibratedWhiteColorSpace
 										  bytesPerRow:bytesPerSample*samplesPerPixel*width
