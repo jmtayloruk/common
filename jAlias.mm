@@ -16,9 +16,23 @@
 
 @implementation JAlias
 
++(id)aliasForPath:(NSString *)path create:(bool)create
+{
+	if (create)
+	{
+		NSError *err;
+		bool ok = [[NSFileManager defaultManager] createDirectoryAtPath:path
+											withIntermediateDirectories:YES
+															 attributes:nil
+																  error:&err];
+		ALWAYS_ASSERT(ok);
+	}
+	return [[[JAlias alloc] initForPath:path] autorelease];
+}
+
 +(id)aliasForPath:(NSString *)path
 {
-	return [[[JAlias alloc] initForPath:path] autorelease];
+	return [JAlias aliasForPath:path create:false];
 }
 
 -(id)initForPath:(NSString *)path

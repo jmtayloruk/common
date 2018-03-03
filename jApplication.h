@@ -31,9 +31,9 @@
 -(int)intForDefault:(NSString *)key;
 -(int)intForDefault:(NSString *)key usingIfAbsent:(int)def;
 -(double)doubleForDefault:(NSString *)key;
--(NSString *)dateTimeStringForDate:(NSDate *)date;
--(FILE *)timestampedLogFileWithIdentifier:(NSString *)identifier;
--(NSString *)timestampedLogFilePathWithIdentifier:(NSString *)identifier;
++(NSString *)dateTimeStringForDate:(NSDate *)date;
++(FILE *)timestampedLogFileWithIdentifier:(NSString *)identifier;
++(NSString *)timestampedLogFilePathWithIdentifier:(NSString *)identifier;
 
 @property (readonly, retain) NSString *configFilename;
 @property (readonly, retain) NSString *buildVersionString;

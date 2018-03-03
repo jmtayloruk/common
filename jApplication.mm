@@ -131,7 +131,7 @@ JApplication *baseApp = nil;
 {
 }
 
--(NSString *)dateTimeStringForDate:(NSDate *)date
++(NSString *)dateTimeStringForDate:(NSDate *)date
 {
     // It might seem silly to have a dedicated function for this, but it allows us
     // to just define the format in one place only.
@@ -140,18 +140,23 @@ JApplication *baseApp = nil;
     return [outputFormatter stringFromDate:date];
 }
 
--(NSString *)currentDateTimeString
++(NSString *)currentDateTimeString
 {
     return [self dateTimeStringForDate:[NSDate date]];
 }
 
--(NSString *)timestampedLogFilePathWithIdentifier:(NSString *)identifier
+-(NSString *)currentDateTimeString
 {
-    NSString *basePath = GetUserDocumentDirectory();
-    return [SWF:@"%@/%@.%@.txt", basePath, self.currentDateTimeString, identifier];
+	return [JApplication currentDateTimeString];
 }
 
--(FILE *)timestampedLogFileWithIdentifier:(NSString *)identifier
++(NSString *)timestampedLogFilePathWithIdentifier:(NSString *)identifier
+{
+    NSString *basePath = GetUserDocumentDirectory();
+    return [SWF:@"%@/Spim GUI Logs/%@.%@.txt", basePath, self.currentDateTimeString, identifier];
+}
+
++(FILE *)timestampedLogFileWithIdentifier:(NSString *)identifier
 {
     FILE *outFile = fopen([self timestampedLogFilePathWithIdentifier:identifier].UTF8String, "w");
     return outFile;
