@@ -48,11 +48,15 @@ NSImage *NSImageFromTiffFile(NSString *tiffPath)
 										  colorSpaceName:(samplesPerPixel > 1) ? NSCalibratedRGBColorSpace : NSCalibratedWhiteColorSpace
 										  bytesPerRow:bytesPerSample*samplesPerPixel*width
 										  bitsPerPixel:0];
-		if (!CHECK(bitmap != nil))
+		if (bitmap == nil)
+		{
+			// Convoluted code here to satisfy the static analyzer
+			CHECK(bitmap != nil);
 			break;
+		}
 		unsigned char *baseAddr = bitmap.bitmapData;
 		size_t sourceRowBytes = bitmap.bytesPerRow;
-		bool ok;
+		bool ok = true;
 		for (size_t row = 0; row < height; row++)
 		{
 			unsigned char *destPtr = baseAddr + row * sourceRowBytes;

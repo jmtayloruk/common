@@ -126,6 +126,11 @@ void CalcMipScalarForBPP(unsigned char *mipData, const unsigned char *otherData,
     };
 }
 
+void UpdateMipWithBitmap(NSBitmapImageRep *mipBitmap, NSBitmapImageRep *frameBitmap)
+{
+	CalcMipForBPP(mipBitmap.bitmapData, frameBitmap.bitmapData, size_t(mipBitmap.pixelsHigh * mipBitmap.bytesPerRow), (int)mipBitmap.bitsPerPixel);
+}
+
 void MakeMipFromImagesInFolder(NSString *sourceFolderPath, NSString *destFilename, CocoaProgressWindow *progress, double totalWork)
 {
 	// TODO: this could be improved on - currently it just bails out if the files aren't in the format it expects
