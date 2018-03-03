@@ -154,6 +154,7 @@ void SaveTiffFromSpool(NSString *spoolPath, NSString *destPath, int numImages, N
     [plist writeToFile:destPlistPath atomically:NO];
     
     fclose(spoolFile);
+	delete[] data;
     TIFFClose(tif);
 }
 

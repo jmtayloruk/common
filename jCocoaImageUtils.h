@@ -24,4 +24,9 @@ NSImage *TintImage(NSImage *srcImage, NSColor *tint, NSColor *saturation, double
 NSBitmapImageRep *TintBitmap(NSBitmapImageRep *srcBitmap, NSColor *tint, NSColor *saturation, double exposureOnScreen);
 void AddNoiseToImage(NSImage *image, double level);
 
+@interface NSBitmapImageRep (JBitmapExtensions)
+	+(NSBitmapImageRep *)rgbaBitmap_width:(int)width height:(int)height;
+	+(NSBitmapImageRep *)bitmapLike:(NSBitmapImageRep *)rep width:(int)width height:(int)height;
+@end
+
 #endif

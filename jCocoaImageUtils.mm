@@ -517,17 +517,8 @@ NSBitmapImageRep *TintBitmap(NSBitmapImageRep *srcBitmap, NSColor *tint, NSColor
 	// that has been tinted according to the input colours
 	ALWAYS_ASSERT(srcBitmap.samplesPerPixel == 1);
 	int width = (int)srcBitmap.pixelsWide, height = (int)srcBitmap.pixelsHigh;
-	NSBitmapImageRep *destBitmap = [[NSBitmapImageRep alloc]
-									initWithBitmapDataPlanes:NULL		// Bitmap allocates and releases the necessary memory for us
-									pixelsWide:width
-									pixelsHigh:height
-									bitsPerSample:8
-									samplesPerPixel:4
-									hasAlpha:YES
-									isPlanar:NO
-									colorSpaceName:NSCalibratedRGBColorSpace
-									bytesPerRow:4*width
-									bitsPerPixel:0];
+	NSBitmapImageRep *destBitmap = [NSBitmapImageRep rgbaBitmap_width:width height:height];
+
 	// We are going to fill in the bitmap data by hand, but first we need to know what the colours are.
 	// There's no simple way of querying the RGB components of an arbitrary NSColor, so we do it the
 	// empirical way by seeing how they come out when drawn into the bitmap!
@@ -543,8 +534,8 @@ NSBitmapImageRep *TintBitmap(NSBitmapImageRep *srcBitmap, NSColor *tint, NSColor
 	[drawingPath appendBezierPathWithRect:NSMakeRect(1, height-1, 1, 1)];
 	[drawingPath fill];
 	[NSGraphicsContext restoreGraphicsState];
-	void *srcData = [srcBitmap bitmapData];
-	unsigned char *destData = [destBitmap bitmapData];
+	void *srcData = srcBitmap.bitmapData;
+	unsigned char *destData = destBitmap.bitmapData;
 	double tintRGB[3] = { (double)destData[0], (double)destData[1], (double)destData[2] };
 	unsigned char saturatedRGB[3] = { destData[4], destData[5], destData[6] };
 	
@@ -552,7 +543,7 @@ NSBitmapImageRep *TintBitmap(NSBitmapImageRep *srcBitmap, NSColor *tint, NSColor
 	int sizeInBytes = width * height * 4;
 	double invMaxVal = 1.0 / ((1 << srcBitmap.bitsPerPixel) - 1);
 	bool sixteenBit = (srcBitmap.bitsPerPixel == 16) ? true : false;
-	ALWAYS_ASSERT([destBitmap bytesPerPlane] == sizeInBytes);
+	ALWAYS_ASSERT(destBitmap.bytesPerPlane == sizeInBytes);
 	for (int pos = 0; pos < width * height; pos++)
 	{
 		double val;
@@ -579,7 +570,7 @@ NSBitmapImageRep *TintBitmap(NSBitmapImageRep *srcBitmap, NSColor *tint, NSColor
 		}
 	}
 	
-	return [destBitmap autorelease];
+	return destBitmap;
 }
 
 NSImage *TintImage(NSImage *srcImage, NSColor *tint, NSColor *saturation, double exposureOnScreen)
@@ -762,3 +753,41 @@ void PrintCompleteFolderPath(NSString *basePath, int indentationLevel, int leadi
 	}
 	dirCheckTime += GetTime() - t2 - recursionTime;
 }
+
+@implementation NSBitmapImageRep (JBitmapExtensions)
+
++(NSBitmapImageRep *)rgbaBitmap_width:(int)width height:(int)height
+{
+	// Return an rgba bitmap
+	// Note that we could let the function choose a value for bytesPerRow,
+	// but some of my existing code relies on there being no extra slop at the end of each row,
+	// so I specify bytesPerRow explicitly.
+	return [[[NSBitmapImageRep alloc]
+				initWithBitmapDataPlanes:NULL
+							  pixelsWide:width
+							  pixelsHigh:height
+						   bitsPerSample:8
+				         samplesPerPixel:4
+				                hasAlpha:YES
+				                isPlanar:NO
+						  colorSpaceName:NSCalibratedRGBColorSpace
+				             bytesPerRow:4*width
+							bitsPerPixel:0] autorelease];
+}
+
++(NSBitmapImageRep *)bitmapLike:(NSBitmapImageRep *)rep width:(int)width height:(int)height
+{
+	return [[[NSBitmapImageRep alloc]
+				initWithBitmapDataPlanes:NULL
+				pixelsWide:width
+				pixelsHigh:height
+				bitsPerSample:rep.bitsPerSample
+				samplesPerPixel:rep.samplesPerPixel
+				hasAlpha:rep.hasAlpha
+				isPlanar:NO
+				colorSpaceName:rep.colorSpaceName
+				bytesPerRow:width*((rep.bitsPerSample+7)/8)*rep.samplesPerPixel
+				bitsPerPixel:0] autorelease];
+}
+
+@end

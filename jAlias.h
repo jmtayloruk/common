@@ -19,7 +19,7 @@
 @property (readonly) NSString *filename; // Works even if bookmark is unresolvable
 
 +(id)aliasForPath:(NSString *)path;
-+(id)aliasForPath:(NSString *)path create:(bool)create;
++(id)aliasForPath:(NSString *)path mkdir:(bool)create;
 +(id)aliasForURL:(NSURL *)url;
 -(id)initForPath:(NSString *)path;
 -(id)initForURL:(NSURL *)url;

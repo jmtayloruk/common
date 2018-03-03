@@ -10,6 +10,7 @@ void ProcessStacksIntoMIPs(void (^completionBlock)(int mipCounter, NSURL *destin
 void CalcMip(unsigned char *mipPixels, const unsigned char *otherPixels, size_t numPixels);
 void CalcMip(unsigned short *mipPixels, const unsigned short *otherPixels, size_t numPixels);
 void CalcMipForBPP(unsigned char *mipData, const unsigned char *otherData, size_t bytes, int bitsPerPixel);
+void CalcYZMip(NSBitmapImageRep *mipBitmap, int mipYPos, NSBitmapImageRep *frameBitmap, int yOffset = 0/* for shear */);
 void UpdateMipWithBitmap(NSBitmapImageRep *mipBitmap, NSBitmapImageRep *frameBitmap);
 
 template<class PIX_TYPE> void CalcMipScalar(PIX_TYPE *mipPixels, const PIX_TYPE *otherPixels, size_t numPixels)

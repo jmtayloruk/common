@@ -131,6 +131,23 @@ void UpdateMipWithBitmap(NSBitmapImageRep *mipBitmap, NSBitmapImageRep *frameBit
 	CalcMipForBPP(mipBitmap.bitmapData, frameBitmap.bitmapData, size_t(mipBitmap.pixelsHigh * mipBitmap.bytesPerRow), (int)mipBitmap.bitsPerPixel);
 }
 
+void CalcYZMip(NSBitmapImageRep *mipBitmap, int mipYPos, NSBitmapImageRep *frameBitmap, int yOffset/* for shear */)
+{
+	ALWAYS_ASSERT(mipYPos < mipBitmap.pixelsHigh);
+	unsigned char *mipRow = (unsigned char *)(mipBitmap.bitmapData + mipBitmap.bytesPerRow * mipYPos);
+	for (int y = 0; y < frameBitmap.pixelsHigh; y++)
+	{
+		int yToUse = y + yOffset;
+		if ((yToUse >= 0) && (yToUse < frameBitmap.pixelsHigh))
+		{
+			// No obvious way to do non-scalar, due to the fact that bytesPerRow may not be sufficiently aligned
+			// for the SSE instructions we would use for a vectorized implementation.
+			const unsigned char *otherRow = (const unsigned char *)(frameBitmap.bitmapData + frameBitmap.bytesPerRow * yToUse);
+			CalcMipScalarForBPP(mipRow, otherRow, frameBitmap.bytesPerRow, (int)mipBitmap.bitsPerPixel);
+		}
+	}
+}
+
 void MakeMipFromImagesInFolder(NSString *sourceFolderPath, NSString *destFilename, CocoaProgressWindow *progress, double totalWork)
 {
 	// TODO: this could be improved on - currently it just bails out if the files aren't in the format it expects
@@ -227,19 +244,7 @@ void MakeMipFromImagesInFolder(NSString *sourceFolderPath, NSString *destFilenam
                          return;
                      if (!(CHECK(frameBitmap.bytesPerRow == mipBitmap.bytesPerRow)))
                          return;
-                     ALWAYS_ASSERT(counter < mipBitmap.pixelsHigh);
-                     for (int y = 0; y < frameBitmap.pixelsHigh; y++)
-                     {
-                         int yToUse = y + shearStart + int(shear * counter);
-                         if ((yToUse >= 0) && (yToUse < frameBitmap.pixelsHigh))
-                         {
-                             // No obvious way to do non-scalar, due to the fact that bytesPerRow may not be sufficiently aligned
-                             // for the SSE instructions we would use for a vectorized implementation.
-                             unsigned char *mipRow = (unsigned char *)(mipBitmap.bitmapData + mipBitmap.bytesPerRow * counter);
-                             const unsigned char *otherRow = (const unsigned char *)(frameBitmap.bitmapData + frameBitmap.bytesPerRow * yToUse);
-                             CalcMipScalarForBPP(mipRow, otherRow, frameBitmap.bytesPerRow, (int)mipBitmap.bitsPerPixel);
-                         }
-                     }
+					 CalcYZMip(mipBitmap, counter, frameBitmap, shearStart + int(shear * counter));
                      counter++;
                      dispatch_async(dispatch_get_main_queue(), ^{ [progress deltaProgress:(totalWork / double(numFrames))]; });
                  }

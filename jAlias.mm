@@ -16,7 +16,7 @@
 
 @implementation JAlias
 
-+(id)aliasForPath:(NSString *)path create:(bool)create
++(id)aliasForPath:(NSString *)path mkdir:(bool)create
 {
 	if (create)
 	{
@@ -25,14 +25,15 @@
 											withIntermediateDirectories:YES
 															 attributes:nil
 																  error:&err];
-		ALWAYS_ASSERT(ok);
+		if (!CHECK(ok))
+			printf("Failed to create directory %s\n", path.UTF8String);
 	}
 	return [[[JAlias alloc] initForPath:path] autorelease];
 }
 
 +(id)aliasForPath:(NSString *)path
 {
-	return [JAlias aliasForPath:path create:false];
+	return [JAlias aliasForPath:path mkdir:false];
 }
 
 -(id)initForPath:(NSString *)path
