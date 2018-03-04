@@ -225,17 +225,7 @@ void MakeMipFromImagesInFolder(NSString *sourceFolderPath, NSString *destFilenam
     else
     {
         ALWAYS_ASSERT(gMipType == kMipXZ);
-        mipBitmap = [[NSBitmapImageRep alloc]
-                        initWithBitmapDataPlanes:NULL		// Bitmap allocates and releases the necessary memory for us
-                        pixelsWide:firstBitmap.pixelsWide
-                        pixelsHigh:numFrames
-                        bitsPerSample:firstBitmap.bitsPerSample
-                        samplesPerPixel:1
-                        hasAlpha:NO
-                        isPlanar:NO
-                        colorSpaceName:NSCalibratedWhiteColorSpace
-                        bytesPerRow:firstBitmap.bytesPerRow
-                        bitsPerPixel:0];
+		mipBitmap = [[NSBitmapImageRep bitmapLike:firstBitmap width:firstBitmap.pixelsWide height:numFrames] retain];
         ForEveryFrameInDirectory(sourceFolderPath,
             ^(NSBitmapImageRep *frameBitmap, MetadataForFrame *frameMetadata) {
                  if (!progress.userCancelled)		// Not sure we can break out of a block-based loop, but we can bail fairly quickly like this
