@@ -756,7 +756,7 @@ void PrintCompleteFolderPath(NSString *basePath, int indentationLevel, int leadi
 
 @implementation NSBitmapImageRep (JBitmapExtensions)
 
-+(NSBitmapImageRep *)rgbaBitmap_width:(int)width height:(int)height
++(NSBitmapImageRep *)rgbaBitmap_width:(NSInteger)width height:(NSInteger)height
 {
 	// Return an rgba bitmap
 	// Note that we could let the function choose a value for bytesPerRow,
@@ -775,7 +775,7 @@ void PrintCompleteFolderPath(NSString *basePath, int indentationLevel, int leadi
 							bitsPerPixel:0] autorelease];
 }
 
-+(NSBitmapImageRep *)bitmapLike:(NSBitmapImageRep *)rep width:(int)width height:(int)height
++(NSBitmapImageRep *)bitmapLike:(NSBitmapImageRep *)rep width:(NSInteger)width height:(NSInteger)height
 {
 	return [[[NSBitmapImageRep alloc]
 				initWithBitmapDataPlanes:NULL
