@@ -447,23 +447,26 @@ JCache *imageCache = [JCache new];
 	metadataWasEdited = true;
 }
 
--(void)setNewObject:(id)obj forCommonKey:(NSString *)key
+-(void)setNewObject:(id)obj forCommonKey:(NSString *)keyPath
 {
 	// TODO: I do not have a generic implementation for deep paths, yet.
 	// [I think it could be done fairly easily using a recursive helper function, I just haven't done it yet]
 	// Instead, for now, I just have a special-case implementation
 	// for the one use-case that I currently have (camera.camera_properties.pixels_per_um)
-	ALWAYS_ASSERT([key isEqualToString:@"camera.camera_properties.pixels_per_um"]);
+	ALWAYS_ASSERT(([keyPath isEqualToString:@"camera.camera_properties.pixels_per_um"]) ||
+				  ([keyPath isEqualToString:@"camera.camera_properties.original_pixels_per_um"]));
+	NSArray *components = [keyPath componentsSeparatedByString:@"."];
+	NSString *lastComponent = components.lastObject;
 	NSMutableDictionary *result = [NSMutableDictionary dictionaryWithDictionary:self.dict];
     if (metadataVersion == kSingleFileMetadataVersion)
     {
-        [result setObject:obj forKey:@"pixels_per_um"];
+        [result setObject:obj forKey:lastComponent];
     }
     else
     {
         NSMutableDictionary *cam = [NSMutableDictionary dictionaryWithDictionary:[result getRequiredDictionaryForKey:@"camera"]];
         NSMutableDictionary *prop = [NSMutableDictionary dictionaryWithDictionary:[cam getRequiredDictionaryForKey:@"camera_properties"]];
-        [prop setObject:obj forKey:@"pixels_per_um"];
+        [prop setObject:obj forKey:lastComponent];
         [cam setObject:prop forKey:@"camera_properties"];
         [result setObject:cam forKey:@"camera"];
     }
