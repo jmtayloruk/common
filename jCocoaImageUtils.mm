@@ -86,7 +86,12 @@ void ForEveryFrameInDirectory(NSString *dir, void (^callback)(NSBitmapImageRep *
 	JAlias *folderAlias = [JAlias aliasForPath:dir];
 	ForEveryImageFileInDirectory(dir, ^(NSString *imagePath)
 								 {
-									 //	Process this image file, which may contain more than one frame
+									 /*	Process this image file, which may contain more than one frame
+										
+										Note: this code is a bit outdated, in that FrameMetadataParser can provide the bitmaps
+										via frameBitmapForArrayIndex.
+										There does not seem to be a big performance difference between the two methods
+										(which is probably not too surprising since the bottleneck will be disk access	*/
 									 NSImage *theImage = [[NSImage alloc] initWithContentsOfFile:imagePath];
 									 NSArray *bitmaps = AllRawBitmapsFromImage(theImage);
 									 // Open the plist file. Parser will be nil if no accompanying plist exists
