@@ -25,8 +25,8 @@ NSBitmapImageRep *TintBitmap(NSBitmapImageRep *srcBitmap, NSColor *tint, NSColor
 void AddNoiseToImage(NSImage *image, double level);
 
 @interface NSBitmapImageRep (JBitmapExtensions)
-	+(NSBitmapImageRep *)rgbaBitmap_width:(int)width height:(int)height;
-	+(NSBitmapImageRep *)bitmapLike:(NSBitmapImageRep *)rep width:(int)width height:(int)height;
+	+(NSBitmapImageRep *)rgbaBitmap_width:(NSInteger)width height:(NSInteger)height;
+	+(NSBitmapImageRep *)bitmapLike:(NSBitmapImageRep *)rep width:(NSInteger)width height:(NSInteger)height;
 @end
 
 #endif
