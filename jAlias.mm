@@ -18,17 +18,12 @@
 
 +(id)aliasForPath:(NSString *)path mkdir:(bool)create
 {
-	if (create)
-	{
-		NSError *err;
-		bool ok = [[NSFileManager defaultManager] createDirectoryAtPath:path
-											withIntermediateDirectories:YES
-															 attributes:nil
-																  error:&err];
-		if (!CHECK(ok))
-			printf("Failed to create directory %s\n", path.UTF8String);
-	}
-	return [[[JAlias alloc] initForPath:path] autorelease];
+	return [JAlias aliasForURL:[NSURL fileURLWithPath:path] mkdir:create];
+}
+
++(id)aliasForURL:(NSURL *)url mkdir:(bool)create
+{
+	return [[[JAlias alloc] initForURL:url mkdir:create] autorelease];
 }
 
 +(id)aliasForPath:(NSString *)path
@@ -36,22 +31,29 @@
 	return [JAlias aliasForPath:path mkdir:false];
 }
 
--(id)initForPath:(NSString *)path
-{
-	return [self initForURL:[NSURL fileURLWithPath:path]];
-}
-
 +(id)aliasForURL:(NSURL *)url
 {
-	return [[[JAlias alloc] initForURL:url] autorelease];
+	return [JAlias aliasForURL:url mkdir:false];
 }
 
--(id)initForURL:(NSURL *)url
+-(id)initForURL:(NSURL *)url mkdir:(bool)create
 {
 	if (!(self = [super init]))
 		return nil;
+	
 	NSError *err;
+	if (create)
+	{
+		bool ok = [[NSFileManager defaultManager] createDirectoryAtPath:url.path
+											withIntermediateDirectories:YES
+															 attributes:nil
+																  error:&err];
+		if (!CHECK(ok))
+			printf("Failed to create directory %s\n", url.path.UTF8String);
+	}
+	
 	self.bookmark = [url bookmarkDataWithOptions:0 includingResourceValuesForKeys:nil relativeToURL:nil error:&err];
+	
 	return self;
 }
 

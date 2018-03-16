@@ -21,8 +21,7 @@
 +(id)aliasForPath:(NSString *)path;
 +(id)aliasForPath:(NSString *)path mkdir:(bool)create;
 +(id)aliasForURL:(NSURL *)url;
--(id)initForPath:(NSString *)path;
--(id)initForURL:(NSURL *)url;
++(id)aliasForURL:(NSURL *)url mkdir:(bool)create;
 -(BOOL)resolvesSameAs:(JAlias *)other;
 
 @end
