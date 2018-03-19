@@ -128,7 +128,16 @@ void CalcMipScalarForBPP(unsigned char *mipData, const unsigned char *otherData,
 
 void UpdateMipWithBitmap(NSBitmapImageRep *mipBitmap, NSBitmapImageRep *frameBitmap)
 {
-	CalcMipForBPP(mipBitmap.bitmapData, frameBitmap.bitmapData, size_t(mipBitmap.pixelsHigh * mipBitmap.bytesPerRow), (int)mipBitmap.bitsPerPixel);
+    if ((mipBitmap.pixelsHigh == frameBitmap.pixelsHigh) &&
+        (mipBitmap.bytesPerRow == frameBitmap.bytesPerRow))
+    {
+        CalcMipForBPP(mipBitmap.bitmapData, frameBitmap.bitmapData, size_t(mipBitmap.pixelsHigh * mipBitmap.bytesPerRow), (int)mipBitmap.bitsPerPixel);
+    }
+    else
+    {
+        // Current behaviour for the GUI-exposed MIP calculator is actually just to skip files where these dimensions do not match
+        // It's probably best to have the same behaviour here.
+    }
 }
 
 void CalcYZMip(NSBitmapImageRep *mipBitmap, int mipYPos, NSBitmapImageRep *frameBitmap, int yOffset/* for shear */)

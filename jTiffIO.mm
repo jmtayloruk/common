@@ -177,7 +177,13 @@ NSInteger crazySpoolSortOrder(id string1, id string2, void *)
 
 void ProcessSpoolFilesFromDirectory(NSString *spoolDir, NSString *iniPath, NSString *plistSourcePath, int firstPlistIndex, NSString *destTiffDir)
 {
-    // Parse and process Andor spool files, exporting them to plists.
+    /*  Parse and process Andor spool files, exporting them to plists.
+             spoolDir: directory containing the Andor spool files
+             iniPath: path to the .ini file describing the spool files
+             plistSourcePath: the directory containing zyla mirror plist files (which I assume to be single-page tiffs, at the moment)
+             firstPlistIndex: the number appearing in the first plist filename you want to match up with the Andor files.
+             destTiffDir: directory where the tiffs (and plists) will be saved. Directory must exist already
+     */
     
     // Get a complete list of the files in the directory
     NSArray *dirContents = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:spoolDir error:nil];

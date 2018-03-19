@@ -49,7 +49,7 @@
 															 attributes:nil
 																  error:&err];
 		if (!CHECK(ok))
-			printf("Failed to create directory %s\n", url.path.UTF8String);
+            NSLog(@"Failed to create directory %@\n", url.path);
 	}
 	
 	self.bookmark = [url bookmarkDataWithOptions:0 includingResourceValuesForKeys:nil relativeToURL:nil error:&err];
