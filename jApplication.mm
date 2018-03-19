@@ -142,7 +142,7 @@ JApplication *baseApp = nil;
 
 +(NSString *)currentDateTimeString
 {
-    return [self dateTimeStringForDate:[NSDate date]];
+    return [JApplication dateTimeStringForDate:[NSDate date]];
 }
 
 -(NSString *)currentDateTimeString

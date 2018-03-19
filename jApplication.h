@@ -35,6 +35,8 @@
 +(FILE *)timestampedLogFileWithIdentifier:(NSString *)identifier;
 +(NSString *)timestampedLogFilePathWithIdentifier:(NSString *)identifier;
 
++(NSString *)currentDateTimeString;
+
 @property (readonly, retain) NSString *configFilename;
 @property (readonly, retain) NSString *buildVersionString;
 @property (readonly, retain) NSString *currentDateTimeString;
