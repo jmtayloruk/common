@@ -30,16 +30,26 @@ NSImage *NSImageFromTiffFile(NSString *tiffPath)
 	
 	do
 	{
-		TIFFGetField(tif, TIFFTAG_IMAGEWIDTH, &width);
-		TIFFGetField(tif, TIFFTAG_IMAGELENGTH, &height);
-		TIFFGetField(tif, TIFFTAG_SAMPLESPERPIXEL, &samplesPerPixel);
-		TIFFGetField(tif, TIFFTAG_BITSPERSAMPLE, &bitsPerSample);
+		bool present = TIFFGetField(tif, TIFFTAG_IMAGEWIDTH, &width);
+        CHECK(present);
+		present = TIFFGetField(tif, TIFFTAG_IMAGELENGTH, &height);
+        CHECK(present);
+		present = TIFFGetField(tif, TIFFTAG_SAMPLESPERPIXEL, &samplesPerPixel);
+        if (!present)
+        {
+            // Some tiffs generated from python don't seem to have this field filled out,
+            // even though I would have imagined it might be compulsory
+            samplesPerPixel = 1;
+        }
+		present = TIFFGetField(tif, TIFFTAG_BITSPERSAMPLE, &bitsPerSample);
+        CHECK(present);
 		bytesPerSample = (bitsPerSample + 7) / 8;
 		// Expecting an orientation of ORIENTATION_TOPLEFT, but if it's something else then
 		// I will just ignore that and read it as-is!
 		TIFFGetField(tif, TIFFTAG_ORIENTATION, &orientation);
 		// Expecting PLANARCONFIG_CONTIG. Not a lot I can do if it is different - if it is, then we will load garbage.
-		TIFFGetField(tif, TIFFTAG_PLANARCONFIG, &planarConfig);
+		present = TIFFGetField(tif, TIFFTAG_PLANARCONFIG, &planarConfig);
+        CHECK(present);
 		CHECK(planarConfig == PLANARCONFIG_CONTIG);
 		NSBitmapImageRep *bitmap = [[NSBitmapImageRep alloc]
 										  initWithBitmapDataPlanes:NULL
