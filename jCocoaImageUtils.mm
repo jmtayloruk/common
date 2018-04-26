@@ -197,7 +197,7 @@ NSInteger frameSortOrderUsingTimestamps(id string1, id string2, void *pathStem)
 	return frameSortOrder(string1, string2, nil);
 }
 
-NSInteger frameSortOrderForURLs(id url1, id url2, void *)
+NSInteger frameSortOrderForURLs(id url1, id url2, void *_Nullable)
 {
 	return frameSortOrder(((NSURL *)url1).path, ((NSURL *)url2).path, nil);
 }
