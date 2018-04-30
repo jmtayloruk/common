@@ -117,6 +117,7 @@ void LinearFit(std::vector<double> &x, std::vector<double> &y, double *alpha, do
 		void ForEveryFrameInDirectory(NSString *dir, void (^callback)(NSBitmapImageRep *, MetadataForFrame *));
   #endif
     NSString *FirstImageFileNameInDirectory(NSString *dir);
+    MetadataForFrame *FirstMetadataInDirectory(NSString *dirPath);
     NSBitmapImageRep *FirstBitmapInDirectory(NSString *dirPath);
 	NSString *MetadataPathFromImagePath(NSString *fileName);
 	void CopyMetadataForImageFile(NSString *sourceFilePath, NSString *destDirPath, NSString *destFileName = nil);

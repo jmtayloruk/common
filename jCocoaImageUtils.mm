@@ -123,10 +123,15 @@ NSString *FirstImageFileNameInDirectory(NSString *dir)
 		return nil;
 }
 
+MetadataForFrame *FirstMetadataInDirectory(NSString *dirPath)
+{
+    FrameMetadataParser *parser = [FrameMetadataParser parserForImagePath:FirstImageFileNameInDirectory(dirPath)];
+    return [parser metadataForFrame:0];
+}
+
 NSBitmapImageRep *FirstBitmapInDirectory(NSString *dirPath)
 {
-	FrameMetadataParser *parser = [FrameMetadataParser parserForImagePath:FirstImageFileNameInDirectory(dirPath)];
-	return [parser metadataForFrame:0].frameBitmap;
+	return FirstMetadataInDirectory(dirPath).frameBitmap;
 }
 
 NSInteger alphabeticalOrder(id string1, id string2, void *)

@@ -50,6 +50,7 @@ template<class TYPE> struct ImageWindow
 	
 	void Construct(NSBitmapImageRep *srcBitmap)
 	{
+        ALWAYS_ASSERT(srcBitmap != nil);
 		retainedBitmap = [srcBitmap retain];
 		width = (int)retainedBitmap.pixelsWide;
 		height = (int)retainedBitmap.pixelsHigh;
