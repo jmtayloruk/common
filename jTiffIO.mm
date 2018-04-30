@@ -217,7 +217,7 @@ void ProcessSpoolFilesFromDirectory(NSString *spoolDir, NSString *iniPath, NSStr
     fclose(iniFile);
     
     // Iterate over them, turning each one into a multipage tiff file
-    int counter = 0;
+    int counter = firstPlistIndex;
     TextualProgressBar progress("Processing spool files", dirContents.count);
     for (NSString *theFilename in dirContents)
     {
