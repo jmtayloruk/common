@@ -310,14 +310,8 @@ void ProcessStacksIntoMIPsSavingAt(NSArray *inURLs, NSURL *destinationURL, void 
 							   {
 								   // This is a genuine camera folder containing images.
 								   // Process a MIP for them, saving it into the appropriate folder
-								   NSError *err;
 								   NSString *destDirPath = [SWF:@"%@/%@", destinationURL.path, cameraFolderName];
-								   BOOL ok = [[NSFileManager defaultManager] createDirectoryAtPath:destDirPath
-																	   withIntermediateDirectories:YES
-																						attributes:nil
-																							 error:&err];
-								   CHECK(ok);
-								   
+								   CHECK(CreateDirectoryIfNeeded(destDirPath));								   
 								   NSString *destFilename = [SWF:@"%@/%@", destDirPath, mipFilename];
 								   NSString *destMetadataPath = [SWF:@"%@/%@.plist", destDirPath, destFilename.lastPathComponent.stringByDeletingPathExtension];
 								   MakeMipFromImagesInFolder(contentsURL.path, destFilename, progress, 1.0 / numCamFolders);

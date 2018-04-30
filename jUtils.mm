@@ -83,7 +83,7 @@ bool/*success*/ CreateDirectoryIfNeeded(NSString *path)
 															  error:&err];
 	if (!CHECK(ok))
 	{
-		NSLog(@"Failed to create directory %@ (%ld, %s)\n", path, err.code, err.localizedFailureReason.UTF8String);
+		NSLog(@"Failed to create directory %@ (%ld, %s)\n", path, (long)err.code, err.localizedFailureReason.UTF8String);
 		ok = [[NSFileManager defaultManager] createDirectoryAtPath:path
 											withIntermediateDirectories:YES
 															 attributes:nil
@@ -103,11 +103,7 @@ NSString *CreateTemporaryDirectory(void)
 {
     NSString *guid = [[NSProcessInfo processInfo] globallyUniqueString];
     NSString *destPath = [SWF:@"%@/%@", NSTemporaryDirectory(), guid];
-    BOOL ok = [[NSFileManager defaultManager] createDirectoryAtPath:destPath
-                                        withIntermediateDirectories:YES
-                                                         attributes:nil
-                                                              error:nil];
-    ALWAYS_ASSERT(ok);
+	ALWAYS_ASSERT(CreateDirectoryIfNeeded(destPath));
     return destPath;
 }
 
