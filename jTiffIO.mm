@@ -87,10 +87,10 @@ NSImage *NSImageFromTiffFile(NSString *tiffPath)
 	return result;
 }
 
-void SaveTiffFromSpool(NSString *spoolPath, NSString *destPath, int numImages, NSString *plistSourcePath, int firstPlistIndex, int w, int h, int stride, int bytesPerImage)
+bool SaveTiffFromSpool(NSString *spoolPath, NSString *destPath, int numImages, NSDictionary *metadataMapping, int firstPlistIndex, int w, int h, int stride, int bytesPerImage)
 {
     // The information passed to this function can be found in the file 'acquisitionmetadata.ini' which should accompany the Solis spool files.
-    // I haven't found a way to tell how many images there actually are - except for the fact that they are all-black.
+    // I haven't found a way to tell how many images there actually are - except for the fact that any excess "slots" are all-black.
     // It should be possible to parse acquisitionmetadata.ini, but for now I just inspect it manually.
     // The TIFF-writing code in this function is just ripped off from ImageSaver - hence the shoehorning of our parameters into the variables it expects.
     FILE *spoolFile = fopen(spoolPath.UTF8String, "r");
@@ -104,10 +104,11 @@ void SaveTiffFromSpool(NSString *spoolPath, NSString *destPath, int numImages, N
     int plistIndex = firstPlistIndex;
     NSMutableArray *frameArray = [NSMutableArray array];
     
-    for (int n = 0; n < numImages; n++)
+    bool outOfPlists = false;
+    for (int n = 0; n < numImages; n++, plistIndex++)
     {
         fread(data, bytesPerImage, 1, spoolFile);
-        
+
         size_t width = w, height = h;
         NSInteger samplesPerPixel = 1, bytesPerSample = 2;
         TIFFSetField(tif, TIFFTAG_IMAGEWIDTH, width);
@@ -137,7 +138,7 @@ void SaveTiffFromSpool(NSString *spoolPath, NSString *destPath, int numImages, N
         TIFFWriteDirectory(tif);
         
         NSMutableDictionary *framePlist;
-        if (plistSourcePath == nil)
+        if (metadataMapping == nil)
         {
             // Create a dummy plist file to accompany the tiff file (so that MovieBuilder can parse them in a reasonable amount of time!)
             framePlist = [NSMutableDictionary dictionary];
@@ -147,16 +148,20 @@ void SaveTiffFromSpool(NSString *spoolPath, NSString *destPath, int numImages, N
         {
             // Use the counterpart plist from the zyla mirror camera
             // TODO: it might be nice to override certain properties to better match what the zyla camera settings actually were
-            FrameMetadataParser *parser = [FrameMetadataParser parserForImagePath:[SWF:@"%@/%06d.tif", plistSourcePath, plistIndex++]];
-            ALWAYS_ASSERT(parser.frameCount == 1);      // TODO: so far I don't support multi-page plists from zyla mirror, but it shouldn't be too hard to implement
-            MetadataForFrame *metadata = [parser metadataForFrame:0];
+            MetadataForFrame *metadata = [metadataMapping objectForKey:[SWF:@"%d", plistIndex]];
             framePlist = metadata.frameSpecificMetadataDictionary;
+            if (framePlist == nil)
+            {
+                printf("Frame %d not found in plist\n", plistIndex);
+                outOfPlists = true;
+                break;
+            }
         }
         [frameArray addObject:framePlist];
     }
     
     [plist setObject:frameArray forKey:@"frames"];
-    if (plistSourcePath == nil)
+    if (metadataMapping == nil)
         [plist setObject:[NSNumber numberWithInt:3] forKey:@"metadata_version"];
     else
         [plist setObject:[NSNumber numberWithInt:2] forKey:@"metadata_version"];
@@ -166,6 +171,7 @@ void SaveTiffFromSpool(NSString *spoolPath, NSString *destPath, int numImages, N
     fclose(spoolFile);
 	delete[] data;
     TIFFClose(tif);
+    return outOfPlists;
 }
 
 NSInteger crazySpoolSortOrder(id string1, id string2, void *)
@@ -185,15 +191,29 @@ NSInteger crazySpoolSortOrder(id string1, id string2, void *)
     return DiffToNSComparisonResult(num1 - num2);
 }
 
-void ProcessSpoolFilesFromDirectory(NSString *spoolDir, NSString *iniPath, NSString *plistSourcePath, int firstPlistIndex, NSString *destTiffDir)
+void ProcessSpoolFilesFromDirectory(NSString *spoolDir, NSString *iniPath, NSString *plistSourceDir, int firstPlistIndex, NSString *destTiffDir)
 {
     /*  Parse and process Andor spool files, exporting them to plists.
              spoolDir: directory containing the Andor spool files
              iniPath: path to the .ini file describing the spool files
-             plistSourcePath: the directory containing zyla mirror plist files (which I assume to be single-page tiffs, at the moment)
+             plistSourceDir: the directory containing zyla mirror plist files [and there must be accompanying tiffs, due to how ForEveryFrameInDirectory is written]
              firstPlistIndex: the number appearing in the first plist filename you want to match up with the Andor files.
              destTiffDir: directory where the tiffs (and plists) will be saved. Directory must exist already
      */
+    
+    // Load all the plist information into a dictionary mapping frame index to metadata.
+    // That seems the easiest way to code it...
+    // Note that, because of the way ForEveryFrameInDirectory is currently coded, the tiffs must also exist.
+    NSMutableDictionary *metadataMapping = [NSMutableDictionary dictionary];
+    {
+        NSArray *dirContents = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:plistSourceDir error:nil];
+        __block TextualProgressBar progress("Reading metadata files", dirContents.count/2);
+        ForEveryFrameInDirectory(plistSourceDir, ^(MetadataForFrame *metadata)
+                                 {
+                                     [metadataMapping setObject:metadata forKey:[SWF:@"%d", metadata.frameNumber]];
+                                     progress.DeltaProgress(1);
+                                 });
+    }
     
     // Get a complete list of the files in the directory
     NSArray *dirContents = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:spoolDir error:nil];
@@ -217,17 +237,25 @@ void ProcessSpoolFilesFromDirectory(NSString *spoolDir, NSString *iniPath, NSStr
     fclose(iniFile);
     
     // Iterate over them, turning each one into a multipage tiff file
-    int counter = firstPlistIndex;
+    int plistIndex = firstPlistIndex;
     TextualProgressBar progress("Processing spool files", dirContents.count);
     for (NSString *theFilename in dirContents)
     {
         //        printf("%s\n", theFilename.UTF8String);
         NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
         NSString *spoolPath = [SWF:@"%@/%@", spoolDir, theFilename];
-        SaveTiffFromSpool(spoolPath, [SWF:@"%@/%06d.tif", destTiffDir, counter++], imagesPerFile,
-                          plistSourcePath, firstPlistIndex,
-                          w, h, stride, bytesPerImage);
+        bool outOfPlists = SaveTiffFromSpool(spoolPath, [SWF:@"%@/%06d.tif", destTiffDir, plistIndex], imagesPerFile,
+                                             metadataMapping, plistIndex,
+                                             w, h, stride, bytesPerImage);
+        plistIndex += imagesPerFile;
         progress.DeltaProgress(1);
         [pool drain];
+        if (outOfPlists)
+        {
+            // We might well run out of plists due to the "filler" frames in the final spool file,
+            // but it should only be the final file.
+            CHECK([theFilename isEqualToString:[dirContents lastObject]]);
+            break;
+        }
     }
 }
