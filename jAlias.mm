@@ -41,18 +41,9 @@
 	if (!(self = [super init]))
 		return nil;
 	
-	NSError *err;
 	if (create)
-	{
-		bool ok = [[NSFileManager defaultManager] createDirectoryAtPath:url.path
-											withIntermediateDirectories:YES
-															 attributes:nil
-																  error:&err];
-		if (!CHECK(ok))
-            NSLog(@"Failed to create directory %@\n", url.path);
-	}
-	
-	self.bookmark = [url bookmarkDataWithOptions:0 includingResourceValuesForKeys:nil relativeToURL:nil error:&err];
+		CreateDirectoryIfNeeded(url);
+	self.bookmark = [url bookmarkDataWithOptions:0 includingResourceValuesForKeys:nil relativeToURL:nil error:nil];
 	
 	return self;
 }

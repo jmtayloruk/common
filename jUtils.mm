@@ -73,6 +73,32 @@ NSString *GetUserDocumentDirectory(void)
 	return [paths objectAtIndex:0];
 }
 
+bool/*success*/ CreateDirectoryIfNeeded(NSString *path)
+{
+	// Returns true unless we fail to create the directory for some reason
+	NSError *err;
+	bool ok = [[NSFileManager defaultManager] createDirectoryAtPath:path
+										withIntermediateDirectories:YES
+														 attributes:nil
+															  error:&err];
+	if (!CHECK(ok))
+	{
+		NSLog(@"Failed to create directory %@ (%ld, %s)\n", path, err.code, err.localizedFailureReason.UTF8String);
+		ok = [[NSFileManager defaultManager] createDirectoryAtPath:path
+											withIntermediateDirectories:YES
+															 attributes:nil
+																  error:&err];
+		if (ok)
+			NSLog(@"Retry succeeded\n");
+	}
+	return ok;
+}
+
+bool/*success*/ CreateDirectoryIfNeeded(NSURL *url)
+{
+	return CreateDirectoryIfNeeded(url.path);
+}
+
 NSString *CreateTemporaryDirectory(void)
 {
     NSString *guid = [[NSProcessInfo processInfo] globallyUniqueString];

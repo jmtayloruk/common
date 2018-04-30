@@ -97,6 +97,8 @@ void LinearFit(std::vector<double> &x, std::vector<double> &y, double *alpha, do
     bool IsDirectory(NSURL *fileURL);
 	NSString *GetUserDocumentDirectory(void);
     NSString *CreateTemporaryDirectory(void);
+	bool/*success*/ CreateDirectoryIfNeeded(NSString *path);
+	bool/*success*/ CreateDirectoryIfNeeded(NSURL *url);
 
 	NSArray *ListImageFilesInDirectory(NSString *dir, bool sorted = true, bool useTimestamps = false/* Default to false just because this is slower and didn't used to be what I did*/, bool fullPath = false, CocoaProgressWindow *progress = nil);
 	void UpdateKeys(id owner, ...) NS_REQUIRES_NIL_TERMINATION;
