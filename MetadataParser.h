@@ -29,6 +29,7 @@ const int kCurrentMetadataVersion = kMultiTiffMetadataVersion;
 -(id)init;
 -(id)valueForKeyPath:(NSString *)keyPath;	// Implemented by subclasses
 
+// Note that this next include line actually defines a series of accessor methods for this class
 #include "DictionaryReadingExtensionsImplementation.h"
 
 @end
@@ -59,6 +60,7 @@ const int kCurrentMetadataVersion = kMultiTiffMetadataVersion;
 }
 
 +(MetadataForFrame *)metadataForFirstFrameAtImagePath:(NSString *)path;
++(MetadataForFrame *)metadataForFirstFrameInFolder:(NSString *)path;
 -(id)initForParser:(FrameMetadataParser *)inParser arrayIndex:(size_t)inArrayIndex;
 -(id)valueForKeyPath:(NSString *)keyPath;
 -(double)universalComputerTimestamp;

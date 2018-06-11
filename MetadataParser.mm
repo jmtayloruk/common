@@ -89,6 +89,11 @@
 	return self;
 }
 
++(MetadataForFrame *)metadataForFirstFrameInFolder:(NSString *)path
+{
+    return [MetadataForFrame metadataForFirstFrameAtImagePath:FirstImageFileNameInDirectory(path)];
+}
+
 +(MetadataForFrame *)metadataForFirstFrameAtImagePath:(NSString *)path
 {
 	FrameMetadataParser *parser = [FrameMetadataParser parserForImagePath:path];
