@@ -185,7 +185,7 @@
 
 -(void)setNewObject:(id)obj forCommonKey:(NSString *)key
 {
-	[self.parser setNewObject:obj forCommonKey:key];
+	[self.parser setNewObject:obj forCommonKey:key arrayIndex:self.arrayIndex];
 }
 
 -(void)saveStandaloneMetadataFileAtPath:(NSString *)destPath
@@ -452,12 +452,17 @@ JCache *imageCache = [JCache new];
 	metadataWasEdited = true;
 }
 
--(void)setNewObject:(id)obj forCommonKey:(NSString *)keyPath
+-(void)setNewObject:(id)obj forCommonKey:(NSString *)keyPath arrayIndex:(size_t)arrayIndex;
 {
-	// TODO: I do not have a generic implementation for deep paths, yet.
-	// [I think it could be done fairly easily using a recursive helper function, I just haven't done it yet]
-	// Instead, for now, I just have a special-case implementation
-	// for the one use-case that I currently have (camera.camera_properties.pixels_per_um)
+	/*	TODO: I do not have a generic implementation for deep paths, yet.
+		[I think it could be done fairly easily using a recursive helper function, I just haven't done it yet]
+		Instead, for now, I just have a special-case implementation
+		for the one use-case that I currently have (camera.camera_properties.pixels_per_um)
+	 
+		TODO: most of the time we shouldn't care what the array index is,
+		and I find it rather unsatisfactory to be passing it in. In principle we may not even 
+		be processing any particular frame at the point when we make this call.
+		However, we need to know it if the plist format is kArrayAggregatedMetadataVersion.	*/
 	ALWAYS_ASSERT(([keyPath isEqualToString:@"camera.camera_properties.pixels_per_um"]) ||
 				  ([keyPath isEqualToString:@"camera.camera_properties.original_pixels_per_um"]));
 	NSArray *components = [keyPath componentsSeparatedByString:@"."];
@@ -467,6 +472,10 @@ JCache *imageCache = [JCache new];
     {
         [result setObject:obj forKey:lastComponent];
     }
+	else if (metadataVersion == kArrayAggregatedMetadataVersion)
+	{
+		[self setNewObject:obj forFrameKey:lastComponent arrayIndex:arrayIndex];
+	}
     else
     {
         NSMutableDictionary *cam = [NSMutableDictionary dictionaryWithDictionary:[result getRequiredDictionaryForKey:@"camera"]];

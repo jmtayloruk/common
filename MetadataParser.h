@@ -102,7 +102,7 @@ const int kCurrentMetadataVersion = kMultiTiffMetadataVersion;
 -(NSMutableDictionary *)frameSpecificMetadataDictionaryForArrayIndex:(size_t)arrayIndex;
 -(NSDictionary *)commonMetadataDictionary;
 -(void)setNewObject:(id)obj forFrameKey:(NSString *)key arrayIndex:(size_t)arrayIndex;
--(void)setNewObject:(id)obj forCommonKey:(NSString *)key;
+-(void)setNewObject:(id)obj forCommonKey:(NSString *)key arrayIndex:(size_t)arrayIndex;
 -(void)saveMetadataIfNeeded;
 
 @property (readonly) size_t frameCount;
