@@ -40,20 +40,7 @@ JApplication *baseApp = nil;
 
 -(void)applicationDidFinishLaunching:(NSNotification *)note
 {
-	// Determine the build version, e.g. for the about box and possibly for debug messages
-	// Read the git build number from the relevant file
-	// That file is written from a "script" build phase defined in the xcode project
-	NSString *versionPath = [[NSBundle mainBundle] pathForResource:@"git-sha" ofType:@"txt"];
-	FILE *versionFile = fopen(versionPath.UTF8String, "r");
-	if (versionFile != NULL)
-	{
-		char versionChars[1000];
-		fscanf(versionFile, "%1000s", versionChars);
-		self.buildVersionString = [SWF:@"%s", versionChars];
-		fclose(versionFile);
-	}
-	else
-		self.buildVersionString = @"<unknown version>";
+	self.buildVersionString = [JApplication buildVersionString];
 
 	// Identify a config file to use
     self.configFilename = [ConfigSelector determineConfigFileToUse];
@@ -129,6 +116,24 @@ JApplication *baseApp = nil;
 
 -(void)addGlobalMetadataToDictionary:(NSMutableDictionary *)dict
 {
+}
+
++(NSString *)buildVersionString
+{
+	// Determine the build version, e.g. for the about box and possibly for debug messages
+	// Read the git build number from the relevant file
+	// That file is written from a "script" build phase defined in the xcode project
+	NSString *versionPath = [[NSBundle mainBundle] pathForResource:@"git-sha" ofType:@"txt"];
+	FILE *versionFile = fopen(versionPath.UTF8String, "r");
+	if (CHECK(versionFile != NULL))
+	{
+		char versionChars[1000];
+		fscanf(versionFile, "%1000s", versionChars);
+		fclose(versionFile);
+		return [SWF:@"%s", versionChars];
+	}
+	else
+		return @"<unknown version>";
 }
 
 +(NSString *)dateTimeStringForDate:(NSDate *)date
