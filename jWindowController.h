@@ -1,5 +1,5 @@
 //
-//  JWindowController.h
+//  jWindowController.h
 //
 //	Copyright 2011-2015 Jonathan Taylor. All rights reserved.
 //
