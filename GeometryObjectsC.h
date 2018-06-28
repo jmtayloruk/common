@@ -14,11 +14,15 @@ struct IntegerPoint
 	int x, y;
 	IntegerPoint() : x(0), y(0) { }
 	IntegerPoint(int a, int b) : x(a), y(b) { }
+	IntegerPoint& operator += (IntegerPoint n) { x += n.x; y += n.y; return *this; }
+	IntegerPoint& operator -= (IntegerPoint n) { x -= n.x; y -= n.y; return *this; }
 };
 
 // Sadly I can't seem to get pass-by-reference to work with this - some of my ObjC property-based
 // code doesn't compile if I pass a and b by reference. Not sure if this would be fix-able, but
 // I'm just going to leave it as-is for now.
 inline bool operator!=(IntegerPoint a, IntegerPoint b) { return ((a.x != b.x) || (a.y != b.y)); }
+inline IntegerPoint operator+(IntegerPoint a, IntegerPoint b) { return IntegerPoint(a.x+b.x, a.y+b.y); }
+inline IntegerPoint operator-(IntegerPoint a, IntegerPoint b) { return IntegerPoint(a.x-b.x, a.y-b.y); }
 
 #endif
