@@ -463,26 +463,34 @@ JCache *imageCache = [JCache new];
 		and I find it rather unsatisfactory to be passing it in. In principle we may not even 
 		be processing any particular frame at the point when we make this call.
 		However, we need to know it if the plist format is kArrayAggregatedMetadataVersion.	*/
-	ALWAYS_ASSERT(([keyPath isEqualToString:@"camera.camera_properties.pixels_per_um"]) ||
-				  ([keyPath isEqualToString:@"camera.camera_properties.original_pixels_per_um"]));
-	NSArray *components = [keyPath componentsSeparatedByString:@"."];
-	NSString *lastComponent = components.lastObject;
-	NSMutableDictionary *result = [NSMutableDictionary dictionaryWithDictionary:self.dict];
+    NSArray *components = [keyPath componentsSeparatedByString:@"."];
+    NSString *firstComponent = components.firstObject, *lastComponent = components.lastObject;
+    NSMutableDictionary *result = [NSMutableDictionary dictionaryWithDictionary:self.dict];
     if (metadataVersion == kSingleFileMetadataVersion)
     {
         [result setObject:obj forKey:lastComponent];
     }
-	else if (metadataVersion == kArrayAggregatedMetadataVersion)
-	{
-		[self setNewObject:obj forFrameKey:lastComponent arrayIndex:arrayIndex];
-	}
+    else if (metadataVersion == kArrayAggregatedMetadataVersion)
+    {
+        [self setNewObject:obj forFrameKey:lastComponent arrayIndex:arrayIndex];
+    }
     else
     {
-        NSMutableDictionary *cam = [NSMutableDictionary dictionaryWithDictionary:[result getRequiredDictionaryForKey:@"camera"]];
-        NSMutableDictionary *prop = [NSMutableDictionary dictionaryWithDictionary:[cam getRequiredDictionaryForKey:@"camera_properties"]];
-        [prop setObject:obj forKey:lastComponent];
-        [cam setObject:prop forKey:@"camera_properties"];
-        [result setObject:cam forKey:@"camera"];
+        // Current file version
+        NSMutableDictionary *cam = [NSMutableDictionary dictionaryWithDictionary:[result getRequiredDictionaryForKey:firstComponent]];
+        if (components.count == 2)
+        {
+            [cam setObject:obj forKey:lastComponent];
+        }
+        else
+        {
+            NSString *secondComponent = [components objectAtIndex:1];
+            ALWAYS_ASSERT(components.count == 3);   // Only this implemented so far
+            NSMutableDictionary *prop = [NSMutableDictionary dictionaryWithDictionary:[cam getRequiredDictionaryForKey:secondComponent]];
+            [prop setObject:obj forKey:lastComponent];
+            [cam setObject:prop forKey:secondComponent];
+        }
+        [result setObject:cam forKey:firstComponent];
     }
 	self.dict = result;
 	metadataWasEdited = true;
