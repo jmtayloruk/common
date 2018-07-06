@@ -13,6 +13,30 @@
 #import "DictionaryReadingExtensions.h"
 #import "jCache.h"
 
+NSArray *DumpDiffsFromFrameInFolder(NSString *path)
+{
+    // This is example code reminding me how to extract and dump out the 'diffs' property from a brightfield frame.
+    // This example is intended to see the diffs associated with the final frame of a set of ref frames.
+    
+    // Open the first [and probably only] file in folder, in order to create the FrameMetadataParser object
+    MetadataForFrame *metadata = [MetadataForFrame metadataForFirstFrameInFolder:path];
+    // ... but switch to the final frame in that file
+    metadata = [metadata.parser metadataForFrame:metadata.parser.frameCount-1];
+    
+    // Decompress the diffs property
+    id arr = [metadata valueForKeyPath:@"frame.sync_info.diffs"];
+    ALWAYS_ASSERT(arr != nil);
+    NSArray *diffs = [NSPropertyListSerialization propertyListWithData:arr options:0 format:nil error:nil];
+    
+    // Print out its contents
+    printf("# %s\n", path.UTF8String);
+    printf("# Length %zd\n", diffs.count);
+    for (size_t i = 0; i < diffs.count; i++)
+        printf("%zd\t%lf\n", i, ((NSNumber *)diffs[i]).doubleValue);
+    
+    return diffs;
+}
+
 @implementation ParserBase
 
 -(id)init
