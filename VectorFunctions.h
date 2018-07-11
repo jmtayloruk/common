@@ -279,4 +279,18 @@
 	}
 #endif
 
+// These are not vectorized, but are useful functions to use in conjunction with vectorized code
+// They probably could be vectorized, in fact, if performance becomes an issue (c.f. vHAdd)
+inline int SumOver32BitInts(void *i)
+{
+    uint32_t *l = (uint32_t *)i;
+    return l[0] + l[1] + l[2] + l[3];
+}
+
+inline int OrOver32BitInts(void *i)
+{
+    uint32_t *l = (uint32_t *)i;
+    return l[0] | l[1] | l[2] | l[3];
+}
+
 #endif
