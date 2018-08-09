@@ -452,6 +452,8 @@ NSBitmapImageRep *RawBitmapFromImage(const NSImage *image)
 	// In practice most images I work with seem to contain one and only one bitmap image.
 	if (!CHECK(image != nil))
 		return nil;
+	if (!CHECK(image.representations.count > 0))
+        return nil;
 		
 	NSBitmapImageRep	*result = nil;
     NSArray				*repArray = [image representations];
