@@ -62,6 +62,7 @@ const int kCurrentMetadataVersion = kMultiTiffMetadataVersion;
 +(MetadataForFrame *)metadataForFirstFrameAtImagePath:(NSString *)path;
 +(MetadataForFrame *)metadataForFirstFrameInFolder:(NSString *)path;
 -(id)initForParser:(FrameMetadataParser *)inParser arrayIndex:(size_t)inArrayIndex;
+-(bool)metadataAvailable;
 -(id)valueForKeyPath:(NSString *)keyPath;
 -(double)universalComputerTimestamp;
 -(NSPoint)driftOffset;
@@ -104,6 +105,7 @@ const int kCurrentMetadataVersion = kMultiTiffMetadataVersion;
 -(void)setNewObject:(id)obj forFrameKey:(NSString *)key arrayIndex:(size_t)arrayIndex;
 -(void)setNewObject:(id)obj forCommonKey:(NSString *)key arrayIndex:(size_t)arrayIndex;
 -(void)saveMetadataIfNeeded;
+-(bool)metadataAvailable;
 
 @property (readonly) size_t frameCount;
 @property (readonly) JAlias *folderAlias;

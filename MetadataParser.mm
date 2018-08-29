@@ -192,6 +192,8 @@ NSArray *DumpDiffsFromFrameInFolder(NSString *path)
 		return self.parser.imagePath.lastPathComponent;
 }
 
+-(bool)metadataAvailable { return self.parser.metadataAvailable; }
+
 -(NSMutableDictionary *)frameSpecificMetadataDictionary
 {
 	return [self.parser frameSpecificMetadataDictionaryForArrayIndex:self.arrayIndex];
@@ -343,7 +345,9 @@ JCache *imageCache = [JCache new];
 
 -(MetadataForFrame *)metadataForFrame:(size_t)arrayIndex
 {
-	return [[[MetadataForFrame alloc] initForParser:self arrayIndex:arrayIndex] autorelease];
+    // Note: we return an object even if there is no plist available -
+    // the MetadataForFrame object also allows access to the frame image itself, so the caller may still want it.
+    return [[[MetadataForFrame alloc] initForParser:self arrayIndex:arrayIndex] autorelease];
 }
 
 -(NSString *)translateKeyPath:(NSString *)keyPath
@@ -519,6 +523,8 @@ JCache *imageCache = [JCache new];
 	self.dict = result;
 	metadataWasEdited = true;
 }
+
+-(bool)metadataAvailable { return (self.dict != nil); }
 
 -(void)saveMetadataIfNeeded
 {
