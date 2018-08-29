@@ -1,10 +1,14 @@
 //
-//  BoundsRect.h
+//  Signposts.h
 //
 //	Copyright 2014-2015 Jonathan Taylor. All rights reserved.
 //
 //	OS X specific code that allows us to insert markers into the Shark system trace
 //	as an aid for performance analysis.
+//
+//  Currently (2018) long obsolete now that Apple have retired the Shark tool.
+//  Unfortunately its replacement (Instruments) does not have an equivalent to signposts as far as I know
+//  (and in fact I haven't found a way to get it to give info anywhere near as useful as the old Shark system trace...)
 //
 
 #ifndef __SIGNPOSTS_H__
