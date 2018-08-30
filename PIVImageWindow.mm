@@ -91,18 +91,6 @@ template<> double ImageWindow<double>::CalculateSNR(int threshold) const
 
 #pragma mark -
 
-inline int SumOver32BitInts(void *i)
-{
-    uint32_t *l = (uint32_t *)i;
-    return l[0] + l[1] + l[2] + l[3];
-}
-
-inline int OrOver32BitInts(void *i)
-{
-    uint32_t *l = (uint32_t *)i;
-    return l[0] | l[1] | l[2] | l[3];
-}
-
 template<int correlationType, class TYPE> void CrossCorrelateImageWindows(ImageWindow<TYPE> &window1, ImageWindow<TYPE> &window2, ImageWindow<double> &result)
 {
     // Generic version
