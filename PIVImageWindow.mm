@@ -91,8 +91,6 @@ template<> double ImageWindow<double>::CalculateSNR(int threshold) const
 
 #pragma mark -
 
-#include "tmmintrin.h"		// SSSE3 (supplemental SSE3)
-
 inline int SumOver32BitInts(void *i)
 {
     uint32_t *l = (uint32_t *)i;
