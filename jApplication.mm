@@ -155,10 +155,14 @@ JApplication *baseApp = nil;
 	return [JApplication currentDateTimeString];
 }
 
++(NSString *)logFileDirectoryPath
+{
+    return [SWF:@"%@/Spim GUI Logs", GetUserDocumentDirectory()];
+}
+
 +(NSString *)timestampedLogFilePathWithIdentifier:(NSString *)identifier
 {
-    NSString *basePath = GetUserDocumentDirectory();
-    return [SWF:@"%@/Spim GUI Logs/%@.%@.txt", basePath, self.currentDateTimeString, identifier];
+    return [SWF:@"%@/Spim GUI Logs/%@.%@.txt", [JApplication logFileDirectoryPath], self.currentDateTimeString, identifier];
 }
 
 +(FILE *)timestampedLogFileWithIdentifier:(NSString *)identifier

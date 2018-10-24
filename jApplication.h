@@ -34,6 +34,7 @@
 +(NSString *)buildVersionString;
 +(NSString *)dateTimeStringForDate:(NSDate *)date;
 +(FILE *)timestampedLogFileWithIdentifier:(NSString *)identifier;
++(NSString *)logFileDirectoryPath;
 +(NSString *)timestampedLogFilePathWithIdentifier:(NSString *)identifier;
 
 +(NSString *)currentDateTimeString;

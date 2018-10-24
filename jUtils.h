@@ -95,6 +95,7 @@ void LinearFit(std::vector<double> &x, std::vector<double> &y, double *alpha, do
     NSURL *PathToURL(NSString *path, NSURL *relativeTo);
     NSURL *PathToURL(NSString *path);
     bool IsDirectory(NSURL *fileURL);
+    bool DirectoryPathExists(NSString *folderPath);
 	NSString *GetUserDocumentDirectory(void);
     NSString *CreateTemporaryDirectory(void);
 	bool/*success*/ CreateDirectoryIfNeeded(NSString *path);

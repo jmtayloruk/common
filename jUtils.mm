@@ -65,6 +65,14 @@ bool IsDirectory(NSURL *fileURL)
 	return false;
 } 
 
+bool DirectoryPathExists(NSString *folderPath)
+{
+    // Note: this might well be pretty much duplicating the functionality of IsDirectory,
+    // but if nothing else it seems helpful to have both functions as their different titles can be more informative in different contexts...
+    BOOL isDir;
+    return [[NSFileManager defaultManager] fileExistsAtPath:folderPath isDirectory:&isDir] && isDir;
+}
+
 NSString *GetUserDocumentDirectory(void)
 {
 	NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
