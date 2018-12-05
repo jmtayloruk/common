@@ -162,7 +162,7 @@ JApplication *baseApp = nil;
 
 +(NSString *)timestampedLogFilePathWithIdentifier:(NSString *)identifier
 {
-    return [SWF:@"%@/Spim GUI Logs/%@.%@.txt", [JApplication logFileDirectoryPath], self.currentDateTimeString, identifier];
+    return [SWF:@"%@/%@.%@.txt", [JApplication logFileDirectoryPath], self.currentDateTimeString, identifier];
 }
 
 +(FILE *)timestampedLogFileWithIdentifier:(NSString *)identifier
