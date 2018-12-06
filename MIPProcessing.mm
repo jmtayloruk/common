@@ -171,6 +171,11 @@ void MakeMipFromImagesInFolder(NSString *sourceFolderPath, NSString *destFilenam
     
     NSBitmapImageRep *firstBitmap = FirstBitmapInDirectory(sourceFolderPath);
 	printf(" First file: %s %p\n", FirstImageFileNameInDirectory(sourceFolderPath).UTF8String, firstBitmap);
+    if ([sourceFolderPath rangeOfString:@"Brightfield"].length > 0)
+    {
+        printf("Skipping brightfield\n");
+        return;
+    }
 
 	__block int counter = 0;
 	double shear = 0.0;//2.0;
@@ -328,7 +333,7 @@ void ProcessStacksIntoMIPsSavingAt(NSArray *inURLs, NSURL *destinationURL, void 
 						   // So far there isn't a GUI for this (need to make sure there is a fixed number of frames in each stack, discarding excess
 						   // if necessary, offer a means of tweaking gain/offsets etc that is applied to all stacks that are processed, etc)
 						   GUIMovieBuilder *builder = [[GUIMovieBuilder alloc] initAndRunBackgroundSession:@"Movie Builder"];
-						   [builder addSequenceUsingDirectoryURL:url];
+						   [builder addSequencesUsingDirectoryURL:url];
 						   builder.tiffStem = [SWF:@"stack_%04d_", counter++];
 						   
 						   builder.maskEnabled = true;
