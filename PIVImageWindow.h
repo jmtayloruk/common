@@ -213,7 +213,7 @@ template<class TYPE> struct ImageWindow
 	}
 	
 #if __OBJC__
-	NSBitmapImageRep *Bitmap(void)
+	NSBitmapImageRep *Bitmap(double gain = 1.0)
 	{
 		NSBitmapImageRep *result = [[NSBitmapImageRep alloc]
 									initWithBitmapDataPlanes:NULL
@@ -230,8 +230,17 @@ template<class TYPE> struct ImageWindow
 		TYPE *destData = (TYPE *)result.bitmapData;
         ALWAYS_ASSERT(destData != nil);
 		
-		for (int y = 0; y < height; y++)
-			memcpy(destData + y*width, this->baseAddr + y*this->elementsPerRow, width * sizeof(TYPE));
+        if (gain != 1.0)
+        {
+            for (int y = 0; y < height; y++)
+                for (int x = 0; x < width; x++)
+                    destData[y*width+x] = (TYPE)LIMIT(this->baseAddr[y*this->elementsPerRow+x] * gain, 0.0, ((1<<(8*sizeof(TYPE)))-1.0));
+        }
+        else
+        {
+            for (int y = 0; y < height; y++)
+                memcpy(destData + y*width, this->baseAddr + y*this->elementsPerRow, width * sizeof(TYPE));
+        }
 		
 		return [result autorelease];
 	}
