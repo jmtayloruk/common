@@ -9,7 +9,10 @@
 #import <Cocoa/Cocoa.h>
 
 @interface JNSView : NSView
+{
+    int _viewNeedsRedraw_dummyProperty;
+}
 
-@property (readonly) bool viewNeedsRedraw_dummyProperty;
+@property (readwrite) int viewNeedsRedraw_dummyProperty;
 
 @end

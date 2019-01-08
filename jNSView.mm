@@ -33,6 +33,6 @@
         [super observeValueForKeyPath:keyPath ofObject:object change:change context:context];
 }
 
--(bool)viewNeedsRedraw_dummyProperty { return true; }
+@synthesize viewNeedsRedraw_dummyProperty;
 
 @end
