@@ -59,7 +59,7 @@ void DebugPrintfFatal(const char *errorIntro, const char *format, ...)
 	if (pthread_main_np())
 		theBlock();
 	else
-		dispatch_sync(dispatch_get_main_queue(), theBlock);
+		dispatch_async(dispatch_get_main_queue(), theBlock);
     [pool drain];
 	va_end(args);
 }
