@@ -54,6 +54,8 @@ const int kCurrentMetadataVersion = kMultiTiffMetadataVersion;
 @interface MetadataForFrame : ParserBase
 // This object knows about the metadata for a single frame
 // The backing store for this may be a .plist file that contains information about multiple frames
+// Remember that ParserBase (superclass for the current MetadataForFrame class) does not include any backing storage,
+// it is just a set of convenience accessors. It is ONLY our FrameMetadataParser property 'parser' that has backing storage.
 {
 	FrameMetadataParser *_parser;
 	size_t				_arrayIndex;
