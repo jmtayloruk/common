@@ -101,6 +101,49 @@
 
 @end
 
+@implementation JPoint3
+
++(JPoint3*)pointWithCoord3:(const coord3)r
+{
+    return [[[JPoint3 alloc] initWithCoord3:r] autorelease];
+}
+
+-(id)initWithCoord3:(const coord3)p
+{
+    if (!(self = [super init]))
+        return nil;
+    self.x = p.x;
+    self.y = p.y;
+    self.z = p.z;
+    return self;
+}
+
+-(float)x { return _x; }
+-(float)y { return _y; }
+-(float)z { return _z; }
+-(const NSPoint)nsXY { return NSMakePoint(_x, _y); }
+
+-(void)setX:(float)val { _x = val; }
+-(void)setY:(float)val { _y = val; }
+-(void)setZ:(float)val { _z = val; }
+-(void)setNsXY:(const NSPoint)ns { _x = ns.x; _y = ns.y; }
+
+-(int)everything { return 1; }
+
++(NSSet*)keyPathsForValuesAffectingValueForKey:(NSString*)inKey
+{
+    NSSet* set = [super keyPathsForValuesAffectingValueForKey:inKey];
+    if ([inKey isEqualToString:@"nsXY"])
+        set = [set setByAddingObjectsFromSet:[NSSet setWithObjects:@"x", @"y", nil]];
+    else if ([inKey isEqualToString:@"everything"])
+        set = [set setByAddingObjectsFromSet:[NSSet setWithObjects:@"nsXY", @"x", @"y", @"z", nil]];
+    else
+        set = [set setByAddingObjectsFromSet:[NSSet setWithObjects:@"nsXY", nil]];
+    return set;
+}
+
+@end
+
 @implementation JIntegerPoint
 
 +(JIntegerPoint*)pointWithIntegerPoint:(const IntegerPoint &)p

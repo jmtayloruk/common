@@ -44,6 +44,21 @@
 
 @end
 
+@interface JPoint3 : NSObject
+{
+    float _x, _y, _z;        // Variable type chosen to be consistent with JPoint2
+}
+
++(JPoint3*)pointWithCoord3:(const coord3)r;
+
+@property (readwrite) float x;
+@property (readwrite) float y;
+@property (readwrite) float z;
+@property (readwrite) const NSPoint nsXY;
+@property (readonly) int everything;	// Can be monitored using KVO to see if any variable changes
+
+@end
+
 // This class is named to be consistent with the others above, but it's a bit of a misnomer
 // since IntegerPoint is also one of my own classes.
 @interface JIntegerPoint : NSObject
