@@ -92,7 +92,8 @@ bool SaveTiffFromSpool(NSString *spoolPath, NSString *destPath, int numImages, N
     // The information passed to this function can be found in the file 'acquisitionmetadata.ini' which should accompany the Solis spool files.
     // I haven't found a way to tell how many images there actually are - except for the fact that any excess "slots" are all-black.
     // It should be possible to parse acquisitionmetadata.ini, but for now I just inspect it manually.
-    // The TIFF-writing code in this function is just ripped off from ImageSaver - hence the shoehorning of our parameters into the variables it expects.
+    // The TIFF-writing code in this function is just ripped off from TIFFFileSaver - hence the shoehorning of our parameters into the variables it expects.
+    // This code could probably be updated to just call that code directly, but since it works I'm not going to modify it just for the sake of tidiness - let's wait until (if) I am editing this function anyway.
     FILE *spoolFile = fopen(spoolPath.UTF8String, "r");
     ALWAYS_ASSERT(spoolFile != NULL);
     unsigned short *data = new unsigned short[bytesPerImage/2];
