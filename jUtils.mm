@@ -91,6 +91,10 @@ bool/*success*/ CreateDirectoryIfNeeded(NSString *path)
 															  error:&err];
 	if (!CHECK(ok))
 	{
+        // Note that createDirectoryAtPath does not seem to be fully threadsafe:
+        // if we call createDirectoryAtPath from two different threads then the second attempt may return error 516 (already exists).
+        // If we encounter this, it's really up to the calling code to figure out where the race condition is coming in, and eliminate it.
+        // This seems to be a harmless failure - retry seems typically to succeed.
 		NSLog(@"Failed to create directory %@ (%ld, %s)\n", path, (long)err.code, err.localizedFailureReason.UTF8String);
 		ok = [[NSFileManager defaultManager] createDirectoryAtPath:path
 											withIntermediateDirectories:YES
