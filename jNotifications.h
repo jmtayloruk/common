@@ -17,4 +17,7 @@ void QueueNotificationOnMainThread(NSString *notificationName, id obj, bool coal
 void QueueNotificationOnMainThread2(NSNotification *myNotification, bool coalesce = false, NSPostingStyle style = NSPostASAP);
 void SendImmediateNotificationOnMainThread(NSNotification *myNotification);
 
+int IntFromNotification(NSNotification *note, NSString *key);
+NSString *StringFromNotification(NSNotification *note, NSString *key);
+
 extern NSString *CloseSheetsForTermination;

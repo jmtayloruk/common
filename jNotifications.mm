@@ -79,3 +79,17 @@ void SendImmediateNotificationOnMainThread(NSNotification *myNotification)
 		[[NSNotificationCenter defaultCenter] postNotification:myNotification];
 	});
 }
+
+int IntFromNotification(NSNotification *note, NSString *key)
+{
+    NSNumber *n = [note.userInfo objectForKey:key];
+    ALWAYS_ASSERT([n isKindOfClass:[NSNumber class]]);
+    return n.intValue;
+}
+
+NSString *StringFromNotification(NSNotification *note, NSString *key)
+{
+    NSString *s = [note.userInfo objectForKey:key];
+    ALWAYS_ASSERT((s == nil) || [s isKindOfClass:[NSString class]]);
+    return s;
+}
