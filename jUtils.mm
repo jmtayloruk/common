@@ -183,6 +183,14 @@ bool StringIsInList(NSString *s, ...)
 	return false;
 }
 
+NSString *SizeStringInGBOrMB(double sizeInBytes)
+{
+    double size = sizeInBytes / 1e6;
+    if (size > 100.0)
+        return [SWF:@"%.1lf GB", size/1e3];
+    return [SWF:@"%.1lf MB", size];
+}
+
 id ResurrectWeakRef(MAZeroingWeakRef *&ref, BlockReturningObject resurrectionBlock)
 {
 	// Ensure that the weak reference exists. If it does not, then call the supplied block
