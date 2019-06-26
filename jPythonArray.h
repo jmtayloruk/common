@@ -204,6 +204,7 @@ template<class Type> class JPythonArray1D : public JPythonArray<Type>
 		ALWAYS_ASSERT(i < JPythonArray<Type>::dims[0]);
 		return JPythonArray<Type>::data[i * JPythonArray<Type>::strides[0]];
 	}
+    Type *ElementPtr(int x) { return (Type *)(((const char*)JPythonArray<Type>::data) + JPythonArray<Type>::strides[0] * x); }
 	
 	Type &GetIndex_CanPromote(int i)
 	{
@@ -228,6 +229,7 @@ template<class Type> class JPythonArray2D : public JPythonArray<Type>
 		// Could check that i is in range (check against dims[0])
 		return JPythonArray1D<Type>(JPythonArray<Type>::data + JPythonArray<Type>::strides[0] * i, JPythonArray<Type>::dims + 1, JPythonArray<Type>::strides + 1);
 	}
+    Type *ElementPtr(int y, int x) { return (Type *)(((const char*)JPythonArray<Type>::data) + JPythonArray<Type>::strides[1] * y + JPythonArray<Type>::strides[0] * x); }
 };
 
 template<class Type> class JPythonArray3D : public JPythonArray<Type>

@@ -244,6 +244,7 @@
 #if HAS_SSE || HAS_ALTIVEC
 //	inline vFloat vCMul(vFloat a, vFloat b, vFloat sum) { return vNMSub(vSplatImag(a), vSwapReIm(b), vMAdd(vSplatReal(a), vNegateImag(b), sum)); }
 	inline vFloat vCMul(vFloat a, vFloat b, vFloat sum) { return vMAdd(vSplatImag(a), vNegateReal(vSwapReIm(b)), vMAdd(vSplatReal(a), b, sum)); }
+    inline vFloat vCMul(vFloat a, vFloat b) { return vMAdd(vSplatImag(a), vNegateReal(vSwapReIm(b)), vMul(vSplatReal(a), b)); }
 	inline vFloat vAdd4(vFloat a, vFloat b, vFloat c, vFloat d) { return vAdd(vAdd(a, b), vAdd(c, d)); }
 #endif
 
