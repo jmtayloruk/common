@@ -237,6 +237,7 @@ template<class Type> class JPythonArray3D : public JPythonArray<Type>
   public:
 	JPythonArray3D(PyArrayObject *init) : JPythonArray<Type>(init, 3) { }
 	JPythonArray3D(PyObject *init) : JPythonArray<Type>(init, 3) { }
+    JPythonArray3D(Type *inData, npy_intp *inDims, npy_intp *inStrides) : JPythonArray<Type>(inData, 3, inDims, inStrides) { }
 
 	JPythonArray2D<Type> operator[](int i)
 	{
