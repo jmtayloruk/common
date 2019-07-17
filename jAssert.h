@@ -34,6 +34,9 @@
 	#define CHECK(CONDITION) assertionHandler->CheckCondition((CONDITION), __LINE__, __PRETTY_FUNCTION__, __FILE__)
 #endif
 
+/* Note: a good place to go looking for a definition of old-style error codes is:
+    /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.9.sdk/System/Library/Frameworks/CoreServices.framework/Versions/A/Frameworks/CarbonCore.framework/Versions/A/Headers/MacErrors.h
+ */
 #define ALWAYS_ASSERT_NOERR(RESULT) do { if (RESULT != 0) { DebugPrintf("Error code %d encountered\n", (int)(RESULT)); ALWAYS_ASSERT(0); } } while(0)
 #define IGNORE_CONDITION(CONDITION) do { } while(0)
 
