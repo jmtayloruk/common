@@ -158,6 +158,7 @@ void JMovieBuilder::CreateCompressionSession(ICMCompressionSessionRef *compressi
 	encodedFrameOutputRecord.encodedFrameOutputRefCon = this;
 	encodedFrameOutputRecord.frameDataAllocator = NULL;
 
+    ALWAYS_ASSERT((width > 0) && (height > 0));     // Otherwise ICMCompressionSessionCreate will fail
 	err = ICMCompressionSessionCreate( NULL, width, height, codecType, timeScale,
 			sessionOptions, NULL, &encodedFrameOutputRecord, compressionSessionOut );
 	ALWAYS_ASSERT_NOERR(err);
