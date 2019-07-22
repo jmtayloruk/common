@@ -171,6 +171,41 @@ JApplication *baseApp = nil;
     return outFile;
 }
 
++(NSString*)runCommand:(NSString*)commandToRun;
+{
+    // Utility function from https://stackoverflow.com/questions/3145701/relaunching-a-cocoa-app
+    // (I am not sure whether that is in turn copied from somewhere else)
+    NSTask *task;
+    task = [[NSTask alloc] init];
+    [task setLaunchPath: @"/bin/bash"];
+    
+    NSArray *arguments = [NSArray arrayWithObjects:
+                          @"-c" ,
+                          [NSString stringWithFormat:@"%@", commandToRun],
+                          nil];
+    //NSLog(@"run command: %@",commandToRun);
+    [task setArguments: arguments];
+    
+    NSPipe *pipe;
+    pipe = [NSPipe pipe];
+    [task setStandardOutput: pipe];
+    
+    NSFileHandle *file;
+    file = [pipe fileHandleForReading];
+    
+    [task launch];
+    
+    NSData *data;
+    data = [file readDataToEndOfFile];
+    
+    NSString *output;
+    output = [[NSString alloc] initWithData: data encoding: NSUTF8StringEncoding];
+    if (output.length >= 1)
+        return [output substringToIndex:output.length-1];       // Strip final newline
+    else
+        return output;
+}
+
 #pragma mark -
 #pragma mark Defaults
 

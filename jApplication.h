@@ -36,6 +36,7 @@
 +(FILE *)timestampedLogFileWithIdentifier:(NSString *)identifier;
 +(NSString *)logFileDirectoryPath;
 +(NSString *)timestampedLogFilePathWithIdentifier:(NSString *)identifier;
++(NSString*)runCommand:(NSString*)commandToRun;
 
 +(NSString *)currentDateTimeString;
 
