@@ -4,6 +4,9 @@
 	Copyright 2010-2015 Jonathan Taylor. All rights reserved.
 
 	Build up a movie file from individual frames that are supplied to this class by the caller in sequence.
+    This is still a C++ class in the hope that I can keep it callable from non-objC code,
+    but after updates to this code I will probably need to do some tweaks to get this header compiling again when included from pure C++.
+ 
 */
 
 #ifndef __JMOVIEBUILDER_H__
@@ -12,62 +15,47 @@
 #include "jMutex.h"
 #include "BoundsRect.h"
 
-#if (!HAS_OS_X_GUI) || defined(__x86_64__)
-
 #if (!HAS_OS_X_GUI)
-	class NSImage;
-	class NSRect;
-#endif
 
-// Code not implemented except on 32-bit OS X
+class NSImage;
+class NSRect;
+
 // This first bit of code here is just dummy code to allow things to compile on other platforms, but without any functionality
+// TODO: this probably needs updating
 class JMovieBuilder
 {
   public:
-			JMovieBuilder(OSType inCodec, char** outputMovieDataRef, OSType outputMovieDataRefType, const BoundsRect &bounds, double frameRate, int32_t *outErr, int inQuality = 0) { ALWAYS_ASSERT(0); }
-	void	AddFrame(const NSImage *frameImage, const NSRect *cropRect, double gain = 1.0) { }
+            JMovieBuilder(NSString *destPath, const BoundsRect &inBounds, double inFrameRate, OSStatus *outErr, double compressionFactor, int channelCount);
+	void	AddFrame(const NSImage *frameImage, const NSRect *cropRect) { }
 };
 
 #else
 
 #include <Quicktime/QuickTime.h>
+// Note: do not include AVFoundation.h as it conflicts with win32 typedefs also defined through Ximea camera headers, if we include this here.
+// Fortunately we don't need to, we can just give @class prototypes as needed.
+
+@class AVAssetWriter;
+@class AVAssetWriterInput;
+@class AVAssetWriterInputPixelBufferAdaptor;
 
 class JMovieBuilder
 {
   protected:
 	int							width;		// dest width
 	int							height;		// dest height
-	CodecType					codecType;	// codec
-	int							quality;
-	ICMCompressionSessionRef	compressionSession; // compresses frames
-	Movie						outputMovie; // movie file for storing compressed frames
-	Media						outputVideoMedia; // media for our video track in the movie
-	DataHandler					outputMovieDataHandler; // storage for movie header
-	Boolean						didBeginVideoMediaEdits;
-	Boolean						verbose;
-    TimeScale					timeScale;
 	double						desiredFramesPerSecond;
-	TimeValue					frameDuration;
-	CFMutableDictionaryRef		pixelBufferAttributes;
-	OSType						pixelFormat;
 	int							frameCounter;
-	
-	void	DoInit(OSType inCodec, const BoundsRect &bounds, double frameRate, Handle outputMovieDataRef, OSType outputMovieDataRefType, OSStatus *outErr, int inQuality);
-	void	SetUpOutputMovie(const char *inFileName);
-	void	CreateCompressionSession(ICMCompressionSessionRef *compressionSessionOut);
-	void	CreateVideoMedia(ImageDescriptionHandle imageDesc, TimeScale timescale );
-	static OSStatus WriteEncodedFrameToMovie(void *encodedFrameOutputRefCon, 
-											   ICMCompressionSessionRef session, 
-											   OSStatus err,
-											   ICMEncodedFrameRef encodedFrame,
-											   void *reserved );
-	OSStatus WriteEncodedFrameToMovie2(ICMCompressionSessionRef session, ICMEncodedFrameRef encodedFrame);
-	static void ReleaseBackingStorage(void *releaseRefCon, const void *baseAddress);
-	void	FinishOutputMovie(void);
-	
+    
+    AVAssetWriter               *videoWriter;
+    AVAssetWriterInput          *writerInput;
+    AVAssetWriterInputPixelBufferAdaptor *avAdaptor;
+    
+    void	DoInit(NSURL *destURL, const BoundsRect &bounds, double frameRate, OSStatus *outErr, double compressionFactor, int channelCount);
+
   public:
-			JMovieBuilder(OSType inCodec, Handle outputMovieDataRef, OSType outputMovieDataRefType, const BoundsRect &bounds, double frameRate, OSStatus *outErr, int inQuality = codecLosslessQuality);
-            JMovieBuilder(OSType inCodec, const char *destPath, const BoundsRect &bounds, double frameRate, OSStatus *outErr, int inQuality = codecLosslessQuality);
+            JMovieBuilder(NSString *destPath, const BoundsRect &inBounds, double inFrameRate, OSStatus *outErr, double compressionFactor, int channelCount);
+//            JMovieBuilder(const char *destPath, const BoundsRect &bounds, double frameRate, OSStatus *outErr, double compressionFactor, int channelCount);
 	virtual ~JMovieBuilder();
 	
 	int Width(void) { return width; }
@@ -79,7 +67,7 @@ class JMovieBuilder
 	Haven't yet found a specific option that identifies files where NSImage is defined
 	Trying just objc switch. I don't ~think~ I've got any C++ code that uses AddFrame...	*/
 #ifdef __OBJC__
-	void	AddFrame(const NSImage *frameImage, const NSRect *cropRect, double gain = 1.0);
+	void	AddFrame(const NSImage *frameImage, const NSRect *cropRect);
 #endif
 	void	AddFrame(const CVPixelBufferRef pixelBuffer);
 };
@@ -95,6 +83,7 @@ void GetMovieDestinationDetailsUsingSheetOnWindow(NSWindow *sheetOnWindow, void 
 #include <CoreVideo/CoreVideo.h>
 #include "BoundsRect.h"
 
+// This may be obsolete, but I am leaving it in case I use it in any of my old projects!
 class MoviePixelBuffer
 {
 protected:

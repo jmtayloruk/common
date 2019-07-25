@@ -3,10 +3,15 @@
 //
 //	Copyright 2010-2015 Jonathan Taylor. All rights reserved.
 //
-//	Additional Cocoa/NSImage interface for jMovieBuilder.
+//	Cocoa/NSImage interface for jMovieBuilder.
+//  Correct sequence of calls for AVAsset determined from:
+//  https://stackoverflow.com/questions/3741323/how-do-i-export-uiimage-array-as-a-movie?rq=1
+//  and http://codethink.no-ip.org/wordpress/archives/673
 //
 
 #include "jMovieBuilder.h"
+#import "jCocoaImageUtils.h"
+#include <AVFoundation/AVFoundation.h>
 
 void GetMovieDestinationDetailsUsingSheetOnWindow(NSWindow *sheetOnWindow, void (^handler)(NSInteger result, NSSavePanel *savePanel))
 {
@@ -25,8 +30,9 @@ void GetMovieDestinationDetailsUsingSheetOnWindow(NSWindow *sheetOnWindow, void 
 	 }];
 }
 
-#if !defined(__x86_64__)
-CVPixelBufferRef FastImageFromNSImage(const NSImage *image, const _NSRect cropRect)
+#if HAS_OS_X_GUI
+
+CVPixelBufferRef FastImageFromNSImage(const NSImage *image, const NSRect cropRect)
 {
     CVPixelBufferRef buffer = NULL;
 	
@@ -69,16 +75,128 @@ CVPixelBufferRef FastImageFromNSImage(const NSImage *image, const _NSRect cropRe
     return buffer;
 }
 
-void JMovieBuilder::AddFrame(const NSImage *frameImage, const _NSRect *cropRect, double gain)
+JMovieBuilder::JMovieBuilder(NSString *destPath, const BoundsRect &inBounds, double inFrameRate, OSStatus *outErr, double compressionFactor, int channelCount)
 {
-	CVPixelBufferRef pixelBuffer = FastImageFromNSImage(frameImage, *cropRect);
-	
-	// Feed the frame to the compression session and then release the CVBuffer
-	OSStatus err = ICMCompressionSessionEncodeFrame(compressionSession, pixelBuffer,
-										   frameCounter * frameDuration, frameDuration, kICMValidTime_DisplayTimeStampIsValid | kICMValidTime_DisplayDurationIsValid,
-										   NULL, NULL, NULL);
-	ALWAYS_ASSERT_NOERR(err);
-	CVPixelBufferRelease(pixelBuffer);
-	frameCounter++;
+    DoInit(PathToURL(destPath), inBounds, inFrameRate, outErr, compressionFactor, channelCount);
 }
+
+void JMovieBuilder::DoInit(NSURL *destURL, const BoundsRect &bounds, double frameRate, OSStatus *outErr, double compressionFactor, int channelCount)
+{
+    width = bounds.w;
+    height = bounds.h;
+    desiredFramesPerSecond = frameRate;
+    frameCounter = 0;
+    
+    /*  Create a new movie file.
+        Somewhat to my surprise, AVAssetWriter refuses to overwrite existing files (error comes when we write first frame to file),
+        so we have to delete any existing file manually.    */
+    if ([[NSFileManager defaultManager] fileExistsAtPath:destURL.path])
+    {
+        BOOL success = [[NSFileManager defaultManager] removeItemAtPath:destURL.path error:nil];
+        CHECK(success);
+    }
+    NSError *error = nil;
+    videoWriter = [[AVAssetWriter alloc] initWithURL:destURL
+                                            fileType:AVFileTypeQuickTimeMovie
+                                               error:&error];
+    if (error != nil)
+    {
+        if (outErr != nil)
+        {
+            *outErr = error.code;
+            return;
+        }
+        else
+            ALWAYS_ASSERT_NOERR(error.code);
+    }
+    ALWAYS_ASSERT(videoWriter != nil);
+    
+    int desiredBitrate = int(width * height * channelCount * 8/*bits/byte*/ * frameRate / compressionFactor);
+    printf("Specifying bitrate %.3fMbps\n", desiredBitrate/1e6);
+    NSDictionary *compression = [NSDictionary dictionaryWithObjectsAndKeys:
+                                 [NSNumber numberWithInt:desiredBitrate], AVVideoAverageBitRateKey,
+                                 nil];          // TODO: I could consider incuding the key kVTCompressionPropertyKey_AllowFrameReordering
+    NSDictionary *videoSettings = [NSDictionary dictionaryWithObjectsAndKeys:
+                                   AVVideoCodecH264, AVVideoCodecKey,
+                                   compression, AVVideoCompressionPropertiesKey,
+                                   [NSNumber numberWithInt:width], AVVideoWidthKey,
+                                   [NSNumber numberWithInt:height], AVVideoHeightKey,
+                                   nil];
+    writerInput = [[AVAssetWriterInput assetWriterInputWithMediaType:AVMediaTypeVideo
+                                                      outputSettings:videoSettings] retain];
+    
+    ALWAYS_ASSERT(writerInput != nil);
+    
+    NSDictionary* bufferAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
+                                      [NSNumber numberWithInt:kCVPixelFormatType_32ARGB], kCVPixelBufferPixelFormatTypeKey, nil];
+    avAdaptor = [[AVAssetWriterInputPixelBufferAdaptor assetWriterInputPixelBufferAdaptorWithAssetWriterInput:writerInput
+                                                                                  sourcePixelBufferAttributes:bufferAttributes] retain];
+    ALWAYS_ASSERT([videoWriter canAddInput:writerInput]);
+    [videoWriter addInput:writerInput];
+    
+    [videoWriter startWriting];
+    [videoWriter startSessionAtSourceTime:kCMTimeZero];
+}
+
+JMovieBuilder::~JMovieBuilder()
+{
+    // TODO: test this with zero frames and see what happens
+    [writerInput markAsFinished];
+    
+    // TODO: This next call is deprecated - "may take a long time", and should be replaced with a completion handler if we care about when the file is finished.
+    // However, in practice it doesn't seem to be causing my any problems (at present...) to call this.
+    [videoWriter finishWriting];
+
+    if (videoWriter != nil)
+        [videoWriter release];
+    if (writerInput != nil)
+        [writerInput release];
+}
+
+void JMovieBuilder::AddFrame(const NSImage *frameImage, const NSRect *cropRect)
+{
+    AddFrame(FastImageFromNSImage(frameImage, *cropRect));
+}
+
+void JMovieBuilder::AddFrame(const CVPixelBufferRef pixelBuffer)
+{
+    CVPixelBufferLockBaseAddress(pixelBuffer, 0);
+    //    See header docs for this flag. It sounds as if it's not the end of the world if we provide more data when this is FALSE,
+    //    but there are solutions described there if we want to be better-behaved.
+    //    ALWAYS_ASSERT([writerInput isReadyForMoreMediaData]);
+    bool ok = [avAdaptor appendPixelBuffer:pixelBuffer withPresentationTime:CMTimeMake(frameCounter, desiredFramesPerSecond)];
+    if (!ok)
+        NSLog(@"Error from appendPixelBuffer: %d %d %@\n", videoWriter.status, videoWriter.error.code, videoWriter.error.description);
+    ALWAYS_ASSERT(ok);
+    CVPixelBufferUnlockBaseAddress(pixelBuffer, 0);
+    CVPixelBufferRelease(pixelBuffer);
+    frameCounter++;
+}
+
+// TODO: do I actually use these for anything? I don't in Spim GUI, but I might in other projects...?
+MoviePixelBuffer::MoviePixelBuffer(const BoundsRect &bounds)
+{
+    // config
+    int flag = true;
+    yes = CFNumberCreate(NULL, kCFNumberIntType, &flag );
+    d = CFDictionaryCreateMutable(NULL, 2, NULL, NULL);
+    CFDictionaryAddValue(d, kCVPixelBufferCGImageCompatibilityKey, yes);
+    CFDictionaryAddValue(d, kCVPixelBufferCGBitmapContextCompatibilityKey, yes);
+    
+    // create pixel buffer
+    buffer = NULL;
+    CVPixelBufferCreate(kCFAllocatorDefault, bounds.w, bounds.h, k32ARGBPixelFormat, (CFDictionaryRef)d, &buffer);
+    CVPixelBufferLockBaseAddress(buffer, 0);
+    baseAddr = (unsigned char *)CVPixelBufferGetBaseAddress(buffer);
+    rowBytes = CVPixelBufferGetBytesPerRow(buffer);
+}
+
+MoviePixelBuffer::~MoviePixelBuffer()
+{
+    CVPixelBufferUnlockBaseAddress(buffer, 0);
+    CVPixelBufferRelease(buffer);
+    CFRelease(d);
+    CFRelease(yes);
+}
+
 #endif
