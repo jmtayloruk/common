@@ -166,7 +166,7 @@ void JMovieBuilder::AddFrame(const CVPixelBufferRef pixelBuffer)
     //    ALWAYS_ASSERT([writerInput isReadyForMoreMediaData]);
     bool ok = [avAdaptor appendPixelBuffer:pixelBuffer withPresentationTime:CMTimeMake(frameCounter, desiredFramesPerSecond)];
     if (!ok)
-        NSLog(@"Error from appendPixelBuffer: %d %d %@\n", videoWriter.status, videoWriter.error.code, videoWriter.error.description);
+        NSLog(@"Error from appendPixelBuffer: %d %d %@\n", (int)videoWriter.status, (int)videoWriter.error.code, videoWriter.error.description);
     ALWAYS_ASSERT(ok);
     CVPixelBufferUnlockBaseAddress(pixelBuffer, 0);
     CVPixelBufferRelease(pixelBuffer);
