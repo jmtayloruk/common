@@ -198,8 +198,10 @@ JApplication *baseApp = nil;
     NSData *data;
     data = [file readDataToEndOfFile];
     
+    [task autorelease];
+    
     NSString *output;
-    output = [[NSString alloc] initWithData: data encoding: NSUTF8StringEncoding];
+    output = [[[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding] autorelease];
     if (output.length >= 1)
         return [output substringToIndex:output.length-1];       // Strip final newline
     else
