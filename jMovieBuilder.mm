@@ -109,6 +109,8 @@ void JMovieBuilder::DoInit(NSURL *destURL, const BoundsRect &bounds, double fram
         else
             ALWAYS_ASSERT_NOERR(error.code);
     }
+    else
+        *outErr = noErr;
     ALWAYS_ASSERT(videoWriter != nil);
     
     int desiredBitrate = int(width * height * channelCount * 8/*bits/byte*/ * frameRate / compressionFactor);
@@ -126,6 +128,11 @@ void JMovieBuilder::DoInit(NSURL *destURL, const BoundsRect &bounds, double fram
                                                       outputSettings:videoSettings] retain];
     
     ALWAYS_ASSERT(writerInput != nil);
+    // I don't know what the realtime flag actually does, but it seems to make it less likely not to be ready
+    // to accept more data (especially when I am streaming brightfield live). Maybe the compressor runs at higher priority,
+    // or does less demanding compression...?
+    // Somebody asked on the internet, and didn't get a helpful answer!
+    writerInput.expectsMediaDataInRealTime = YES;
     
     NSDictionary* bufferAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
                                       [NSNumber numberWithInt:kCVPixelFormatType_32ARGB], kCVPixelBufferPixelFormatTypeKey, nil];
@@ -161,9 +168,16 @@ void JMovieBuilder::AddFrame(const NSImage *frameImage, const NSRect *cropRect)
 void JMovieBuilder::AddFrame(const CVPixelBufferRef pixelBuffer)
 {
     CVPixelBufferLockBaseAddress(pixelBuffer, 0);
-    //    See header docs for this flag. It sounds as if it's not the end of the world if we provide more data when this is FALSE,
-    //    but there are solutions described there if we want to be better-behaved.
-    //    ALWAYS_ASSERT([writerInput isReadyForMoreMediaData]);
+    
+    /*  Although the header docs imply it should be possible to continue when readyForMoreMediaData==false,
+        in practice it leads to an exception. So, we have to cope with it.
+        (Note the header comment "When using a push-style buffer source..." - I think that's pretty much
+         what I'm doing, but I still get an exception).
+        TODO: the headers indicate a better solution involving block callbacks, which I could consider.
+        That said, I don't think there's any harm in blocking this thread for a while until things
+        have sorted themselves out. */
+    while (!writerInput.readyForMoreMediaData)
+        [NSThread sleepForTimeInterval:0.05];
     bool ok = [avAdaptor appendPixelBuffer:pixelBuffer withPresentationTime:CMTimeMake(frameCounter, desiredFramesPerSecond)];
     if (!ok)
         NSLog(@"Error from appendPixelBuffer: %d %d %@\n", (int)videoWriter.status, (int)videoWriter.error.code, videoWriter.error.description);
