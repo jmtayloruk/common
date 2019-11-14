@@ -31,7 +31,6 @@ class JMovieBuilder
 
 #else
 
-#include <Quicktime/QuickTime.h>
 // Note: do not include AVFoundation.h as it conflicts with win32 typedefs also defined through Ximea camera headers, if we include this here.
 // Fortunately we don't need to, we can just give @class prototypes as needed.
 
