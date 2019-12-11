@@ -195,6 +195,9 @@ NSInteger crazySpoolSortOrder(id string1, id string2, void *)
 void ProcessSpoolFilesFromDirectory(NSString *spoolDir, NSString *iniPath, NSString *plistSourceDir, int firstPlistIndex, NSString *destTiffDir)
 {
     /*  Parse and process Andor spool files, exporting them to plists.
+        This code is useful for when a long Andor acquisition crashes - we can recover the data even though it hasn't been exported to TIFFs by the Andor code.
+        If plistSourceDir is not nil, this code also deals with transferring metadata across from my zyla mirror files (acquired using a Prosilica camera)
+        which contain timestamp information etc that matches up with each Zyla frame.
              spoolDir: directory containing the Andor spool files
              iniPath: path to the .ini file describing the spool files
              plistSourceDir: the directory containing zyla mirror plist files [and there must be accompanying tiffs, due to how ForEveryFrameInDirectory is written]
@@ -205,8 +208,10 @@ void ProcessSpoolFilesFromDirectory(NSString *spoolDir, NSString *iniPath, NSStr
     // Load all the plist information into a dictionary mapping frame index to metadata.
     // That seems the easiest way to code it...
     // Note that, because of the way ForEveryFrameInDirectory is currently coded, the tiffs must also exist.
-    NSMutableDictionary *metadataMapping = [NSMutableDictionary dictionary];
+    NSMutableDictionary *metadataMapping = nil;
+    if (plistSourceDir != nil)
     {
+        metadataMapping = [NSMutableDictionary dictionary];
         NSArray *dirContents = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:plistSourceDir error:nil];
         __block TextualProgressBar progress("Reading metadata files", dirContents.count/2);
         ForEveryFrameInDirectory(plistSourceDir, ^(MetadataForFrame *metadata)
@@ -239,7 +244,7 @@ void ProcessSpoolFilesFromDirectory(NSString *spoolDir, NSString *iniPath, NSStr
     
     // Iterate over them, turning each one into a multipage tiff file
     int plistIndex = firstPlistIndex;
-    TextualProgressBar progress("Processing spool files", dirContents.count);
+    TextualProgressBar progress("Processing %d spool files", dirContents.count, dirContents.count);
     for (NSString *theFilename in dirContents)
     {
         //        printf("%s\n", theFilename.UTF8String);
