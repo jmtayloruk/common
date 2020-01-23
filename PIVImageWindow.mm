@@ -7,7 +7,6 @@
 //
 
 #include "PIVImageWindow.h"
-#include "tmmintrin.h"		// SSSE3 (supplemental SSE3)
 
 template <class TYPE> TYPE SadFunc(TYPE a, TYPE b);
 template<> double SadFunc<double>(double a, double b) { return fabs(a - b); }
@@ -93,8 +92,6 @@ template<> double ImageWindow<double>::CalculateSNR(int threshold) const
 
 #pragma mark -
 
-#include "tmmintrin.h"		// SSSE3 (supplemental SSE3)
-
 inline int SumOver32BitInts(void *i)
 {
     uint32_t *l = (uint32_t *)i;
@@ -165,16 +162,12 @@ template<> void CrossCorrelateImageWindows<kCorrelationSAD, unsigned char>(Image
         for (int dx = 0; dx <= maxDX; dx++)
         {
             double sum = 0;
-            __m128i sumVec = (__m128i)_mm_setzero_ps();
             for (int y = 0; y < w1Height; y++)
             {
                 int x = 0;
-                for (; x <= w1Width - 16; x += 16)
-                    sumVec = _mm_add_epi64(sumVec, _mm_sad_epu8(_mm_loadu_si128((__m128i*)window1.PixelXYAddr(x, y)), _mm_loadu_si128((__m128i*)window2.PixelXYAddr(x+dx, y+dy))));
                 for (; x < w1Width; x++)
                     sum += abs(window1.PixelXY(x, y) - window2.PixelXY(x+dx, y+dy));
             }
-            sum += ExtractLongLongPairSum(&sumVec);
             result.SetXY(dx, dy, sum);
         }
 }
@@ -187,7 +180,6 @@ template<> void CrossCorrelateImageWindows<kCorrelationSAD, unsigned short>(Imag
     int w1Height = window1.height;
 	int maxDX = window2.width - window1.width;
 	int maxDY = window2.height - window1.height;
-	__m128i zeros = _mm_set1_epi16(0);
 	
 #ifdef Py_ERRORS_H
 	if (maxDX * maxDY >= (1<<15))
@@ -209,31 +201,12 @@ template<> void CrossCorrelateImageWindows<kCorrelationSAD, unsigned short>(Imag
         for (int dx = 0; dx <= maxDX; dx++)
         {
             double sum = 0;
-            __m128i sumVec = (__m128i)_mm_setzero_ps();
             for (int y = inset; y < w1Height-inset; y++)
             {
                 int x = inset;
-                for (; x <= w1Width - 8-inset; x += 8)
-				{
-					__m128i a = _mm_loadu_si128((__m128i*)window1.PixelXYAddr(x, y));
-					__m128i b = _mm_loadu_si128((__m128i*)window2.PixelXYAddr(x+dx, y+dy));
-					/*	Unpack the low/high (unsigned) shorts into ints and then do the SAD processing on ints.
-					 Note that I don't believe we can do this in one go, on 16-bit ints all the way.
-					 The _mm_madd_epi16 instruction is handy, but subtracting two 16-bit ints will
-					 overflow a 16-bit int	*/
-					__m128i oddA = _mm_unpacklo_epi16(a, zeros);		// Check this is the right byte order. I think it is...
-					__m128i oddB = _mm_unpacklo_epi16(b, zeros);
-					__m128i sad = _mm_abs_epi32(_mm_sub_epi32(oddA, oddB));
-					sumVec = _mm_add_epi32(sumVec, sad);
-					__m128i evenA = _mm_unpackhi_epi16(a, zeros);		// Check this is the right byte order. I think it is...
-					__m128i evenB = _mm_unpackhi_epi16(b, zeros);
-					sad = _mm_abs_epi32(_mm_sub_epi32(evenA, evenB));
-					sumVec = _mm_add_epi32(sumVec, sad);
-				}
 				for (; x < w1Width-inset; x++)
                     sum += abs(window1.PixelXY(x, y) - window2.PixelXY(x+dx, y+dy));
             }
-            sum += SumOver32BitInts(&sumVec);
             result.SetXY(dx, dy, sum);
         }
 #elif 0
@@ -252,25 +225,7 @@ template<> void CrossCorrelateImageWindows<kCorrelationSAD, unsigned short>(Imag
 			for (int dx = 0; dx <= maxDX; dx++)
             {
 				double sum = 0;
-				__m128i sumVec = (__m128i)_mm_setzero_ps();
                 int x = 0;
-                for (; x <= w1Width - 8; x += 8)
-				{
-					__m128i a = _mm_loadu_si128((__m128i*)window1.PixelXYAddr(x, y));
-					__m128i b = _mm_loadu_si128((__m128i*)window2.PixelXYAddr(x+dx, y+dy));
-					/*	Unpack the low/high (unsigned) shorts into ints and then do the SAD processing on ints.
-					 Note that I don't believe we can do this in one go, on 16-bit ints all the way.
-					 The _mm_madd_epi16 instruction is handy, but subtracting two 16-bit ints will
-					 overflow a 16-bit int	*/
-					__m128i oddA = _mm_unpacklo_epi16(a, zeros);		// Check this is the right byte order. I think it is...
-					__m128i oddB = _mm_unpacklo_epi16(b, zeros);
-					__m128i sad = _mm_abs_epi32(_mm_sub_epi32(oddA, oddB));
-					sumVec = _mm_add_epi32(sumVec, sad);
-					__m128i evenA = _mm_unpackhi_epi16(a, zeros);		// Check this is the right byte order. I think it is...
-					__m128i evenB = _mm_unpackhi_epi16(b, zeros);
-					sad = _mm_abs_epi32(_mm_sub_epi32(evenA, evenB));
-					sumVec = _mm_add_epi32(sumVec, sad);
-				}
 				for (; x < w1Width; x++)
                     sum += abs(window1[y][x] - window2[y+dy][x+dx]);
 				sum += SumOver32BitInts(&sumVec);
@@ -287,17 +242,14 @@ void Check16BitData(ImageWindow<int> &window1)
     int w1Width = window1.width;
     int w1Height = window1.height;
 	
-	__m128i orVec = (__m128i)_mm_setzero_ps();
 	int orRest = 0;
 	for (int y = 0; y < w1Height; y++)
 	{
 		int x = 0;
-		for (; x <= w1Width - 4; x += 4)
-			orVec = _mm_or_si128(orVec, _mm_loadu_si128((__m128i*)window1.PixelXYAddr(x, y)));
 		for (; x < w1Width; x++)
 			orRest |= window1.PixelXY(x, y);
 	}
-	int result = orRest | OrOver32BitInts(&orVec);
+	int result = orRest;
 #ifdef Py_ERRORS_H
 	if (result & 0xFFFF0000)
         PyErr_Format(PyErr_NewException((char*)"exceptions.TypeError", NULL, NULL), "ERROR - you passed in values greater than 2^16 - 1 to the fast SAD code!");
@@ -331,16 +283,12 @@ template<> void CrossCorrelateImageWindows<kCorrelationSAD, int>(ImageWindow<int
         for (int dx = 0; dx <= maxDX; dx++)
         {
             double sum = 0;
-            __m128i sumVec = (__m128i)_mm_setzero_ps();
             for (int y = 0; y < w1Height; y++)
             {
                 int x = 0;
-                for (; x <= w1Width - 4; x += 4)
-                    sumVec = _mm_add_epi32(sumVec, _mm_abs_epi32(_mm_sub_epi32(_mm_loadu_si128((__m128i*)window1.PixelXYAddr(x, y)), _mm_loadu_si128((__m128i*)window2.PixelXYAddr(x+dx, y+dy)))));
                 for (; x < w1Width; x++)
                     sum += abs(window1.PixelXY(x, y) - window2.PixelXY(x+dx, y+dy));
             }
-            sum += SumOver32BitInts(&sumVec);
             result.SetXY(dx, dy, sum);
         }
 }
