@@ -150,26 +150,61 @@ template<int correlationType, class TYPE> void CrossCorrelateImageWindows(ImageW
         }
 }
 
+#include <arm_neon.h>
 template<> void CrossCorrelateImageWindows<kCorrelationSAD, unsigned char>(ImageWindow<unsigned char> &window1, ImageWindow<unsigned char> &window2, ImageWindow<double> &result)
 {
-    // Specialized version for SAD with 8-bit data
-    // For every possible shift of 'a' relative to 'b', calculate the SAD
-    int w1Width = window1.width;
-    int w1Height = window1.height;
-	int maxDX = window2.width - window1.width;
-	int maxDY = window2.height - window1.height;
-    for (int dy = 0; dy <= maxDY; dy++)
-        for (int dx = 0; dx <= maxDX; dx++)
+  // Specialized version for SAD with 8-bit data
+  // For every possible shift of 'a' relative to 'b', calculate the SAD
+  int w1Width = window1.width;
+  int w1Height = window1.height;
+  int maxDX = window2.width - window1.width;
+  int maxDY = window2.height - window1.height;
+  for (int dy = 0; dy <= maxDY; dy++)
+    for (int dx = 0; dx <= maxDX; dx++)
+    {
+      double sum = 0;
+      uint32x4_t sumVec = vmovq_n_u32(0);
+      for (int y = 0; y < w1Height; y++)
+      {
+        uint16x8_t rowSumVec = vmovq_n_u16(0);
+        int x = 0;
+#if 0
+        for (; x <= w1Width - 8; x += 8)
         {
-            double sum = 0;
-            for (int y = 0; y < w1Height; y++)
-            {
-                int x = 0;
-                for (; x < w1Width; x++)
-                    sum += abs(window1.PixelXY(x, y) - window2.PixelXY(x+dx, y+dy));
-            }
-            result.SetXY(dx, dy, sum);
+          uint8x8_t a = vld1_u8((uint8_t*)window1.PixelXYAddr(x, y));
+          uint8x8_t b = vld1_u8((uint8_t*)window2.PixelXYAddr(x+dx, y+dy));
+          // Calculate the sum of absolute differences, accumulating in eight 16-bit vector elements
+          rowSumVec = vabal_u8(rowSumVec, a, b);
         }
+#else
+        // Alternative strategy which might be better for pipelining (and parallelism)
+        for (; x <= w1Width - 16; x += 16)
+        {
+          uint8x16_t a = vld1q_u8((uint8_t*)window1.PixelXYAddr(x, y));
+          uint8x16_t b = vld1q_u8((uint8_t*)window2.PixelXYAddr(x+dx, y+dy));
+          // Calculate the sum of absolute differences
+          uint8x16_t sad = vabdq_u8(a, b);
+          // Sum pairs into 16-bit vector elements, and accumulate into rowSumVec
+          rowSumVec = vaddq_u16(rowSumVec, vpaddlq_u8(sad));
+        }
+#endif
+        for (; x < w1Width; x++)
+          sum += abs(window1.PixelXY(x, y) - window2.PixelXY(x+dx, y+dy));
+        /* We now have 8 uint16 elements in rowSumVec, which together form our SAD for this row.
+          However, we cannot sustain accumulation in 16-bit elements for the whole image (we will overflow).
+          After each row we need to transfer into a larger-capacity sum.
+          It would be nice to use vaddlvq, which sums across the vector, but sadly that is only available on ARM64.
+          However, vpaddlq_u16 is a nifty instruction that does a pairwise add, returning 4 uint32 elements.
+          That's great, and we can just accumulate that in sumVec.  */
+        sumVec = vaddq_u32(sumVec, vpaddlq_u16(rowSumVec));
+      }
+      // We have now done all our summing, but need to bring together all the partial sums in sumVec.
+      // n.b. at this point we could use vpaddq_u32 to concentrate the sum into the first two elements of sumVec,
+      // but we are only doing this once, outside the xy loop, so we can just sum the scalar elements longhand.
+      sum += (sumVec[0] + sumVec[1] + sumVec[2] + sumVec[3]);
+      // Store the result in the correlation matrix
+      result.SetXY(dx, dy, sum);
+    }
 }
 
 template<> void CrossCorrelateImageWindows<kCorrelationSAD, unsigned short>(ImageWindow<unsigned short> &window1, ImageWindow<unsigned short> &window2, ImageWindow<double> &result)
