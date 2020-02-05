@@ -4,6 +4,11 @@
 #define __JPYTHONARRAY_H__ 1
 
 #define NEW_CODE 1
+#ifndef JPA_BOUNDS_CHECK
+    // This should normally be set to 0, but (at the cost of a performance hit) it can be enabled
+    // to perform bounds checking when accessing python arrays through my JPythonArray wrapper.
+    #define JPA_BOUNDS_CHECK 0
+#endif
 
 #include <Python.h>
 #include "numpy/arrayobject.h"
@@ -11,8 +16,14 @@
 #include <stdlib.h>
 #include "jAssert.h"
 
-// This should be specialized for all required types in JPythonArray.cpp
+// This should be specialized, in JPythonArray.cpp, for all required types
 template<class Type> int ArrayType(void);
+
+/*  Rather unsatisfactorily, I have not come up with a good way of 'throwing' a python error from code other
+    than the function that was directly called from python (which can 'return NULL').
+    For now I just have this flag. If we are not happy with something we are passed, we set up a python error
+    and set this flag. It is then up to the caller to return NULL (at which point the python error will be presented to the user)   */
+extern bool gPythonArraysOK;
 
 template<class Type> class JPythonArray
 {
@@ -29,8 +40,6 @@ template<class Type> class JPythonArray
 	Type			*data;
 //	PyArrayObject	*obj;		// I prefer not to store the object, because I think that's easier when dealing with sub-arrays.
 								// It may be helpful to refcount it, though
-	PyArrayObject	*mutableObj;		// I prefer not to store the object, because I think that's easier when dealing with sub-arrays.
-										// It may be helpful to refcount it, though
 	
 	void AllocDims(int inNum, npy_intp *inDims, npy_intp *inStrides, int divideFactor = 1)
 	{
@@ -48,26 +57,29 @@ template<class Type> class JPythonArray
 			strides[i] = inStrides[i] / divideFactor;
 	}
 
-	static void CheckArrayType(PyArrayObject *obj, int expectedDims = 0)
+	static bool CheckArrayType(PyArrayObject *obj, int expectedDims = 0)
 	{
 		if (PyArray_TYPE(obj) != ArrayType())
 		{
 			// If this error is hit then the wrong array type was passed to the JPythonArray class
 			PyErr_Format(PyErr_NewException((char*)"exceptions.TypeError", NULL, NULL), "Array type %d didn't match expected type %d", PyArray_TYPE(obj), ArrayType());
+            return false;
 		}
 		int dimCount = PyArray_NDIM(obj);
 		if ((expectedDims != 0) && (dimCount != expectedDims))
 		{
 			// If this error is hit then an array with the wrong dimensions was passed to the JPythonArray class
-			PyErr_Format(PyErr_NewException((char*)"exceptions.TypeError", NULL, NULL), "Array had the wrong number of dimensions (got %d, expected %d)\n", dimCount, expectedDims);
+			PyErr_Format(PyErr_NewException((char*)"exceptions.TypeError", NULL, NULL), "Array type check failed: array had the wrong number of dimensions (got %d, expected %d)\n", dimCount, expectedDims);
+            return false;
 		}
+        return true;
 	}	
 
   public:
 	
 	void Construct(PyArrayObject *obj, int expectedDims = 0)
 	{
-		CheckArrayType(obj, expectedDims);
+		gPythonArraysOK &= CheckArrayType(obj, expectedDims);
 		AllocDims(PyArray_NDIM(obj), PyArray_DIMS(obj), PyArray_STRIDES(obj), sizeof(Type));
 		data = (Type *)PyArray_DATA(obj);
 	}
@@ -187,6 +199,8 @@ template<class Type> class JPythonArray
 	int NDims(void) const { return numDims; }
 	npy_intp *Dims(void) { return dims; }		// This should be const, and return a const array, but PyArray_SimpleNew takes a non-const parameter for some reason
 	npy_intp *Strides(void) { return strides; }	// This should be const, and return a const array, but PyArray_SimpleNew takes a non-const parameter for some reason
+    int Dims(int n) const { return dims[n]; }
+    int Strides(int n) const { return strides[n]; }
 	Type *Data(void) const { return data; }
 	static int ArrayType(void) { return ::ArrayType<Type>(); }
 };
@@ -201,9 +215,14 @@ template<class Type> class JPythonArray1D : public JPythonArray<Type>
 	Type &operator[](int i)		// Note we return a reference here, so that this can be used as an lvalue, e.g. my1DArray[0] = 1.0, or my2DArray[0][0] = 1.0;
 	{
 //		printf("Access element %d of %d\n", i, JPythonArray<Type>::dims[0]);
-		ALWAYS_ASSERT(i < JPythonArray<Type>::dims[0]);
-		return JPythonArray<Type>::data[i * JPythonArray<Type>::strides[0]];
-	}
+#if JPA_BOUNDS_CHECK
+        // TODO: I am also assuming a stride of 1 here. I need to think about how to enforce that. Possibly a second subclass that does the checking and can be constructed from JPythonArray1D
+        ALWAYS_ASSERT(i < JPythonArray<Type>::dims[0]);
+        return JPythonArray<Type>::data[i * JPythonArray<Type>::strides[0]];
+#else
+        return JPythonArray<Type>::data[i];
+#endif
+    }
     Type *ElementPtr(int x) { return (Type *)(((const char*)JPythonArray<Type>::data) + JPythonArray<Type>::strides[0] * x); }
 	
 	Type &GetIndex_CanPromote(int i)

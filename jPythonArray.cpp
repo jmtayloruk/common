@@ -9,3 +9,5 @@ template<> int ArrayType<unsigned char>(void) { return NPY_UBYTE; }
 template<> int ArrayType<unsigned short>(void) { return NPY_USHORT; }
 template<> int ArrayType< std::complex<float> >(void) { return NPY_CFLOAT; }
 template<> int ArrayType< std::complex<double> >(void) { return NPY_CDOUBLE; }
+
+bool gPythonArraysOK = true;
