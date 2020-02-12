@@ -7,7 +7,12 @@
 #ifndef JPA_BOUNDS_CHECK
     // This should normally be set to 0, but (at the cost of a performance hit) it can be enabled
     // to perform bounds checking when accessing python arrays through my JPythonArray wrapper.
-    #define JPA_BOUNDS_CHECK 0
+    #if 1
+        #define JPA_BOUNDS_CHECK 0
+    #else
+        #warning "JPA bounds checking enabled (slow)"
+        #define JPA_BOUNDS_CHECK 1
+    #endif
 #endif
 
 #include <Python.h>
@@ -25,11 +30,40 @@ template<class Type> int ArrayType(void);
     and set this flag. It is then up to the caller to return NULL (at which point the python error will be presented to the user)   */
 extern bool gPythonArraysOK;
 
+template<class Type> struct BackingData
+{
+    Type *data;
+    size_t refcount, allocatedSize;
+    
+    BackingData(size_t inSize)
+    {
+        allocatedSize = inSize*sizeof(Type);
+        data = (Type *)malloc(allocatedSize);        // Note: I use malloc, and this means values are not initialized to zero on creation. Caller must zero explicitly if required.
+        ALWAYS_ASSERT(data != NULL);
+        refcount = 1;
+    }
+
+    void Release(void)
+    {
+        size_t oldVal = __sync_fetch_and_sub(&refcount, 1);
+        ALWAYS_ASSERT(oldVal > 0);
+        if (oldVal == 1)
+            delete this;
+    }
+
+  private:        // Callers should always call Release()
+    ~BackingData()
+    {
+        ALWAYS_ASSERT(refcount == 0);
+        free(data);
+    }
+};
+
 template<class Type> class JPythonArray
 {
   protected:
 #if NEW_CODE
-	static const int kMaxDims = 3;
+	static const int kMaxDims = 4;
 	npy_intp		dims[kMaxDims];
 	npy_intp		strides[kMaxDims];
 #else
@@ -38,6 +72,7 @@ template<class Type> class JPythonArray
 #endif
 	int				numDims;
 	Type			*data;
+    BackingData<Type>     *backingData;    // Only non-NULL if we allocated the data ourselves
 //	PyArrayObject	*obj;		// I prefer not to store the object, because I think that's easier when dealing with sub-arrays.
 								// It may be helpful to refcount it, though
 	
@@ -53,6 +88,7 @@ template<class Type> class JPythonArray
 		memcpy(dims, inDims, sizeof(npy_intp[numDims]));
 		strides = new npy_intp[numDims];
 #endif
+        ALWAYS_ASSERT(inStrides != NULL);
 		for (int i = 0; i < numDims; i++)
 			strides[i] = inStrides[i] / divideFactor;
 	}
@@ -62,7 +98,9 @@ template<class Type> class JPythonArray
 		if (PyArray_TYPE(obj) != ArrayType())
 		{
 			// If this error is hit then the wrong array type was passed to the JPythonArray class
+            // Note that array enums can be checked at anaconda/lib/python3.5/site-packages/numpy/core/include/numpy/ndarraytypes.h
 			PyErr_Format(PyErr_NewException((char*)"exceptions.TypeError", NULL, NULL), "Array type %d didn't match expected type %d", PyArray_TYPE(obj), ArrayType());
+            printf("Array type %d didn't match expected type %d\n", PyArray_TYPE(obj), ArrayType());
             return false;
 		}
 		int dimCount = PyArray_NDIM(obj);
@@ -70,6 +108,7 @@ template<class Type> class JPythonArray
 		{
 			// If this error is hit then an array with the wrong dimensions was passed to the JPythonArray class
 			PyErr_Format(PyErr_NewException((char*)"exceptions.TypeError", NULL, NULL), "Array type check failed: array had the wrong number of dimensions (got %d, expected %d)\n", dimCount, expectedDims);
+            printf("Array type check failed: array had the wrong number of dimensions (got %d, expected %d)\n", dimCount, expectedDims);
             return false;
 		}
         return true;
@@ -81,6 +120,7 @@ template<class Type> class JPythonArray
 	{
 		gPythonArraysOK &= CheckArrayType(obj, expectedDims);
 		AllocDims(PyArray_NDIM(obj), PyArray_DIMS(obj), PyArray_STRIDES(obj), sizeof(Type));
+        backingData = NULL;
 		data = (Type *)PyArray_DATA(obj);
 	}
 	
@@ -102,12 +142,69 @@ template<class Type> class JPythonArray
 	
 	JPythonArray(Type *inData, int inNum, npy_intp *inDims, npy_intp *inStrides)
 	{
-		AllocDims(inNum, inDims, inStrides);
-		data = inData;
+        if (inData != NULL)
+        {
+            // We have been provided with a data buffer
+            AllocDims(inNum, inDims, inStrides);
+            backingData = NULL;
+            data = inData;
+        }
+        else
+        {
+            // Caller expects us to allocate and manage a data buffer
+            npy_intp tempStrides[inNum];
+            if (inStrides == NULL)
+            {
+                // Caller expects us to choose suitable strides. We will just make it contiguous.
+                int s = 1;
+                for (int n = inNum - 1; n >= 0; n--)
+                {
+                    tempStrides[n] = s;
+                    s *= inDims[n];
+                }
+                inStrides = tempStrides;
+            }
+            
+            npy_intp largestStride = 0;
+            size_t s = 0;
+            for (int n = 0; n < inNum; n++)
+            {
+                if (inStrides[n] > largestStride)
+                {
+                    largestStride = inStrides[n];
+                    s = inStrides[n] * inDims[n];
+                }
+            }
+            AllocDims(inNum, inDims, inStrides);
+            backingData = new BackingData<Type>(s);
+            data = backingData->data;
+        }
 	}
+    
+    JPythonArray(const JPythonArray &copy)
+    {
+        backingData = NULL;
+        operator=(copy);
+    }
+    
+    JPythonArray &operator =(const JPythonArray &copy)
+    {
+        memcpy(dims, copy.dims, sizeof(dims));
+        memcpy(strides, copy.strides, sizeof(strides));
+        numDims = copy.numDims;
+        data = copy.data;
+        if (backingData != NULL)
+            backingData->Release();
+        backingData = copy.backingData;
+        if (backingData != NULL)
+            __sync_fetch_and_add(&backingData->refcount, 1);
+        return *this;
+    }
 	
 	virtual ~JPythonArray()
 	{
+        if (backingData != NULL)
+            backingData->Release();
 #if NEW_CODE
 #else
 		delete[] dims;
@@ -127,7 +224,7 @@ template<class Type> class JPythonArray
 			for (i = 0; i < numDims; i++)
 				offset += strides[i] * indices[i];
 			data[offset] = 0;
-			for (i = numDims; i >= 0; i--)
+			for (i = numDims-1; i >= 0; i--)
 			{
 				indices[i]++;
 				if (indices[i] == dims[i])
@@ -137,11 +234,6 @@ template<class Type> class JPythonArray
 			}
 		}
 		while (i != -1);
-		
-/*		long numElements = 1;
-		for (int i = 0; i < numDims; i++)
-			numElements *= dims[i];
-		memset(data, 0, sizeof(Type[numElements]));*/
 	}
 
 	npy_intp NumElements(void) const
@@ -152,6 +244,11 @@ template<class Type> class JPythonArray
 		return count;
 	}
 	
+    bool FinalDimensionUnitStride(void) const
+    {
+        return (strides[numDims-1] == 1);
+    }
+    
 	bool Contiguous(void) const
 	{
 		npy_intp expected = 1;
@@ -199,8 +296,8 @@ template<class Type> class JPythonArray
 	int NDims(void) const { return numDims; }
 	npy_intp *Dims(void) { return dims; }		// This should be const, and return a const array, but PyArray_SimpleNew takes a non-const parameter for some reason
 	npy_intp *Strides(void) { return strides; }	// This should be const, and return a const array, but PyArray_SimpleNew takes a non-const parameter for some reason
-    int Dims(int n) const { return dims[n]; }
-    int Strides(int n) const { return strides[n]; }
+    int Dims(int n) const { return (int)dims[n]; }
+    int Strides(int n) const { return (int)strides[n]; }
 	Type *Data(void) const { return data; }
 	static int ArrayType(void) { return ::ArrayType<Type>(); }
 };
@@ -216,10 +313,10 @@ template<class Type> class JPythonArray1D : public JPythonArray<Type>
 	{
 //		printf("Access element %d of %d\n", i, JPythonArray<Type>::dims[0]);
 #if JPA_BOUNDS_CHECK
-        // TODO: I am also assuming a stride of 1 here. I need to think about how to enforce that. Possibly a second subclass that does the checking and can be constructed from JPythonArray1D
         ALWAYS_ASSERT(i < JPythonArray<Type>::dims[0]);
         return JPythonArray<Type>::data[i * JPythonArray<Type>::strides[0]];
 #else
+        // TODO: I am also assuming a stride of 1 here. I need to think about how to enforce that. Possibly a second subclass that does the checking and can be constructed from JPythonArray1D
         return JPythonArray<Type>::data[i];
 #endif
     }
@@ -242,10 +339,13 @@ template<class Type> class JPythonArray2D : public JPythonArray<Type>
 	JPythonArray2D(PyArrayObject *init) : JPythonArray<Type>(init, 2) { }
 	JPythonArray2D(PyObject *init) : JPythonArray<Type>(init, 2) { }
 	JPythonArray2D(Type *inData, npy_intp *inDims, npy_intp *inStrides) : JPythonArray<Type>(inData, 2, inDims, inStrides) { }
+    JPythonArray2D(npy_intp *inDims) : JPythonArray<Type>(NULL, 2, inDims, NULL) { }
 
 	JPythonArray1D<Type> operator[](int i)
 	{
-		// Could check that i is in range (check against dims[0])
+#if JPA_BOUNDS_CHECK
+        ALWAYS_ASSERT(i < JPythonArray<Type>::dims[0]);
+#endif
 		return JPythonArray1D<Type>(JPythonArray<Type>::data + JPythonArray<Type>::strides[0] * i, JPythonArray<Type>::dims + 1, JPythonArray<Type>::strides + 1);
 	}
     Type *ElementPtr(int y, int x) { return (Type *)(((const char*)JPythonArray<Type>::data) + JPythonArray<Type>::strides[1] * y + JPythonArray<Type>::strides[0] * x); }
@@ -257,12 +357,31 @@ template<class Type> class JPythonArray3D : public JPythonArray<Type>
 	JPythonArray3D(PyArrayObject *init) : JPythonArray<Type>(init, 3) { }
 	JPythonArray3D(PyObject *init) : JPythonArray<Type>(init, 3) { }
     JPythonArray3D(Type *inData, npy_intp *inDims, npy_intp *inStrides) : JPythonArray<Type>(inData, 3, inDims, inStrides) { }
+    JPythonArray3D(npy_intp *inDims) : JPythonArray<Type>(NULL, 3, inDims, NULL) { }
 
 	JPythonArray2D<Type> operator[](int i)
 	{
-		// Could check that i is in range (check against dims[0])
+#if JPA_BOUNDS_CHECK
+        ALWAYS_ASSERT(i < JPythonArray<Type>::dims[0]);
+#endif
 		return JPythonArray2D<Type>(JPythonArray<Type>::data + JPythonArray<Type>::strides[0] * i, JPythonArray<Type>::dims + 1, JPythonArray<Type>::strides + 1);
 	}
+};
+
+template<class Type> class JPythonArray4D : public JPythonArray<Type>
+{
+public:
+    JPythonArray4D(PyArrayObject *init) : JPythonArray<Type>(init, 4) { }
+    JPythonArray4D(PyObject *init) : JPythonArray<Type>(init, 4) { }
+    JPythonArray4D(Type *inData, npy_intp *inDims, npy_intp *inStrides) : JPythonArray<Type>(inData, 4, inDims, inStrides) { }
+    
+    JPythonArray3D<Type> operator[](int i)
+    {
+#if JPA_BOUNDS_CHECK
+        ALWAYS_ASSERT(i < JPythonArray<Type>::dims[0]);
+#endif
+        return JPythonArray3D<Type>(JPythonArray<Type>::data + JPythonArray<Type>::strides[0] * i, JPythonArray<Type>::dims + 1, JPythonArray<Type>::strides + 1);
+    }
 };
 
 template<class Type> JPythonArray2D<Type> PromoteTo2D(PyArrayObject *init)
