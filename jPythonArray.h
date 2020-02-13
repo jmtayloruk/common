@@ -216,24 +216,42 @@ template<class Type> class JPythonArray
 	{
 		// Set every element to zero (taking correct account of strides)
 		int i;
-		npy_intp indices[numDims];
-		memset(indices, 0, sizeof(indices));
-		do
-		{
-			npy_intp offset = 0;
-			for (i = 0; i < numDims; i++)
-				offset += strides[i] * indices[i];
-			data[offset] = 0;
-			for (i = numDims-1; i >= 0; i--)
-			{
-				indices[i]++;
-				if (indices[i] == dims[i])
-					indices[i] = 0;
-				else
-					break;
-			}
-		}
-		while (i != -1);
+        
+        // If things are contiguous (or if we allocated ourselves and so we know any gaps are just padding)
+        // then we can do this much faster.
+        bool isContiguous = true;
+        if (backingData == NULL)
+        {
+            for (i = 1; i < numDims; i++)
+                if (strides[i-1] != dims[i])
+                    isContiguous = false;
+        }
+        
+        if (isContiguous)
+        {
+            memset(data, 0, dims[0] * strides[0] * sizeof(Type));
+        }
+        else
+        {
+            npy_intp indices[numDims];
+            memset(indices, 0, sizeof(indices));
+            do
+            {
+                npy_intp offset = 0;
+                for (i = 0; i < numDims; i++)
+                    offset += strides[i] * indices[i];
+                data[offset] = 0;
+                for (i = numDims-1; i >= 0; i--)
+                {
+                    indices[i]++;
+                    if (indices[i] == dims[i])
+                        indices[i] = 0;
+                    else
+                        break;
+                }
+            }
+            while (i != -1);
+        }
 	}
 
 	npy_intp NumElements(void) const
