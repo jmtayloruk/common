@@ -510,6 +510,8 @@ void ReleaseNSImage(NSImage *image)
 void BrightenNSImage(NSImage *image, int factor)
 {
 	// Almost certainly obsolete code, doing a quick-and-dirty brightening operation on an NSImage
+    // WARNING: I have had problems with lockFocus changing the colorspace - better to create a graphics context with a bitmap.
+    // This is obsolete code though, so I'm going to leave it like this for now.
 	if (factor == 1)
 		return;
 		
@@ -782,7 +784,7 @@ void PrintCompleteFolderPath(NSString *basePath, int indentationLevel, int leadi
 				         samplesPerPixel:4
 				                hasAlpha:YES
 				                isPlanar:NO
-						  colorSpaceName:NSCalibratedRGBColorSpace
+						  colorSpaceName:NSCalibratedRGBColorSpace       // Note to self: see bug #250 and the question of whether I should be using this or NSDeviceRGBColorSpace.
 				             bytesPerRow:4*width
 							bitsPerPixel:0] autorelease];
 }
