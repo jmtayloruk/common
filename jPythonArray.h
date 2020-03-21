@@ -14,6 +14,8 @@
 // This should be specialized for all required types in JPythonArray.cpp
 template<class Type> int ArrayType(void);
 
+const char *StringForPythonType(int objType);
+
 template<class Type> class JPythonArray
 {
   protected:
@@ -53,7 +55,10 @@ template<class Type> class JPythonArray
 		if (PyArray_TYPE(obj) != ArrayType())
 		{
 			// If this error is hit then the wrong array type was passed to the JPythonArray class
-			PyErr_Format(PyErr_NewException((char*)"exceptions.TypeError", NULL, NULL), "Array type %d didn't match expected type %d", PyArray_TYPE(obj), ArrayType());
+            // Note that array enums can be checked at anaconda/lib/python3.5/site-packages/numpy/core/include/numpy/ndarraytypes.h
+			PyErr_Format(PyErr_NewException((char*)"exceptions.TypeError", NULL, NULL), "Array type %d (%s) didn't match expected type %d (%s)", PyArray_TYPE(obj), StringForPythonType(PyArray_TYPE(obj)), ArrayType(), StringForPythonType(ArrayType()));
+            printf("Array type %d (%s) didn't match expected type %d (%s)\n", PyArray_TYPE(obj), StringForPythonType(PyArray_TYPE(obj)), ArrayType(), StringForPythonType(ArrayType()));
+            return false;
 		}
 		int dimCount = PyArray_NDIM(obj);
 		if ((expectedDims != 0) && (dimCount != expectedDims))
