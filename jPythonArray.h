@@ -59,6 +59,8 @@ template<class Type> struct BackingData
     }
 };
 
+const char *StringForPythonType(int objType);
+
 template<class Type> class JPythonArray
 {
   protected:
@@ -99,8 +101,8 @@ template<class Type> class JPythonArray
 		{
 			// If this error is hit then the wrong array type was passed to the JPythonArray class
             // Note that array enums can be checked at anaconda/lib/python3.5/site-packages/numpy/core/include/numpy/ndarraytypes.h
-			PyErr_Format(PyErr_NewException((char*)"exceptions.TypeError", NULL, NULL), "Array type %d didn't match expected type %d", PyArray_TYPE(obj), ArrayType());
-            printf("Array type %d didn't match expected type %d\n", PyArray_TYPE(obj), ArrayType());
+			PyErr_Format(PyErr_NewException((char*)"exceptions.TypeError", NULL, NULL), "Array type %d (%s) didn't match expected type %d (%s)", PyArray_TYPE(obj), StringForPythonType(PyArray_TYPE(obj)), ArrayType(), StringForPythonType(ArrayType()));
+            printf("Array type %d (%s) didn't match expected type %d (%s)\n", PyArray_TYPE(obj), StringForPythonType(PyArray_TYPE(obj)), ArrayType(), StringForPythonType(ArrayType()));
             return false;
 		}
 		int dimCount = PyArray_NDIM(obj);
