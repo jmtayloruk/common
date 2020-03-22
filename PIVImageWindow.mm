@@ -298,7 +298,7 @@ void Check16BitData(ImageWindow<int> &window1)
 		int x = 0;
 #if HAS_VECTOR_SUPPORT
         for (; x <= w1Width - 4; x += 4)
-			orVec = vOr(orVec, ((vUInt32*)window1.PixelXYAddr(x, y))[0]);
+			orVec = vOr(orVec, vLoadUnalignedInt32(window1.PixelXYAddr(x, y)));
 #endif
         for (; x < w1Width; x++)
 			orRest |= window1.PixelXY(x, y);

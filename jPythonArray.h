@@ -50,23 +50,26 @@ template<class Type> class JPythonArray
 			strides[i] = inStrides[i] / divideFactor;
 	}
 
-	static void CheckArrayType(PyArrayObject *obj, int expectedDims = 0)
-	{
-		if (PyArray_TYPE(obj) != ArrayType())
-		{
-			// If this error is hit then the wrong array type was passed to the JPythonArray class
+    static bool CheckArrayType(PyArrayObject *obj, int expectedDims = 0)
+    {
+        if (PyArray_TYPE(obj) != ArrayType())
+        {
+            // If this error is hit then the wrong array type was passed to the JPythonArray class
             // Note that array enums can be checked at anaconda/lib/python3.5/site-packages/numpy/core/include/numpy/ndarraytypes.h
-			PyErr_Format(PyErr_NewException((char*)"exceptions.TypeError", NULL, NULL), "Array type %d (%s) didn't match expected type %d (%s)", PyArray_TYPE(obj), StringForPythonType(PyArray_TYPE(obj)), ArrayType(), StringForPythonType(ArrayType()));
+            PyErr_Format(PyErr_NewException((char*)"exceptions.TypeError", NULL, NULL), "Array type %d (%s) didn't match expected type %d (%s)", PyArray_TYPE(obj), StringForPythonType(PyArray_TYPE(obj)), ArrayType(), StringForPythonType(ArrayType()));
             printf("Array type %d (%s) didn't match expected type %d (%s)\n", PyArray_TYPE(obj), StringForPythonType(PyArray_TYPE(obj)), ArrayType(), StringForPythonType(ArrayType()));
             return false;
-		}
-		int dimCount = PyArray_NDIM(obj);
-		if ((expectedDims != 0) && (dimCount != expectedDims))
-		{
-			// If this error is hit then an array with the wrong dimensions was passed to the JPythonArray class
-			PyErr_Format(PyErr_NewException((char*)"exceptions.TypeError", NULL, NULL), "Array had the wrong number of dimensions (got %d, expected %d)\n", dimCount, expectedDims);
-		}
-	}	
+        }
+        int dimCount = PyArray_NDIM(obj);
+        if ((expectedDims != 0) && (dimCount != expectedDims))
+        {
+            // If this error is hit then an array with the wrong dimensions was passed to the JPythonArray class
+            PyErr_Format(PyErr_NewException((char*)"exceptions.TypeError", NULL, NULL), "Array type check failed: array had the wrong number of dimensions (got %d, expected %d)\n", dimCount, expectedDims);
+            printf("Array type check failed: array had the wrong number of dimensions (got %d, expected %d)\n", dimCount, expectedDims);
+            return false;
+        }
+        return true;
+    }	
 
   public:
 	
