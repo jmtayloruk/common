@@ -49,7 +49,7 @@ NSMutableDictionary *ArchivePropertiesForObject(id object, NSArray *exclude)
         if (propName && !propertyIsReadOnly(property) && ![exclude containsObject:propNameNS])
         {
             // This looks like a property we should archive
-            const char *propType = getPropertyType(property);
+//            const char *propType = getPropertyType(property);
 //            const char *propAttr = property_getAttributes(property);
             id propObj = [object valueForKey:propNameNS];
 //            printf("Archive %s, type %s, class %s\n", propName, propType, object_getClassName(propObj));
