@@ -40,6 +40,7 @@ void BaseAssertionHandler::PullDownCode(void)
 #endif
 	// Included to satisfy the compiler, which wants to see unambiguously that this function will never return
 	assert(false);
+    abort();
 }
 
 bool BaseAssertionHandler::CheckCondition(bool condition, int line, const char *function, const char *file)
