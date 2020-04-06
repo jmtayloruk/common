@@ -155,7 +155,7 @@ template<> void CrossCorrelateImageWindows<kCorrelationSAD, unsigned char>(Image
                 especially on ARM where I have not found a natural and simple set of instructions to use.
                 As a consequence, I have not been able to abstract this code using my wrappers in VectorFunctions.h,
                 and have had to actually write separate code branches for different instruction sets.   */
-#if __arm__
+#if __ARM_NEON__
             vUInt32 sumVec = vZeroInt();
             for (int y = 0; y < w1Height; y++)
             {
@@ -298,7 +298,7 @@ void Check16BitData(ImageWindow<int> &window1)
 		int x = 0;
 #if HAS_VECTOR_SUPPORT
         for (; x <= w1Width - 4; x += 4)
-			orVec = vOr(orVec, vLoadUnalignedInt32(window1.PixelXYAddr(x, y)));
+			orVec = vOr(orVec, vLoadUnalignedUInt32(window1.PixelXYAddr(x, y)));
 #endif
         for (; x < w1Width; x++)
 			orRest |= window1.PixelXY(x, y);
@@ -341,7 +341,7 @@ template<> void CrossCorrelateImageWindows<kCorrelationSAD, int>(ImageWindow<int
             for (int y = 0; y < w1Height; y++)
             {
                 int x = 0;
-#if __SSE3__ || __ARM__
+#if __SSE3__ || __ARM_NEON__
                 for (; x <= w1Width - 4; x += 4)
                     sumVec = vAdd(sumVec, vAbs(vSub(vLoadUnalignedInt32(window1.PixelXYAddr(x, y)), vLoadUnalignedInt32(window2.PixelXYAddr(x+dx, y+dy)))));
 #else

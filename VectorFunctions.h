@@ -167,15 +167,16 @@
 			return _mm_shuffle_pd(c, d, _MM_SHUFFLE2(0, 0));
 		}
 	#endif
-#elif __arm__       /* NEON instruction set for ARM processors */
+#elif __ARM_NEON__       /* NEON instruction set for ARM processors */
     // Note that ARM support here is incomplete - I am just adding functions as and when I need them
     inline vUInt32 vZeroInt(void) { return vmovq_n_u32(0); }
     /*  It seems that ARM accepts unaligned loads by default, so there is no need for special code here.
         Incidentally, it sounds like it may be possible to include "alignment specifiers" to make *aligned* loads faster,
         but I have not currently looked into that at all. */
     inline vInt32 vLoadUnalignedInt32(void *addr) { return ((vInt32*)addr)[0]; }
+    inline vUInt32 vLoadUnalignedUInt32(void *addr) { return ((vUInt32*)addr)[0]; }
 
-    inline vUInt32 vOr(vUInt32 a, vUInt32 b) { return vorq_u32(a, b); }
+    inline vUInt32 vOr(vUInt32 a, vUInt32 b) { return vorrq_u32(a, b); }
     inline vInt32 vAdd(vInt32 a, vInt32 b)	{ return vaddq_s32( a, b ); }
     inline vInt32 vSub(vInt32 a, vInt32 b)	{ return vsubq_s32( a, b ); }
     inline vInt32 vAbs(vInt32 a)            { return vabsq_s32( a ); }
@@ -297,7 +298,7 @@
 	#define vExp vexpf
 #endif
 
-#if __ARM__
+#if __ARM_NEON__
     // Direct access to vector elements is possible in C code. This may be better for the compiler than the generic code below this?
     inline uint32_t SumAcross(vUInt32 *i)
     {
