@@ -6,9 +6,10 @@
 //
 //
 
-#include "PIVImageWindow.h"
-#include "tmmintrin.h"		// SSSE3 (supplemental SSE3)
 #include <stdint.h>         // Seems to be needed on some platforms
+#include "PIVImageWindow.h"
+#include "VectorTypes.h"
+#include "VectorFunctions.h"
 
 template <class TYPE> TYPE SadFunc(TYPE a, TYPE b);
 template<> double SadFunc<double>(double a, double b) { return fabs(a - b); }
@@ -143,13 +144,62 @@ template<> void CrossCorrelateImageWindows<kCorrelationSAD, unsigned char>(Image
     // For every possible shift of 'a' relative to 'b', calculate the SAD
     int w1Width = window1.width;
     int w1Height = window1.height;
-	int maxDX = window2.width - window1.width;
-	int maxDY = window2.height - window1.height;
+    int maxDX = window2.width - window1.width;
+    int maxDY = window2.height - window1.height;
     for (int dy = 0; dy <= maxDY; dy++)
         for (int dx = 0; dx <= maxDX; dx++)
         {
             double sum = 0;
-            __m128i sumVec = (__m128i)_mm_setzero_ps();
+            
+            /*  These are the inner loops that perform the SAD calculation.
+                Fast strategies for computing the SAD are very much platform-dependent,
+                especially on ARM where I have not found a natural and simple set of instructions to use.
+                As a consequence, I have not been able to abstract this code using my wrappers in VectorFunctions.h,
+                and have had to actually write separate code branches for different instruction sets.   */
+#if __ARM_NEON__
+            vUInt32 sumVec = vZeroInt();
+            for (int y = 0; y < w1Height; y++)
+            {
+                uint16x8_t rowSumVec = vmovq_n_u16(0);
+                int x = 0;
+    #if 0
+                // Original strategy, processing 8 bytes at a time.
+                // TODO: use vget_low_u8 to be able to use vabal while looping in 16 byte chunks
+                for (; x <= w1Width - 8; x += 8)
+                {
+                    uint8x8_t a = vld1_u8((uint8_t*)window1.PixelXYAddr(x, y));
+                    uint8x8_t b = vld1_u8((uint8_t*)window2.PixelXYAddr(x+dx, y+dy));
+                    // Calculate the sum of absolute differences, accumulating in eight 16-bit vector elements
+                    rowSumVec = vabal_u8(rowSumVec, a, b);
+                }
+    #else
+                // Alternative strategy, processing 16 bytes at a time. This seems to perform better
+                for (; x <= w1Width - 16; x += 16)
+                {
+                    uint8x16_t a = vld1q_u8((uint8_t*)window1.PixelXYAddr(x, y));
+                    uint8x16_t b = vld1q_u8((uint8_t*)window2.PixelXYAddr(x+dx, y+dy));
+                    // Calculate the sum of absolute differences
+                    uint8x16_t sad = vabdq_u8(a, b);
+                    // Sum pairs into 16-bit vector elements, and accumulate into rowSumVec
+                    rowSumVec = vaddq_u16(rowSumVec, vpaddlq_u8(sad));
+                }
+    #endif
+                for (; x < w1Width; x++)
+                    sum += abs(window1.PixelXY(x, y) - window2.PixelXY(x+dx, y+dy));
+                /*  We now have 8 uint16 elements in rowSumVec, which together form our SAD for this row.
+                    However, we cannot sustain accumulation in 16-bit elements for the whole image (we will overflow).
+                    After each row we need to transfer into a larger-capacity sum.
+                    It would be nice to use vaddlvq, which sums across the vector, but sadly that is only available on ARM64.
+                    However, vpaddlq_u16 is a nifty instruction that does a pairwise add, returning 4 uint32 elements.
+                    That's great, and we can just accumulate that in sumVec.    */
+                sumVec = vaddq_u32(sumVec, vpaddlq_u16(rowSumVec));
+            }
+            // We have now done all our summing, but need to bring together all the partial sums in sumVec.
+            // n.b. at this point we could use vpaddq_u32 to concentrate the sum into the first two elements of sumVec,
+            // but we are only doing this once, outside the xy loop, so we can just sum the scalar elements longhand.
+            sum += SumAcross(&sumVec);
+#elif __SSE3__
+            __m128i sumVec = (__m128i)_mm_setzero_ps();     // Note that this will be used to hold 2x64bit long longs.
             for (int y = 0; y < w1Height; y++)
             {
                 int x = 0;
@@ -158,7 +208,17 @@ template<> void CrossCorrelateImageWindows<kCorrelationSAD, unsigned char>(Image
                 for (; x < w1Width; x++)
                     sum += abs(window1.PixelXY(x, y) - window2.PixelXY(x+dx, y+dy));
             }
-            sum += ExtractLongLongPairSum(&sumVec);
+            sum += SumAcrossLongLong(&sumVec);
+#else
+            // Fallback code for when vector instructions are not available.
+            // It is possible the compiler may auto-vectorise, although the SAD is specialised enough that I would be impressed
+            // if it spontaneously came up with an even close to optimal instruction sequence.
+    #warning "Vector instruction set unavailable - falling back to slower scalar code for uint8 SAD"
+            for (int y = 0; y < w1Height; y++)
+                for (int x = 0; x < w1Width; x++)
+                    sum += abs(window1.PixelXY(x, y) - window2.PixelXY(x+dx, y+dy));
+#endif
+            // Store the result in the correlation matrix
             result.SetXY(dx, dy, sum);
         }
 }
@@ -171,7 +231,6 @@ template<> void CrossCorrelateImageWindows<kCorrelationSAD, unsigned short>(Imag
     int w1Height = window1.height;
 	int maxDX = window2.width - window1.width;
 	int maxDY = window2.height - window1.height;
-	__m128i zeros = _mm_set1_epi16(0);
 	
 #ifdef Py_ERRORS_H
 	if (maxDX * maxDY >= (1<<15))
@@ -180,7 +239,6 @@ template<> void CrossCorrelateImageWindows<kCorrelationSAD, unsigned short>(Imag
 	ALWAYS_ASSERT(maxDX * maxDY < (1<<15));
 #endif
 	
-#if 1
     /*  There may be specific circumstances where I want to force the IWs to be smaller in size, but to still be centered
         in the same places as they would be if they were larger. Under those circumstances it is not trivial to provide
         the correct PIV settings to make that happen, and it's easier to leave the PIV settings as they are but to hack
@@ -193,10 +251,12 @@ template<> void CrossCorrelateImageWindows<kCorrelationSAD, unsigned short>(Imag
         for (int dx = 0; dx <= maxDX; dx++)
         {
             double sum = 0;
-            __m128i sumVec = (__m128i)_mm_setzero_ps();
+            vUInt32 sumVec = vZeroInt();
             for (int y = inset; y < w1Height-inset; y++)
             {
                 int x = inset;
+#if __SSE3__
+                vUInt32 zeros = vZeroInt();
                 for (; x <= w1Width - 8-inset; x += 8)
 				{
 					__m128i a = _mm_loadu_si128((__m128i*)window1.PixelXYAddr(x, y));
@@ -214,54 +274,15 @@ template<> void CrossCorrelateImageWindows<kCorrelationSAD, unsigned short>(Imag
 					sad = _mm_abs_epi32(_mm_sub_epi32(evenA, evenB));
 					sumVec = _mm_add_epi32(sumVec, sad);
 				}
-				for (; x < w1Width-inset; x++)
+#else
+    #warning "Vector instruction set unavailable - falling back to slower scalar code for uint16 SAD"
+#endif
+                for (; x < w1Width-inset; x++)
                     sum += abs(window1.PixelXY(x, y) - window2.PixelXY(x+dx, y+dy));
             }
-            sum += SumOver32BitInts(&sumVec);
+            sum += SumAcross(&sumVec);
             result.SetXY(dx, dy, sum);
         }
-#elif 0
-	/*	This variant is slower overall.
-	 However, I believe it's the loads that seem to take the time.
-	 I say that because adding a lot of extra maths doesn't seem to slow things down at all.
-	 I had hoped this would improve the cache usage, but this naive rearrangement hasn't helped.
-	 May be worth investigating performance further in future... */
-	for (int dy = 0; dy <= maxDY; dy++)
-        for (int dx = 0; dx <= maxDX; dx++)
-			result[dy][dx] = 0;
-	
-	for (int dy = 0; dy <= maxDY; dy++)
-		for (int y = 0; y < w1Height; y++)
-        {
-			for (int dx = 0; dx <= maxDX; dx++)
-            {
-				double sum = 0;
-				__m128i sumVec = (__m128i)_mm_setzero_ps();
-                int x = 0;
-                for (; x <= w1Width - 8; x += 8)
-				{
-					__m128i a = _mm_loadu_si128((__m128i*)window1.PixelXYAddr(x, y));
-					__m128i b = _mm_loadu_si128((__m128i*)window2.PixelXYAddr(x+dx, y+dy));
-					/*	Unpack the low/high (unsigned) shorts into ints and then do the SAD processing on ints.
-					 Note that I don't believe we can do this in one go, on 16-bit ints all the way.
-					 The _mm_madd_epi16 instruction is handy, but subtracting two 16-bit ints will
-					 overflow a 16-bit int	*/
-					__m128i oddA = _mm_unpacklo_epi16(a, zeros);
-					__m128i oddB = _mm_unpacklo_epi16(b, zeros);
-					__m128i sad = _mm_abs_epi32(_mm_sub_epi32(oddA, oddB));
-					sumVec = _mm_add_epi32(sumVec, sad);
-					__m128i evenA = _mm_unpackhi_epi16(a, zeros);
-					__m128i evenB = _mm_unpackhi_epi16(b, zeros);
-					sad = _mm_abs_epi32(_mm_sub_epi32(evenA, evenB));
-					sumVec = _mm_add_epi32(sumVec, sad);
-				}
-				for (; x < w1Width; x++)
-                    sum += abs(window1[y][x] - window2[y+dy][x+dx]);
-				sum += SumOver32BitInts(&sumVec);
-				result.SetXY(dx, dy, result.PixelXY(dx, dy) + sum);
-            }
-        }
-#endif
 }
 
 void Check16BitData(ImageWindow<int> &window1)
@@ -271,17 +292,19 @@ void Check16BitData(ImageWindow<int> &window1)
     int w1Width = window1.width;
     int w1Height = window1.height;
 	
-	__m128i orVec = (__m128i)_mm_setzero_ps();
+	vUInt32 orVec = vZeroInt();
 	int orRest = 0;
 	for (int y = 0; y < w1Height; y++)
 	{
 		int x = 0;
-		for (; x <= w1Width - 4; x += 4)
-			orVec = _mm_or_si128(orVec, _mm_loadu_si128((__m128i*)window1.PixelXYAddr(x, y)));
-		for (; x < w1Width; x++)
+#if HAS_VECTOR_SUPPORT
+        for (; x <= w1Width - 4; x += 4)
+			orVec = vOr(orVec, vLoadUnalignedUInt32(window1.PixelXYAddr(x, y)));
+#endif
+        for (; x < w1Width; x++)
 			orRest |= window1.PixelXY(x, y);
 	}
-	int result = orRest | OrOver32BitInts(&orVec);
+	int result = orRest | OrAcross(&orVec);
 #ifdef Py_ERRORS_H
 	if (result & 0xFFFF0000)
         PyErr_Format(PyErr_NewException((char*)"exceptions.TypeError", NULL, NULL), "ERROR - you passed in values greater than 2^16 - 1 to the fast SAD code!");
@@ -315,16 +338,20 @@ template<> void CrossCorrelateImageWindows<kCorrelationSAD, int>(ImageWindow<int
         for (int dx = 0; dx <= maxDX; dx++)
         {
             double sum = 0;
-            __m128i sumVec = (__m128i)_mm_setzero_ps();
+            vUInt32 sumVec = vZeroInt();
             for (int y = 0; y < w1Height; y++)
             {
                 int x = 0;
+#if __SSE3__ || __ARM_NEON__
                 for (; x <= w1Width - 4; x += 4)
-                    sumVec = _mm_add_epi32(sumVec, _mm_abs_epi32(_mm_sub_epi32(_mm_loadu_si128((__m128i*)window1.PixelXYAddr(x, y)), _mm_loadu_si128((__m128i*)window2.PixelXYAddr(x+dx, y+dy)))));
+                    sumVec = vAdd(sumVec, vAbs(vSub(vLoadUnalignedInt32(window1.PixelXYAddr(x, y)), vLoadUnalignedInt32(window2.PixelXYAddr(x+dx, y+dy)))));
+#else
+    #warning "Vector instruction set unavailable - falling back to slower scalar code for int32 SAD"
+#endif
                 for (; x < w1Width; x++)
                     sum += abs(window1.PixelXY(x, y) - window2.PixelXY(x+dx, y+dy));
             }
-            sum += SumOver32BitInts(&sumVec);
+            sum += SumAcross(&sumVec);
             result.SetXY(dx, dy, sum);
         }
 }

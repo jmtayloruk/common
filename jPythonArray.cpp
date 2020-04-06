@@ -35,7 +35,7 @@ const char *pythonArrayTypeStrings[] =
 
 const char *StringForPythonType(int objType)
 {
-    if (objType < sizeof(pythonArrayTypeStrings)/sizeof(pythonArrayTypeStrings[0]))
+    if (objType < (int)(sizeof(pythonArrayTypeStrings)/sizeof(pythonArrayTypeStrings[0])))
         return pythonArrayTypeStrings[objType];
     return "<unknown>";
 }

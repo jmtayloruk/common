@@ -34,12 +34,13 @@ void BaseAssertionHandler::PullDownCode(void)
 	fflush(stderr);
 	
 	// Now trigger the crash by dereferencing a null pointer
-	// Note that the analyzer doesnt like this, so we hide it from the analyzer
+	// Note that the static analyzer doesnt like this, so we hide it if the analyzer is running.
 #ifndef __clang_analyzer__
 	*((volatile int *)0L) = 0;
 #endif
 	// Included to satisfy the compiler, which wants to see unambiguously that this function will never return
-	assert(false);
+    // because the prototype in the header is marked with  __attribute__((noreturn))
+    abort();
 }
 
 bool BaseAssertionHandler::CheckCondition(bool condition, int line, const char *function, const char *file)
