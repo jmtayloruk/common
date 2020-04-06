@@ -40,6 +40,7 @@ void BaseAssertionHandler::PullDownCode(void)
 #endif
 	// Included to satisfy the compiler, which wants to see unambiguously that this function will never return
     // because the prototype in the header is marked with  __attribute__((noreturn))
+	assert(false);
     abort();
 }
 
