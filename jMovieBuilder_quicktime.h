@@ -1,5 +1,5 @@
 /*
-	jMovieBuilder.h
+	jMovieBuilder_quicktime.h
  
 	Copyright 2010-2015 Jonathan Taylor. All rights reserved.
 

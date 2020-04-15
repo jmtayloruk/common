@@ -175,8 +175,8 @@ inline jComplexPairAsVector conj(const jComplexPairAsVector &z)
 	return z.conj();
 }
 
-inline jComplexPairAsVector re_part(const jComplexPairAsVector &x) { return jComplexPairAsVector(x.re(), vZeroD); }
-inline jComplexPairAsVector im_part(const jComplexPairAsVector &x) { return jComplexPairAsVector(x.im(), vZeroD); }
+inline jComplexPairAsVector re_part(const jComplexPairAsVector &x) { return jComplexPairAsVector(x.re(), vZeroD()); }
+inline jComplexPairAsVector im_part(const jComplexPairAsVector &x) { return jComplexPairAsVector(x.im(), vZeroD()); }
 inline double SumReal(const jComplexPairAsVector &x) { return x.SumReal(); }
 inline double SumNorm(const jComplexPairAsVector &x) { return x.SumNorm(); }
 inline jComplex SumAcross(const jComplexPairAsVector &x) { return x.SumAcross(); }

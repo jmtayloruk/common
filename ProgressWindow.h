@@ -29,7 +29,15 @@ class ProgressWindow : public BaseProgressBar
 class ProgressWindow : public TextualProgressBar
 {
   public:
-					ProgressWindow(int x, int y, const char *title, double inLength, ...) __attribute__ ((format (printf, 4, 6)));
+    ProgressWindow(int x, int y, const char *title, double inLength, ...) __attribute__ ((format (printf, 4, 6))) : TextualProgressBar("", length)
+    {
+        if (title != NULL)
+        {
+            va_list argList;
+            va_start(argList, inLength);
+            SetTitle(title, argList);
+        }
+    }
 	virtual			~ProgressWindow() { }
 };
 #endif

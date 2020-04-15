@@ -23,10 +23,11 @@
 */
 	
 
-#include "jMovieBuilder.h"
 #include "jUtils.h"
 
 #if HAS_QUICKTIME
+
+#include "jMovieBuilder.h"
 
 JMovieBuilder::JMovieBuilder(OSType inCodec, Handle outputMovieDataRef, OSType outputMovieDataRefType, const BoundsRect &inBounds, double inFrameRate, OSStatus *outErr, int inQuality)
 {
