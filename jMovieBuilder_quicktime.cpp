@@ -26,7 +26,7 @@
 #include "jMovieBuilder.h"
 #include "jUtils.h"
 
-#if HAS_OS_X_GUI
+#if HAS_QUICKTIME
 
 JMovieBuilder::JMovieBuilder(OSType inCodec, Handle outputMovieDataRef, OSType outputMovieDataRefType, const BoundsRect &inBounds, double inFrameRate, OSStatus *outErr, int inQuality)
 {

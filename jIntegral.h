@@ -411,9 +411,9 @@ template<class RETURN_TYPE, class FUNC_TYPE> RETURN_TYPE IntegrateOverSurface2(c
 	return Integrate2D<RETURN_TYPE, SurfaceIntegralOuterKernel, UnitKernel>(&functor, 0.0, PI, xIntervals, 0.0, 2.0 * PI, yIntervals);
 }
 
-template<class RETURN_TYPE, class FUNC_TYPE> RETURN_TYPE IntegrateOverHemisphericalSurface(const FUNC_TYPE *functor, int xIntervals, int yIntervals)
+template<class RETURN_TYPE, class FUNC_TYPE> RETURN_TYPE IntegrateOverHemisphericalSurface(const FUNC_TYPE &functor, int xIntervals, int yIntervals)
 {
-	return Integrate2D<RETURN_TYPE, SurfaceIntegralOuterKernel, UnitKernel>(functor, 0.0, PI / 2.0, xIntervals, 0.0, 2.0 * PI, yIntervals);
+	return Integrate2D<RETURN_TYPE, SurfaceIntegralOuterKernel, UnitKernel>(&functor, 0.0, PI / 2.0, xIntervals, 0.0, 2.0 * PI, yIntervals);
 }
 
 template<class RETURN_TYPE, class FUNC_TYPE> RETURN_TYPE IntegrateOverSphericalVolume2(const FUNC_TYPE &functor, double r_1, int xIntervals, int yIntervals, int zIntervals)

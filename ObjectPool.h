@@ -81,7 +81,7 @@ template<class OBJ> class ObjectPool
 	
 	void FinishedWithObject(OBJ *obj)
 	{
-		int entry = obj - &object[0];
+		size_t entry = obj - &object[0];
 		int oldVal = __sync_fetch_and_and(&objectsInUseMask, ~(1 << entry));
 		ALWAYS_ASSERT(oldVal & (1<<entry));		// Confirm that it was reserved beforehand
 //		printf("Pool %p finished with obj[%d], bitfield now %x\n", this, entry, objectsInUseMask);

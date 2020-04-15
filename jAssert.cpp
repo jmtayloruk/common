@@ -9,6 +9,7 @@
 #include "jAssert.h"
 #include "assert.h"
 #include "DebugPrintf.h"
+#include <execinfo.h>
 
 static BaseAssertionHandler defaultHandler;
 BaseAssertionHandler *assertionHandler = &defaultHandler;
@@ -18,7 +19,16 @@ void BaseAssertionHandler::AssertionFailed(int line, const char *function, const
 	// Report the error
 	// This code was moved out of assertion macro for code brevity and to make modification easier
 	DebugPrintfFatal("An assertion was failed and the program has crashed", "Assertion failed on line %d, function %s, file %s\n", line, function, file);
-	fflush(stdout);
+    
+    void* callstack[128];
+    int i, frames = backtrace(callstack, 128);
+    char** strs = backtrace_symbols(callstack, frames);
+    for (i = 0; i < frames; ++i) {
+        printf("%s\n", strs[i]);
+    }
+    free(strs);
+    
+    fflush(stdout);
 	fflush(stderr);
 	PullDownCode();
 	// Included to satisfy the compiler, which wants to see unambiguously that this function will never return

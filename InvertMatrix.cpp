@@ -152,12 +152,12 @@ void SolveWithUpperTriangularMatrixUsingLAPACK(int inSize1, int inSize2, double 
 
 void InvertUpperTriangularMatrix(gsl_matrix *matrix)
 {
-	InvertUpperTriangularMatrixUsingLAPACK(matrix->size1, matrix->data, matrix->tda);
+	InvertUpperTriangularMatrixUsingLAPACK((int)matrix->size1, matrix->data, (int)matrix->tda);
 }
 
 void SolveWithUpperTriangularMatrix(gsl_matrix *matrix, gsl_matrix *x)
 {
-	SolveWithUpperTriangularMatrixUsingLAPACK(matrix->size1, x->size2, matrix->data, matrix->tda, x->data, x->tda);
+	SolveWithUpperTriangularMatrixUsingLAPACK((int)matrix->size1, (int)x->size2, matrix->data, (int)matrix->tda, x->data, (int)x->tda);
 }
 
 #endif
