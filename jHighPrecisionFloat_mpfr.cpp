@@ -648,7 +648,7 @@ jComplexVectorR z_bessel_jl_array(const int lmax, const jComplexR &z)
 	}
 }
 
-jComplexR z_bessel_jl(const int l, const jComplexR &x)
+jComplexR z_bessel_jl(const int l, const jComplexR &x, bool ignoreUnderflow/* unused as I don't check for underflow here(!) */)
 {
 	if (imag(x) == 0)
 	{
