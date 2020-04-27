@@ -19,7 +19,7 @@ class BaseProgressBar
 	double				currentProgress;
 	double				length;
 	static int			disabled;
-	int				overrideEnabled;
+	int                 overrideEnabled;
 	JMutex				progressMutex;
 
 	double				startTime, startTimeForEstimate, lastProgressUpdateTime;
@@ -55,7 +55,7 @@ class TextualProgressBar : public BaseProgressBar
   protected:
 	static const char	*kTextProgressBarSpaces;
 	static const int	kTextProgressBarWidth;
-	int				numCharsDrawn;
+	int                 numCharsDrawn;
 	char				cachedTitle[256];
 	bool				drawnTitle;
 
@@ -65,7 +65,11 @@ class TextualProgressBar : public BaseProgressBar
 
   public:
 						TextualProgressBar(const char *title, double inLength, ...) PRINTFLIKE(2, 4);
-	virtual				~TextualProgressBar() { if (Enabled()) printf("\n"); }
+	virtual				~TextualProgressBar()
+                        {
+                            if (Enabled())
+                                printf("   Took %.2lf\n", GetTime()-startTime);
+                        }
 	virtual void		OverrideEnable(void);
 };
 
