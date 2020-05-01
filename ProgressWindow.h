@@ -22,14 +22,14 @@ class ProgressWindow : public BaseProgressBar
 	virtual void	InternalUpdateProgress(double newProgress);
 
   public:
-					ProgressWindow(int x, int y, const char *title, double inLength, ...) __attribute__ ((format (printf, 4, 6)));
+					ProgressWindow(int x, int y, const char *title, double inLength, ...) __attribute__ ((format (__printf__, 4, 6)));
 	virtual			~ProgressWindow();
 };
 #else
 class ProgressWindow : public TextualProgressBar
 {
   public:
-    ProgressWindow(int x, int y, const char *title, double inLength, ...) __attribute__ ((format (printf, 4, 6))) : TextualProgressBar("", length)
+    ProgressWindow(int x, int y, const char *title, double inLength, ...) __attribute__ ((format (__printf__, 4, 6))) : TextualProgressBar("", length)
     {
         if (title != NULL)
         {
