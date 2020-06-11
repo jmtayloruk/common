@@ -42,6 +42,7 @@ class JMutex
 			JMutex();
 			~JMutex();
 	void	Lock(int line);
+    bool    TryLock(int line);
 	void	Unlock(int line);
 	int		BlockWaitingForSignal(pthread_cond_t *cond, int line, bool mayBeAges = false);
 	void	DumpHistory(int maxItems);

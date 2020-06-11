@@ -18,22 +18,11 @@
 #include <sys/time.h>
 #include <sys/errno.h>
 
-/*	I am pretty sure the intention of the two-stage lock compile-time option was to offer
-	improved performance under certain circumstances, apparently when more concurrent threads are present.
-	Looking at it now, some years later, I am not honestly sure why this was intended to be better!
-	Googling "two stage lock" hasn't particularly helped. I will leave the code in, but disabled
-	(which is how I found it when writing this comment in 2015)	*/
-#define TWO_STAGE_LOCK 0
-
 JMutex::JMutex()
 {
 	lockCount = 0;
 	int result = pthread_mutex_init(&mutex, NULL);
 	ALWAYS_ASSERT(result == 0);
-#if TWO_STAGE_LOCK
-	result = pthread_mutex_init(&mutex2, NULL);
-	ALWAYS_ASSERT(result == 0);
-#endif
 #if MUTEX_TIMESTAMPS
 	wrapped = false;
 	historyPos = 0;
@@ -46,10 +35,6 @@ JMutex::~JMutex()
 	ALWAYS_ASSERT(lockCount == 0);
 	int result = pthread_mutex_destroy(&mutex);
 	ALWAYS_ASSERT_NOERR(result);
-#if TWO_STAGE_LOCK
-	result = pthread_mutex_destroy(&mutex2);
-	ALWAYS_ASSERT_NOERR(result);
-#endif
 }
 
 void JMutex::Lock(int line)
@@ -59,24 +44,12 @@ void JMutex::Lock(int line)
 #if MUTEX_TIMESTAMPS
 	int tryResult = 0;
 #endif
-#if TWO_STAGE_LOCK
-	int res2 = -99;
-#endif
 
 #if MUTEX_TIMESTAMPS
 	double t1;
 	t1 = GetTime();
-  #if TWO_STAGE_LOCK
-	tryResult = res2 = pthread_mutex_trylock(&mutex2);
-  #endif
 #endif
 
-#if TWO_STAGE_LOCK
-	if (res2)
-		res2 = pthread_mutex_lock(&mutex2);
-	ALWAYS_ASSERT(res2 == 0);
-#endif
-	
 #if MUTEX_TIMESTAMPS
 	result = pthread_mutex_trylock(&mutex);
 	if (!tryResult)
@@ -88,11 +61,6 @@ void JMutex::Lock(int line)
 	result = pthread_mutex_lock(&mutex);
 #endif
 	ALWAYS_ASSERT(result == 0);
-
-#if TWO_STAGE_LOCK
-	res2 = pthread_mutex_unlock(&mutex2);
-	ALWAYS_ASSERT(res2 == 0);
-#endif
 
 	if (lockCount != 0)
 		printf("lock count %d\n", lockCount);
@@ -113,6 +81,45 @@ void JMutex::Lock(int line)
 	}
 #endif
 //	printf("locked on line %ld\n", line);
+}
+
+bool JMutex::TryLock(int line)
+{
+    //	printf("trying lock on line %ld\n", line);
+    int result = -99;
+    
+#if MUTEX_TIMESTAMPS
+    double t1;
+    t1 = GetTime();
+#endif
+    
+    result = pthread_mutex_trylock(&mutex);
+    
+    if (result == 0)
+    {
+        if (lockCount != 0)
+            printf("lock count %d\n", lockCount);
+        ALWAYS_ASSERT(lockCount == 0);
+        lockCount++;
+        
+#if MUTEX_TIMESTAMPS
+        mutexTime[historyPos] = GetTime();
+        mutexBlockTime[historyPos] = t1;
+        historyTryResult[historyPos] = tryResult;
+        got[historyPos] = true;
+        historyLine[historyPos] = line;
+        historyPos++;
+        if (historyPos == kMutexHistorySize)
+        {
+            historyPos = 0;
+            wrapped = true;
+        }
+#endif
+        //	printf("locked on line %ld\n", line);
+        return true;
+    }
+    else
+        return false;
 }
 
 void JMutex::Unlock(int line)
