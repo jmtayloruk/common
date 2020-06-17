@@ -367,6 +367,23 @@ LocalGetMutex::LocalGetMutex(JMutex *inMutex)
 	}
 }
 
+LocalGetMutex::LocalGetMutex(JMutex *inMutex, long *outAcquireTime_us)
+{
+    // Alternative constructor that reports how much time it took to acquire the mutex
+    mutex = inMutex;
+    // We support inMutex being NULL, since this makes it easier to use this class in
+    // a case where we will sometimes want to acquire a mutex but sometimes not care.
+    if (mutex != NULL)
+    {
+        double t1 = GetTime();
+        mutex->Lock(-1);
+        double t2 = GetTime();
+        long elapsedMicroseconds = long((t2-t1)*1e6);
+        __sync_fetch_and_add(outAcquireTime_us, elapsedMicroseconds);
+        locked = true;
+    }
+}
+
 LocalGetMutex::~LocalGetMutex()
 {
 	if ((mutex != NULL) && (locked))

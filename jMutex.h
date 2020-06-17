@@ -41,6 +41,12 @@ class JMutex
   public:
 			JMutex();
 			~JMutex();
+
+    // We are absolutely not set up to tolerate copying of JMutex objects!
+    // These lines make that explicitly clear (using C++07 syntax)
+    JMutex(JMutex &a) =delete;
+    JMutex& operator=(JMutex &a) = delete;
+    
 	void	Lock(int line);
     bool    TryLock(int line);
 	void	Unlock(int line);
@@ -70,6 +76,7 @@ class LocalGetMutex
 	bool	locked;
   public:
 			LocalGetMutex(JMutex *inMutex);
+            LocalGetMutex(JMutex *inMutex, long *outAcquireTime_us);
 			~LocalGetMutex();
 	void	Unlock(int line);
 	void	Lock(int line);
