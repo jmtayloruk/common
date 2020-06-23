@@ -12,6 +12,7 @@
 #ifndef __VECTOR_FUNCTIONS_H__
 #define __VECTOR_FUNCTIONS_H__
 
+#include <cstdint>
 #include "VectorTypes.h"
 
 #if HAS_SSE     /* SSE instruction set for Intel processors */
