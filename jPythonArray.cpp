@@ -39,5 +39,3 @@ const char *StringForPythonType(int objType)
         return pythonArrayTypeStrings[objType];
     return "<unknown>";
 }
-
-bool gPythonArraysOK = true;

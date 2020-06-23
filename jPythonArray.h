@@ -24,12 +24,6 @@
 // This should be specialized, in JPythonArray.cpp, for all required types
 template<class Type> int ArrayType(void);
 
-/*  Rather unsatisfactorily, I have not come up with a good way of 'throwing' a python error from code other
-    than the function that was directly called from python (which can 'return NULL').
-    For now I just have this flag. If we are not happy with something we are passed, we set up a python error
-    and set this flag. It is then up to the caller to return NULL (at which point the python error will be presented to the user)   */
-extern bool gPythonArraysOK;
-
 template<class Type> struct BackingData
 {
     Type *data;
@@ -111,7 +105,7 @@ template<class Type> class JPythonArray
             // Note that array enums can be checked at anaconda/lib/python3.5/site-packages/numpy/core/include/numpy/ndarraytypes.h
             PyErr_Format(PyErr_NewException((char*)"exceptions.TypeError", NULL, NULL), "Array type %d (%s) didn't match expected type %d (%s)", PyArray_TYPE(obj), StringForPythonType(PyArray_TYPE(obj)), ArrayType(), StringForPythonType(ArrayType()));
             printf("Array type %d (%s) didn't match expected type %d (%s)\n", PyArray_TYPE(obj), StringForPythonType(PyArray_TYPE(obj)), ArrayType(), StringForPythonType(ArrayType()));
-            return false;
+            throw std::invalid_argument("array type incorrect");
         }
         int dimCount = PyArray_NDIM(obj);
         if ((expectedDims != 0) && (dimCount != expectedDims))
@@ -119,7 +113,7 @@ template<class Type> class JPythonArray
             // If this error is hit then an array with the wrong dimensions was passed to the JPythonArray class
             PyErr_Format(PyErr_NewException((char*)"exceptions.TypeError", NULL, NULL), "Array type check failed: array had the wrong number of dimensions (got %d, expected %d)\n", dimCount, expectedDims);
             printf("Array type check failed: array had the wrong number of dimensions (got %d, expected %d)\n", dimCount, expectedDims);
-            return false;
+            throw std::invalid_argument("array dimensions incorrect");
         }
         return true;
     }	
@@ -128,7 +122,7 @@ template<class Type> class JPythonArray
 	
 	void Construct(PyArrayObject *obj, int expectedDims = 0)
 	{
-		gPythonArraysOK &= CheckArrayType(obj, expectedDims);
+		CheckArrayType(obj, expectedDims);
 		AllocDims(PyArray_NDIM(obj), PyArray_DIMS(obj), PyArray_STRIDES(obj), sizeof(Type));
         backingData = NULL;
         data = (Type *)PyArray_DATA(obj);
