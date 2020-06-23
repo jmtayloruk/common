@@ -19,6 +19,7 @@
 #include "numpy/arrayobject.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdexcept>
 #include "jAssert.h"
 
 // This should be specialized, in JPythonArray.cpp, for all required types
