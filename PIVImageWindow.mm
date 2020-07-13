@@ -217,6 +217,18 @@ template<> void CrossCorrelateImageWindows<kCorrelationSAD, unsigned char>(Image
             for (int y = 0; y < w1Height; y++)
                 for (int x = 0; x < w1Width; x++)
                     sum += abs(window1.PixelXY(x, y) - window2.PixelXY(x+dx, y+dy));
+            
+            /* TODO: I came across this code which looks like it might well perform better than the scalar option, for pre-SSE3.
+                http://0x80.pl/notesen/2018-03-11-sse-abs-unsigned.html
+                The reasoning is that a saturated subtraction will yield zero for one of the two orderings,
+                and the correct answer for the other ordering!
+                     __m128i abs_sub_epu8(const __m128i a, const __m128i b)
+                     {
+                         const __m128i ab = _mm_subs_epu8(a, b);
+                         const __m128i ba = _mm_subs_epu8(b, a);
+                         return _mm_or_si128(ab, ba);
+                     }
+            */
 #endif
             // Store the result in the correlation matrix
             result.SetXY(dx, dy, sum);
@@ -256,6 +268,8 @@ template<> void CrossCorrelateImageWindows<kCorrelationSAD, unsigned short>(Imag
             {
                 int x = inset;
 #if __SSE3__
+                /*  TODO: see example code above (not yet implemented) that involves _mm_subs_epu8.
+                    I suspect that a 16-bit version would be faster than this code here  */
                 vUInt32 zeros = vZeroInt();
                 for (; x <= w1Width - 8-inset; x += 8)
 				{
@@ -342,9 +356,13 @@ template<> void CrossCorrelateImageWindows<kCorrelationSAD, int>(ImageWindow<int
             for (int y = 0; y < w1Height; y++)
             {
                 int x = 0;
-#if __SSE3__ || __ARM_NEON__
+#if __SSSE3__ || __ARM_NEON__
+                // I have not documented why I have used unaligned loads here, but I suspect I decided it did not involve much of a speed penalty,
+                // and possibly I did have a use-case where this was necessary...
                 for (; x <= w1Width - 4; x += 4)
                     sumVec = vAdd(sumVec, vAbs(vSub(vLoadUnalignedInt32(window1.PixelXYAddr(x, y)), vLoadUnalignedInt32(window2.PixelXYAddr(x+dx, y+dy)))));
+                /*  TODO: see example code above (not yet implemented) that involves _mm_subs_epu8.
+                    That would provide a fallback for the case where vAbs is not available. */
 #else
     #warning "Vector instruction set unavailable - falling back to slower scalar code for int32 SAD"
 #endif
