@@ -66,9 +66,11 @@
     // Strangely, the builtin expects a signed input, but the instruction definition is very clear that it operates on unsigned chars.
     // I appear to have to include a cast on a and b to make this work.
     inline vUInt64 vSad_u8_to_u64(vUInt8 a, vUInt8 b)	{ return (vUInt64)__builtin_ia32_psadbw128( (vInt8)a, (vInt8)b ); }
-    // These next two functions mirror _mm_unpacklo/hi_epi16, but with proper type safety
-    inline vUInt32 vUnpackLo(vUInt16 a, vUInt16 b) { return (vUInt32)__builtin_shufflevector((__v8hi)a, (__v8hi)b, 0, 8+0, 1, 8+1, 2, 8+2, 3, 8+3); }
-    inline vUInt32 vUnpackHi(vUInt16 a, vUInt16 b) { return (vUInt32)__builtin_shufflevector((__v8hi)a, (__v8hi)b, 4, 8+4, 5, 8+5, 6, 8+6, 7, 8+7); }
+    /*  These next two functions mirror _mm_unpacklo/hi_epi16, but with proper type safety
+        Frustratingly, those _mm_ intrinsics map to different code on different compilers, and neither seems to compile universally.
+        As a result, I just cast the inputs and call through to the _mm_ function, whatever it may be under the covers. */
+    inline vUInt32 vUnpackLo(vUInt16 a, vUInt16 b) { return (vUInt32)_mm_unpacklo_epi16((__m128i)a, (__m128i)b); }
+    inline vUInt32 vUnpackHi(vUInt16 a, vUInt16 b) { return (vUInt32)_mm_unpackhi_epi16((__m128i)a, (__m128i)b); }
 
     inline vFloat vSplatFirstValue(vFloat a) { return (vFloat)_mm_shuffle_epi32((__m128i)a, _MM_SHUFFLE(0, 0, 0, 0)); }
 	inline vFloat vSplatSecondValue(vFloat a) { return (vFloat)_mm_shuffle_epi32((__m128i)a, _MM_SHUFFLE(1, 1, 1, 1)); }
