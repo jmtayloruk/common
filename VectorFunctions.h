@@ -25,15 +25,24 @@
 		#include <xmmintrin.h>
 	#endif
 
-    inline vUInt32 vZeroInt(void) { return _mm_setzero_si128(); }
+    inline vUInt16 vZeroUInt16(void) { return (vUInt16)_mm_setzero_si128(); }
+    inline vUInt32 vZeroUInt32(void) { return (vUInt32)_mm_setzero_si128(); }
+    inline vUInt64 vZeroUInt64(void) { return (vUInt64)_mm_setzero_si128(); }
     inline vFloat vZero(void) { return _mm_setzero_ps(); }
     inline vDouble vZeroD(void) { return _mm_setzero_pd(); }
 
-    inline vInt32 vLoadUnalignedInt32(void *addr) { return _mm_loadu_si128((__m128i*)addr); }
-    inline vUInt32 vLoadUnalignedUInt32(void *addr) { return _mm_loadu_si128((__m128i*)addr); }
+    // This function can be used to guarantee that a load will succeed even if the address is unaligned.
+    // Without this, the compiler will implicitly use an aligned load when an address is dereferenced.
+    // If we cannot guarantee that the address is aligned, we must explicitly protect using this function here.
+    template<class T> T vLoadUnaligned(T *addr) { return (T)_mm_loadu_si128((__m128i*)addr); }
 
-	inline vFloat vSub( vFloat a, vFloat b )	{ return _mm_sub_ps( a, b ); }
-	inline vFloat vAdd( vFloat a, vFloat b )	{ return _mm_add_ps( a, b ); }
+    template<class T> T vAdd(T a, T b)	{ return a + b; }
+    // We can't just define vSub with a template because the signed/unsigned interpretation gets a bit complicated in the case of unsigned types
+    inline vInt8 vSub(vUInt8 a, vUInt8 b)	{ return (vInt8)(a - b); }
+    inline vInt16 vSub(vUInt16 a, vUInt16 b)	{ return (vInt16)(a - b); }
+    inline vInt32 vSub(vUInt32 a, vUInt32 b)	{ return (vInt32)(a - b); }
+    inline vFloat vSub(vFloat a, vFloat b)	{ return a - b; }
+
 	inline vFloat vMul( vFloat a, vFloat b )	{ return _mm_mul_ps( a, b ); }
 	inline vFloat vMAdd( vFloat a, vFloat b, vFloat c )	{ return vAdd( c, vMul( a, b ) ); }
 	inline vFloat vNegate( vFloat a ) { return _mm_xor_ps(a, (vFloat) { -0.0, -0.0, -0.0, -0.0 }); }
@@ -48,10 +57,18 @@
 
 	inline vFloat vXOR(vFloat a, vFloat b) { return _mm_xor_ps(a, b); }
 
-    inline vUInt32 vOr(vUInt32 a, vUInt32 b) { return _mm_or_si128(a, b); }
-    inline vInt32 vAdd(vInt32 a, vInt32 b)	{ return _mm_add_epi32( a, b ); }
-    inline vInt32 vSub(vInt32 a, vInt32 b)	{ return _mm_sub_epi32( a, b ); }
-    inline vInt32 vAbs(vInt32 a)	{ return _mm_abs_epi32( a ); }
+    inline vUInt32 vOr(vUInt32 a, vUInt32 b) { return a | b; }
+    // Note: it is somewhat a matter of preference whether the return values from the next two functions are typed as signed or unsigned.
+    // I have gone with unsigned, because I think that reflects the use of the absolute operator - but the result would also make sense
+    // if interpreted as a signed integer (it will not overflow).
+    // It surely makes sense for the input type to vAbs to be signed.
+    inline vUInt32 vAbs(vInt32 a)	{ return (vUInt32)__builtin_ia32_pabsd128( a ); }
+    // Strangely, the builtin expects a signed input, but the instruction definition is very clear that it operates on unsigned chars.
+    // I appear to have to include a cast on a and b to make this work.
+    inline vUInt64 vSad_u8_to_u64(vUInt8 a, vUInt8 b)	{ return (vUInt64)__builtin_ia32_psadbw128( (vInt8)a, (vInt8)b ); }
+    // These next two functions mirror _mm_unpacklo/hi_epi16, but with proper type safety
+    inline vUInt32 vUnpackLo(vUInt16 a, vUInt16 b) { return (vUInt32)__builtin_shufflevector((__v8hi)a, (__v8hi)b, 0, 8+0, 1, 8+1, 2, 8+2, 3, 8+3); }
+    inline vUInt32 vUnpackHi(vUInt16 a, vUInt16 b) { return (vUInt32)__builtin_shufflevector((__v8hi)a, (__v8hi)b, 4, 8+4, 5, 8+5, 6, 8+6, 7, 8+7); }
 
     inline vFloat vSplatFirstValue(vFloat a) { return (vFloat)_mm_shuffle_epi32((__m128i)a, _MM_SHUFFLE(0, 0, 0, 0)); }
 	inline vFloat vSplatSecondValue(vFloat a) { return (vFloat)_mm_shuffle_epi32((__m128i)a, _MM_SHUFFLE(1, 1, 1, 1)); }
@@ -115,15 +132,6 @@
 		}
 	#endif
 
-	inline long long SumAcrossLongLong(__m128i *i)
-	{
-		// _mm_extract_epi64 is SSE4.1 so we have to do this one by hand on most machines
-		// TODO: if I have access to any machines that implement this intrinsic, I should implement the option of doing it properly...
-		long long *l = (long long *)i;
-	//	printf("%lld %lld  %llx %llx\n", l[0], l[1], l[0], l[1]);
-		return l[0] + l[1];
-	}
-	
 	// Multiply by -i: return { a1, -a0, a3, -a2 }
 	inline vFloat vMultiplyByMinusI(vFloat a) { return _mm_xor_ps((vFloat)_mm_shuffle_epi32((__m128i)a, _MM_SHUFFLE(2, 3, 0, 1)), (vFloat) { 0.0, -0.0, 0.0, -0.0 }); }
 	
@@ -173,7 +181,7 @@
 	#endif
 #elif __ARM_NEON__       /* NEON instruction set for ARM processors */
     // Note that ARM support here is incomplete - I am just adding functions as and when I need them
-    inline vUInt32 vZeroInt(void) { return vmovq_n_u32(0); }
+    inline vUInt32 vZeroUInt32(void) { return vmovq_n_u32(0); }
     /*  It seems that ARM accepts unaligned loads by default, so there is no need for special code here.
         Incidentally, it sounds like it may be possible to include "alignment specifiers" to make *aligned* loads faster,
         but I have not currently looked into that at all. */
@@ -203,12 +211,12 @@
     #define vRSqrtEst spu_rsqrte
     #define vREst spu_re
 
-    inline vUChar vec_splat_u8(unsigned char a) { return spu_splats(a); }
-    inline vFloat vSplatFirstValue(vFloat a) { return spu_shuffle(a, a, (vUChar) { 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3 }); }
-    inline vFloat vSplatSecondValue(vFloat a) { return spu_shuffle(a, a, (vUChar) { 4, 5, 6, 7, 4, 5, 6, 7, 4, 5, 6, 7, 4, 5, 6, 7 }); }
-    inline vFloat vSplatThirdValue(vFloat a) { return spu_shuffle(a, a, (vUChar) { 8, 9, 10, 11, 8, 9, 10, 11, 8, 9, 10, 11, 8, 9, 10, 11 }); }
-    inline vFloat vSplatFourthValue(vFloat a) { return spu_shuffle(a, a, (vUChar) { 12, 13, 14, 15, 12, 13, 14, 15, 12, 13, 14, 15, 12, 13, 14, 15 }); }
-    inline int vExtractShort(vUChar source, const int i) { return spu_extract((vector unsigned short)source, i); }
+    inline vUInt8 vec_splat_u8(unsigned char a) { return spu_splats(a); }
+    inline vFloat vSplatFirstValue(vFloat a) { return spu_shuffle(a, a, (vUInt8) { 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3 }); }
+    inline vFloat vSplatSecondValue(vFloat a) { return spu_shuffle(a, a, (vUInt8) { 4, 5, 6, 7, 4, 5, 6, 7, 4, 5, 6, 7, 4, 5, 6, 7 }); }
+    inline vFloat vSplatThirdValue(vFloat a) { return spu_shuffle(a, a, (vUInt8) { 8, 9, 10, 11, 8, 9, 10, 11, 8, 9, 10, 11, 8, 9, 10, 11 }); }
+    inline vFloat vSplatFourthValue(vFloat a) { return spu_shuffle(a, a, (vUInt8) { 12, 13, 14, 15, 12, 13, 14, 15, 12, 13, 14, 15, 12, 13, 14, 15 }); }
+    inline int vExtractShort(vUInt8 source, const int i) { return spu_extract((vector unsigned short)source, i); }
 
 #elif HAS_ALTIVEC     /* Altivec vector instruction set for PowerPC RISC processors */
     #define vZero (vector float)vec_splat_u32(0)
@@ -227,7 +235,7 @@
     inline vFloat vSplatSecondValue(vFloat a) { return vec_splat(a, 1); }
     inline vFloat vSplatThirdValue(vFloat a) { return vec_splat(a, 2); }
     inline vFloat vSplatFourthValue(vFloat a) { return vec_splat(a, 3); }
-    inline int vExtractShort(vUChar source, const int i)
+    inline int vExtractShort(vUInt8 source, const int i)
     {
         VecUnion u;
         u.vc = source;
@@ -235,35 +243,35 @@
     }
 
 #else       /* Minimal support for the case where no vector instruction set is available */
-    inline vUInt32 vZeroInt(void) { vUInt32 z = {{ 0, 0, 0, 0 }}; return z; }
+    inline vUInt32 vZeroUInt32(void) { vUInt32 z = {{ 0, 0, 0, 0 }}; return z; }
 #endif
 
 
 #if __SPU__ || HAS_ALTIVEC
-    inline vFloat vNegate( vFloat a ) { return (vFloat)vXOR((vUChar)a, (vUChar) (vFloat){ -0.0, -0.0, -0.0, -0.0 }); }
-    inline vFloat vNegateImag( vFloat a ) { return (vFloat)vXOR((vUChar)a, (vUChar) (vFloat){ 0.0, -0.0, 0.0, -0.0 }); }
-    inline vFloat vNegateReal( vFloat a ) { return (vFloat)vXOR((vUChar)a, (vUChar) (vFloat){ -0.0, 0.0, -0.0, 0.0 }); }
-    inline vFloat vSplatReal(vFloat a) { return vPermute(a, a, (vUChar) { 0, 1, 2, 3, 0, 1, 2, 3, 8, 9, 10, 11, 8, 9, 10, 11 }); }
-    inline vFloat vSplatImag(vFloat a) { return vPermute(a, a, (vUChar) { 4, 5, 6, 7, 4, 5, 6, 7, 12, 13, 14, 15, 12, 13, 14, 15 }); }
+    inline vFloat vNegate( vFloat a ) { return (vFloat)vXOR((vUInt8)a, (vUInt8) (vFloat){ -0.0, -0.0, -0.0, -0.0 }); }
+    inline vFloat vNegateImag( vFloat a ) { return (vFloat)vXOR((vUInt8)a, (vUInt8) (vFloat){ 0.0, -0.0, 0.0, -0.0 }); }
+    inline vFloat vNegateReal( vFloat a ) { return (vFloat)vXOR((vUInt8)a, (vUInt8) (vFloat){ -0.0, 0.0, -0.0, 0.0 }); }
+    inline vFloat vSplatReal(vFloat a) { return vPermute(a, a, (vUInt8) { 0, 1, 2, 3, 0, 1, 2, 3, 8, 9, 10, 11, 8, 9, 10, 11 }); }
+    inline vFloat vSplatImag(vFloat a) { return vPermute(a, a, (vUInt8) { 4, 5, 6, 7, 4, 5, 6, 7, 12, 13, 14, 15, 12, 13, 14, 15 }); }
 
     // Permute to swap the pairs: return { v2, v3, v0, v1 }
-    inline vFloat vSwapHiLo(vFloat a) { return vPermute(a, a, (vUChar) { 8, 9, 10, 11, 12, 13, 14, 15, 0, 1, 2, 3, 4, 5, 6, 7 }); }
+    inline vFloat vSwapHiLo(vFloat a) { return vPermute(a, a, (vUInt8) { 8, 9, 10, 11, 12, 13, 14, 15, 0, 1, 2, 3, 4, 5, 6, 7 }); }
     // Permute to swap the real and imaginary: return { v1, v0, v3, v2 }
-    inline vFloat vSwapReIm(vFloat a) { return vPermute(a, a, (vUChar) { 4, 5, 6, 7, 0, 1, 2, 3, 12, 13, 14, 15, 8, 9, 10, 11 }); }
+    inline vFloat vSwapReIm(vFloat a) { return vPermute(a, a, (vUInt8) { 4, 5, 6, 7, 0, 1, 2, 3, 12, 13, 14, 15, 8, 9, 10, 11 }); }
 
     // Special operation used in complex multiply.
     // a should contain the same value four times over.
     // { a0, a1, a2, a3 } * { -b1, b0, -b3, b2 } + sum is returned
-    inline vFloat vCMulRearrangeAndAdd(vFloat a, vFloat sum) { return vAdd(sum, vPermute(a, vNegate(a), (vUChar) { 20, 21, 22, 23, 0, 1, 2, 3, 28, 29, 30, 31, 8, 9, 10, 11 })); }
-    inline vFloat vSpecialCMul(vFloat a, vFloat b, vFloat sum) { return vMAdd(a, vPermute(b, vNegate(b), (vUChar) { 20, 21, 22, 23, 0, 1, 2, 3, 28, 29, 30, 31, 8, 9, 10, 11 }), sum); }
-    inline vFloat vCMulRearrangeSwapAndAdd(vFloat a, vFloat sum) { return vAdd(sum, vPermute(a, vNegate(a), (vUChar) { 28, 29, 30, 31, 8, 9, 10, 11, 20, 21, 22, 23, 0, 1, 2, 3 })); }
-    inline vFloat vSpecialCMulSwapHiLoOnP2(vFloat a, vFloat b, vFloat sum) { return vMAdd(a, vPermute(b, vNegate(b), (vUChar) { 28, 29, 30, 31, 8, 9, 10, 11, 20, 21, 22, 23, 0, 1, 2, 3 }), sum); }
+    inline vFloat vCMulRearrangeAndAdd(vFloat a, vFloat sum) { return vAdd(sum, vPermute(a, vNegate(a), (vUInt8) { 20, 21, 22, 23, 0, 1, 2, 3, 28, 29, 30, 31, 8, 9, 10, 11 })); }
+    inline vFloat vSpecialCMul(vFloat a, vFloat b, vFloat sum) { return vMAdd(a, vPermute(b, vNegate(b), (vUInt8) { 20, 21, 22, 23, 0, 1, 2, 3, 28, 29, 30, 31, 8, 9, 10, 11 }), sum); }
+    inline vFloat vCMulRearrangeSwapAndAdd(vFloat a, vFloat sum) { return vAdd(sum, vPermute(a, vNegate(a), (vUInt8) { 28, 29, 30, 31, 8, 9, 10, 11, 20, 21, 22, 23, 0, 1, 2, 3 })); }
+    inline vFloat vSpecialCMulSwapHiLoOnP2(vFloat a, vFloat b, vFloat sum) { return vMAdd(a, vPermute(b, vNegate(b), (vUInt8) { 28, 29, 30, 31, 8, 9, 10, 11, 20, 21, 22, 23, 0, 1, 2, 3 }), sum); }
 
     // Multiply by -i: return { a1, -a0, a3, -a2 }
-    inline vFloat vMultiplyByMinusI(vFloat a) { return vPermute(a, vNegate(a), (vUChar) { 4, 5, 6, 7, 16, 17, 18, 19, 12, 13, 14, 15, 24, 25, 26, 27 }); }
+    inline vFloat vMultiplyByMinusI(vFloat a) { return vPermute(a, vNegate(a), (vUInt8) { 4, 5, 6, 7, 16, 17, 18, 19, 12, 13, 14, 15, 24, 25, 26, 27 }); }
 
     // Return { a0, a1, b0, b1 }
-    inline vFloat vCombineLowHalves(vFloat a, vFloat b) { return vPermute(a, b, (vUChar) { 0, 1, 2, 3, 4, 5, 6, 7, 16, 17, 18, 19, 20, 21, 22, 23 }); }
+    inline vFloat vCombineLowHalves(vFloat a, vFloat b) { return vPermute(a, b, (vUInt8) { 0, 1, 2, 3, 4, 5, 6, 7, 16, 17, 18, 19, 20, 21, 22, 23 }); }
 #endif
 
 #if HAS_SSE || HAS_ALTIVEC
@@ -315,6 +323,14 @@
         return l[0] | l[1] | l[2] | l[3];
     }
 #else
+    inline uint64_t SumAcross(vUInt64 *i)
+    {
+        // _mm_extract_epi64 is SSE4.1 so we have to do this one by hand on most machines
+        // TODO: if I have access to any machines that implement this intrinsic, I should implement the option of doing it properly...
+        uint64_t *l = (uint64_t *)i;
+        return l[0] + l[1];
+    }
+
     inline uint32_t SumAcross(vUInt32 *i)
     {
         uint32_t *l = (uint32_t *)i;

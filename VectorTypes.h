@@ -22,52 +22,48 @@
 		#include <xmmintrin.h>
 	#endif
 
-    /*  Note: care is ndeed on OS X because vecLibTypes.h (included e.g. by Accelerate.h)
-        wants to redefine some of the same type names that I use, but it defines them in a special way on modern versions of GCC.
-        The simplest solution seems to be just to echo here what is in vecLibTypes.h (with a few tweaks to type names to match what I have been using).
-        It does look as if there should be much better type safety available from doing it the way they do in vecLibTypes.h. */
-    #if defined(__GNUC__)
-        typedef float vFloat __attribute__ ((__vector_size__ (16)));
-    #else /* not __GNUC__ */
-        typedef __m128 vFloat;
-    #endif /* __GNUC__ */
+    /*  It has turned out to be a bit of a nightmare to handle vector types in a way that:
+            1. Is portable across all platforms, including totally different instruction sets
+            2. Is type-safe, i.e. does not allow accidential re-interpretation of e.g. vUInt8 as vInt32.
+        On the mac, clang seems to default to -flax-vector-conversions, which makes all these type distinctions synonymous anyway.
+        If I want to do proper type safety checks I need to explicitly specify -fno-lax-vector-conversions.
 
-    #if defined(__GNUC__)
-        #if defined(__GNUC_MINOR__) && (((__GNUC__ == 3) && (__GNUC_MINOR__ <= 3)) || (__GNUC__ < 3))
-            typedef __m128i                 vUChar;
-            typedef __m128i                 vInt8;
-            typedef __m128i                 vUInt16;
-            typedef __m128i                 vInt16;
-            typedef __m128i                 vUInt32;
-            typedef __m128i                 vInt32;
-            typedef __m128i                 vBool32;
-            typedef __m128i                 vUInt64;
-            typedef __m128i                 vInt64;
-            typedef __m128d                 vDouble;
-        #else /* gcc-3.5 or later */
-            typedef unsigned char           vUChar          __attribute__ ((__vector_size__ (16)));
-            typedef char                    vInt8          __attribute__ ((__vector_size__ (16)));
-            typedef unsigned short          vUInt16         __attribute__ ((__vector_size__ (16)));
-            typedef short                   vInt16         __attribute__ ((__vector_size__ (16)));
-            typedef unsigned int            vUInt32         __attribute__ ((__vector_size__ (16)));
-            typedef int                     vInt32         __attribute__ ((__vector_size__ (16)));
-            typedef unsigned int            vBool32         __attribute__ ((__vector_size__ (16)));
-            typedef unsigned long long      vUInt64         __attribute__ ((__vector_size__ (16)));
-            typedef long long               vInt64         __attribute__ ((__vector_size__ (16)));
-            typedef double                  vDouble         __attribute__ ((__vector_size__ (16)));
-        #endif /* __GNUC__ <= 3.3 */
-    #else /* not __GNUC__ */
-            typedef __m128i                 vUChar;
-            typedef __m128i                 vInt8;
-            typedef __m128i                 vUInt16;
-            typedef __m128i                 vInt16;
-            typedef __m128i                 vUInt32;
-            typedef __m128i                 vInt32;
-            typedef __m128i                 vBool32;
-            typedef __m128i                 vUInt64;
-            typedef __m128i                 vInt64;
-            typedef __m128d                 vDouble;
-    #endif /* __GNUC__ */
+        I should also watch out: it is possible that on old versions of gcc there may be problems, at least on OS X.
+        vecLibTypes.h (included by Accelerate.h) defines the same types that I use, but on gcc versions <3.3 it looks like
+        it defines them all as __m128i. That would cause conflict with what I do here.
+        I could solve that problem just by renaming my own types (everywhere!), but hopefully it won't come to that.
+     
+        The following code seems to work on all machines I have tried, but has the problem that it
+        does not distinguish between signed and unsigned types (they are just synonymous with each other).
+        The subsequent alternative code does not work on all machines [TODO: I think... but I should retry now I understand things better]
+        but successfully distinguishes between signed and unsigned types on a mac.  */
+    #if 0
+        typedef __v16qi                 vUInt8;
+        typedef __v8hi                  vUInt16;
+        typedef __v4si                  vUInt32;
+        typedef __v2di                  vUInt64;
+
+        typedef __v16qi                 vInt8;
+        typedef __v8hi                  vInt16;
+        typedef __v4si                  vInt32;
+        typedef __v2di                  vInt64;
+
+        typedef __v4sf                  vFloat;
+        typedef __v2df                  vDouble;
+    #else
+        typedef unsigned char           vUInt8          __attribute__ ((__vector_size__ (16)));
+        typedef unsigned short          vUInt16         __attribute__ ((__vector_size__ (16)));
+        typedef unsigned int            vUInt32         __attribute__ ((__vector_size__ (16)));
+        typedef unsigned long long      vUInt64         __attribute__ ((__vector_size__ (16)));
+
+        typedef char                    vInt8           __attribute__ ((__vector_size__ (16)));
+        typedef short                   vInt16          __attribute__ ((__vector_size__ (16)));
+        typedef int                     vInt32          __attribute__ ((__vector_size__ (16)));
+        typedef long long               vInt64          __attribute__ ((__vector_size__ (16)));
+
+        typedef float                   vFloat          __attribute__ ((__vector_size__ (16)));
+        typedef double                  vDouble         __attribute__ ((__vector_size__ (16)));
+    #endif
 #elif __arm__
     #include <arm_neon.h>
     typedef uint32x4_t vUInt32;
@@ -89,7 +85,7 @@
 	
 	typedef vector float vFloat;
 	typedef vector unsigned int vUInt32;
-	typedef vector unsigned char vUChar;
+	typedef vector unsigned char vUInt8;
 #else
     // Providing minimal support in the non-vector case, because it may make life easier
     // to be able to write some simple bits of code so they compile and work even in the absence
@@ -109,7 +105,7 @@
 	{
 		vFloat	vf;
 	//	vUInt32	v32;
-		vUChar	vc;
+		vUInt8	vc;
 		float	f[4];
 		long	l[4];
 		short	s[8];

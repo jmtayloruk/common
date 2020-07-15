@@ -157,7 +157,7 @@ template<> void CrossCorrelateImageWindows<kCorrelationSAD, unsigned char>(Image
                 As a consequence, I have not been able to abstract this code using my wrappers in VectorFunctions.h,
                 and have had to actually write separate code branches for different instruction sets.   */
 #if __ARM_NEON__
-            vUInt32 sumVec = vZeroInt();
+            vUInt32 sumVec = vZeroUInt32();
             for (int y = 0; y < w1Height; y++)
             {
                 uint16x8_t rowSumVec = vmovq_n_u16(0);
@@ -199,16 +199,16 @@ template<> void CrossCorrelateImageWindows<kCorrelationSAD, unsigned char>(Image
             // but we are only doing this once, outside the xy loop, so we can just sum the scalar elements longhand.
             sum += SumAcross(&sumVec);
 #elif __SSE3__
-            __m128i sumVec = (__m128i)_mm_setzero_ps();     // Note that this will be used to hold 2x64bit long longs.
+            vUInt64 sumVec = vZeroUInt64();
             for (int y = 0; y < w1Height; y++)
             {
                 int x = 0;
                 for (; x <= w1Width - 16; x += 16)
-                    sumVec = _mm_add_epi64(sumVec, _mm_sad_epu8(_mm_loadu_si128((__m128i*)window1.PixelXYAddr(x, y)), _mm_loadu_si128((__m128i*)window2.PixelXYAddr(x+dx, y+dy))));
+                    sumVec = vAdd(sumVec, vSad_u8_to_u64(vLoadUnaligned((vUInt8*)window1.PixelXYAddr(x, y)), vLoadUnaligned((vUInt8*)window2.PixelXYAddr(x+dx, y+dy))));
                 for (; x < w1Width; x++)
                     sum += abs(window1.PixelXY(x, y) - window2.PixelXY(x+dx, y+dy));
             }
-            sum += SumAcrossLongLong(&sumVec);
+            sum += SumAcross(&sumVec);
 #else
             // Fallback code for when vector instructions are not available.
             // It is possible the compiler may auto-vectorise, although the SAD is specialised enough that I would be impressed
@@ -228,6 +228,10 @@ template<> void CrossCorrelateImageWindows<kCorrelationSAD, unsigned char>(Image
                          const __m128i ba = _mm_subs_epu8(b, a);
                          return _mm_or_si128(ab, ba);
                      }
+                However, I would still need to work out how to handle the accumulate part.
+                This code would leave the result in individual 8-bit results, and I would need to do either a horizontal add
+                or some sort of pairwise add. Horizontal adds are supposed to be slow. I don't know if I could find a creative
+                pairwise add that I could use. The obvious instruction that promotes to a larger data type is... the SAD instruction!
             */
 #endif
             // Store the result in the correlation matrix
@@ -244,6 +248,8 @@ template<> void CrossCorrelateImageWindows<kCorrelationSAD, unsigned short>(Imag
 	int maxDX = window2.width - window1.width;
 	int maxDY = window2.height - window1.height;
 	
+    // At present, this code accumulates the result in a uint32, which means there is a limit
+    // on how large a correlation matrix we can process without overflowing our data types.
 #ifdef Py_ERRORS_H
 	if (maxDX * maxDY >= (1<<15))
 		PyErr_Format(PyErr_NewException((char*)"exceptions.TypeError", NULL, NULL), "WOAH - that's a seriously big correlation matrix! This integer-based SAD code only accepts IWs that lead to correlation matrices with up to 2^15 entries.");
@@ -263,31 +269,32 @@ template<> void CrossCorrelateImageWindows<kCorrelationSAD, unsigned short>(Imag
         for (int dx = 0; dx <= maxDX; dx++)
         {
             double sum = 0;
-            vUInt32 sumVec = vZeroInt();
+            vUInt32 sumVec = vZeroUInt32();
             for (int y = inset; y < w1Height-inset; y++)
             {
                 int x = inset;
 #if __SSE3__
-                /*  TODO: see example code above (not yet implemented) that involves _mm_subs_epu8.
-                    I suspect that a 16-bit version would be faster than this code here  */
-                vUInt32 zeros = vZeroInt();
+                vUInt16 zeros = vZeroUInt16();
                 for (; x <= w1Width - 8-inset; x += 8)
 				{
-					__m128i a = _mm_loadu_si128((__m128i*)window1.PixelXYAddr(x, y));
-					__m128i b = _mm_loadu_si128((__m128i*)window2.PixelXYAddr(x+dx, y+dy));
+					vUInt16 a = vLoadUnaligned((vUInt16*)window1.PixelXYAddr(x, y));
+					vUInt16 b = vLoadUnaligned((vUInt16*)window2.PixelXYAddr(x+dx, y+dy));
 					/*	Unpack the low/high (unsigned) shorts into ints and then do the SAD processing on ints.
-					 Note that I don't believe we can do this in one go, on 16-bit ints all the way.
-					 The _mm_madd_epi16 instruction is handy, but subtracting two 16-bit ints will
-					 overflow a 16-bit int	*/
-					__m128i oddA = _mm_unpacklo_epi16(a, zeros);
-					__m128i oddB = _mm_unpacklo_epi16(b, zeros);
-					__m128i sad = _mm_abs_epi32(_mm_sub_epi32(oddA, oddB));
-					sumVec = _mm_add_epi32(sumVec, sad);
-					__m128i evenA = _mm_unpackhi_epi16(a, zeros);
-					__m128i evenB = _mm_unpackhi_epi16(b, zeros);
-					sad = _mm_abs_epi32(_mm_sub_epi32(evenA, evenB));
-					sumVec = _mm_add_epi32(sumVec, sad);
-				}
+                        It was not obvious to me that we could do this in one go, on 16-bit ints all the way.
+                        TODO: but see example code above (not yet implemented) that involves _mm_subs_epu8.
+                        I suspect that a 16-bit version would be faster than this code here. 
+                        The _mm_madd_epi16 instruction might be handy for promoting to a larger data type	*/
+                    vUInt32 oddA = vUnpackLo(a, zeros);
+                    vUInt32 oddB = vUnpackLo(b, zeros);
+                    // Note I have been slightly cheeky here with casting the result of vSub,
+                    // which is operating on unsigned variables - but I know they will not be negative.
+                    vUInt32 sad = vAbs((vInt32)vSub(oddA, oddB));
+                    sumVec = vAdd(sumVec, sad);
+                    vUInt32 evenA = vUnpackHi(a, zeros);
+                    vUInt32 evenB = vUnpackHi(b, zeros);
+                    sad = vAbs((vInt32)vSub(evenA, evenB));
+                    sumVec = vAdd(sumVec, sad);
+                }
 #else
     #warning "Vector instruction set unavailable - falling back to slower scalar code for uint16 SAD"
 #endif
@@ -306,14 +313,14 @@ void Check16BitData(ImageWindow<int> &window1)
     int w1Width = window1.width;
     int w1Height = window1.height;
 	
-	vUInt32 orVec = vZeroInt();
+	vUInt32 orVec = vZeroUInt32();
 	int orRest = 0;
 	for (int y = 0; y < w1Height; y++)
 	{
 		int x = 0;
 #if HAS_VECTOR_SUPPORT
         for (; x <= w1Width - 4; x += 4)
-			orVec = vOr(orVec, vLoadUnalignedUInt32(window1.PixelXYAddr(x, y)));
+			orVec = vOr(orVec, vLoadUnaligned((vUInt32 *)window1.PixelXYAddr(x, y)));
 #endif
         for (; x < w1Width; x++)
 			orRest |= window1.PixelXY(x, y);
@@ -352,7 +359,7 @@ template<> void CrossCorrelateImageWindows<kCorrelationSAD, int>(ImageWindow<int
         for (int dx = 0; dx <= maxDX; dx++)
         {
             double sum = 0;
-            vUInt32 sumVec = vZeroInt();
+            vUInt32 sumVec = vZeroUInt32();
             for (int y = 0; y < w1Height; y++)
             {
                 int x = 0;
@@ -360,7 +367,7 @@ template<> void CrossCorrelateImageWindows<kCorrelationSAD, int>(ImageWindow<int
                 // I have not documented why I have used unaligned loads here, but I suspect I decided it did not involve much of a speed penalty,
                 // and possibly I did have a use-case where this was necessary...
                 for (; x <= w1Width - 4; x += 4)
-                    sumVec = vAdd(sumVec, vAbs(vSub(vLoadUnalignedInt32(window1.PixelXYAddr(x, y)), vLoadUnalignedInt32(window2.PixelXYAddr(x+dx, y+dy)))));
+                    sumVec = vAdd(sumVec, vAbs(vSub(vLoadUnaligned((vUInt32*)window1.PixelXYAddr(x, y)), vLoadUnaligned((vUInt32*)window2.PixelXYAddr(x+dx, y+dy)))));
                 /*  TODO: see example code above (not yet implemented) that involves _mm_subs_epu8.
                     That would provide a fallback for the case where vAbs is not available. */
 #else
