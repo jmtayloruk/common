@@ -15,9 +15,10 @@
 #define HAS_VECTOR_SUPPORT 1        /* will be overridden, below, if we are just using a scalar substitute */
 
 #if HAS_SSE
-	#if __SSE3__
+    #if __SSSE3__
+        #include <tmmintrin.h>		// SSSE3 (supplemental SSE3)
+    #elif __SSE3__
 		#include <pmmintrin.h>
-        #include <tmmintrin.h>		// SSSE3 (supplemental SSE3)      // TODO: there should probably be a separate #if switch for this.
 	#else
 		#include <xmmintrin.h>
 	#endif
