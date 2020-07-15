@@ -51,7 +51,14 @@
     inline vUInt32 vOr(vUInt32 a, vUInt32 b) { return _mm_or_si128(a, b); }
     inline vInt32 vAdd(vInt32 a, vInt32 b)	{ return _mm_add_epi32( a, b ); }
     inline vInt32 vSub(vInt32 a, vInt32 b)	{ return _mm_sub_epi32( a, b ); }
-    inline vInt32 vAbs(vInt32 a)	{ return _mm_abs_epi32( a ); }
+    #if __SSSE3__
+        // For now this function is only implemented under SSSE3, where this asm instruction is available.
+        // Code compiling under <SSSE3 will have to make its own arrangements for the fact that this function is not defined!
+        // In future I should probably implement a fallback for <SSSE3.
+        // TODO notes in PIVImageWindow.mm indicate a promising-sounding incantation to use for SAD,
+        // which is probably the only scenario where I would actually use vAbs on integer arguments.
+        inline vInt32 vAbs(vInt32 a)	{ return _mm_abs_epi32( a ); }
+    #endif
 
     inline vFloat vSplatFirstValue(vFloat a) { return (vFloat)_mm_shuffle_epi32((__m128i)a, _MM_SHUFFLE(0, 0, 0, 0)); }
 	inline vFloat vSplatSecondValue(vFloat a) { return (vFloat)_mm_shuffle_epi32((__m128i)a, _MM_SHUFFLE(1, 1, 1, 1)); }
