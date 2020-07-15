@@ -213,11 +213,17 @@ void ProcessSpoolFilesFromDirectory(NSString *spoolDir, NSString *iniPath, NSStr
     {
         metadataMapping = [NSMutableDictionary dictionary];
         NSArray *dirContents = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:plistSourceDir error:nil];
-        __block TextualProgressBar progress("Reading metadata files", dirContents.count/2);
+        TextualProgressBar progress("Reading metadata files", dirContents.count/2);
+        /*  This next line is a workaround to avoid a subtle issue that is now highlighted by the compiler.
+            I cannot copy TextualProgressBar objects, because JMutex objects cannot be copied
+            (for good reasons - unclear if that implies the same mutex object or a new one).
+            If I apply the __block attribute to 'progress' that implicitly calls the copy constructor.
+            The workaround is to access a pointer, rather than an object, within the block. */
+        TextualProgressBar *_progress = &progress;
         ForEveryFrameInDirectory(plistSourceDir, ^(MetadataForFrame *metadata)
                                  {
                                      [metadataMapping setObject:metadata forKey:[SWF:@"%d", metadata.frameNumber]];
-                                     progress.DeltaProgress(1);
+                                     _progress->DeltaProgress(1);
                                  });
     }
     
