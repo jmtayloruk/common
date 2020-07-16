@@ -20,11 +20,15 @@ dispatch_queue_t processingQueue = dispatch_queue_create("mip processing queue",
 enum { kMipXY = 1, kMipXZ };
 const int gMipType = kMipXY;
 
-template<class VTYPE, class STYPE> void TCalcMip(STYPE *mipPixels, const STYPE *otherPixels, size_t numPixels)
+template<class PIX_TYPE> void CalcMipScalar(PIX_TYPE *mipPixels, const PIX_TYPE *otherPixels, size_t numPixels)
 {
-#if 0
-    CalcMipScalar(mipPixels, otherPixels, numPixels);
-#else
+    // Old scalar code for reference, and useful when the source or dest data is not sufficiently aligned for vector ops
+    for (size_t x = 0; x < numPixels; x++)
+        mipPixels[x] = MAX(mipPixels[x], otherPixels[x]);
+}
+
+template<class VTYPE, class STYPE, int vectorElements> void TCalcMip(STYPE *mipPixels, const STYPE *otherPixels, size_t numPixels)
+{
     /*  Vectorized MIP code.
      
         Basically this is not normally the bottleneck when image files need to be loaded from disk.
@@ -34,7 +38,7 @@ template<class VTYPE, class STYPE> void TCalcMip(STYPE *mipPixels, const STYPE *
         For unsigned short, we use the SSE4.1 instruction set if available,
         or otherwise fallback code which seems to be only 5-10% slower in reality.  */
     size_t i;
-    for (i = 0; i < numPixels; i += 16)
+    for (i = 0; i <= numPixels-vectorElements; i += vectorElements)
     {
         VTYPE x = *(VTYPE*)&mipPixels[i];
         VTYPE y = *(VTYPE*)&otherPixels[i];
@@ -42,51 +46,74 @@ template<class VTYPE, class STYPE> void TCalcMip(STYPE *mipPixels, const STYPE *
     }
     for (; i < numPixels; i++)
         mipPixels[i] = MAX(mipPixels[i], otherPixels[i]);
-#endif
 }
 
-void CalcMip(unsigned char *mipPixels, const unsigned char *otherPixels, size_t numPixels)
+void CalcMip(unsigned char *mipPixels, const unsigned char *otherPixels, size_t numPixels, bool fast)
 {
-    TCalcMip<vUInt8, unsigned char>(mipPixels, otherPixels, numPixels);
+    if (fast)
+        TCalcMip<vUInt8, unsigned char, 16>(mipPixels, otherPixels, numPixels);
+    else
+        CalcMipScalar(mipPixels, otherPixels, numPixels);
 }
 
-void CalcMip(unsigned short *mipPixels, const unsigned short *otherPixels, size_t numPixels)
+void CalcMip(unsigned short *mipPixels, const unsigned short *otherPixels, size_t numPixels, bool fast)
 {
-    TCalcMip<vUInt16, unsigned short>(mipPixels, otherPixels, numPixels);
+    if (fast)
+        TCalcMip<vUInt16, unsigned short, 8>(mipPixels, otherPixels, numPixels);
+    else
+        CalcMipScalar(mipPixels, otherPixels, numPixels);
 }
 
-void CalcMipForBPP(unsigned char *mipData, const unsigned char *otherData, size_t bytes, int bitsPerPixel)
+void CalcMipForBPP(unsigned char *mipData, const unsigned char *otherData, size_t bytes, int bitsPerPixel, bool fast)
 {
 	switch (bitsPerPixel)
 	{
 		case 8:
 		case 32:
 			// In the case of 32-bit data, we can treat it just as if it's 8-bit greyscale, but with more pixels
-			CalcMip(mipData, otherData, bytes);
+			CalcMip(mipData, otherData, bytes, fast);
 			break;
 		case 16:
-			CalcMip((unsigned short *)mipData, (const unsigned short*)otherData, bytes/2);
+			CalcMip((unsigned short *)mipData, (const unsigned short*)otherData, bytes/2, fast);
 			break;
 		default:
 			ALWAYS_ASSERT(0);
 	};
 }
 
-void CalcMipScalarForBPP(unsigned char *mipData, const unsigned char *otherData, size_t bytes, int bitsPerPixel)
+void TestMIPVectorSupport(void)
 {
-    switch (bitsPerPixel)
+    // Test code can be called to verify that all the SSE vector code is yielding correct results
+    const size_t kTestBufferWidth = 100, kTestBufferHeight = 160, kTestBufferSize = kTestBufferHeight*kTestBufferWidth;
+    for (int bpp = 1; bpp <= 4; bpp *= 2)
     {
-        case 8:
-        case 32:
-            // In the case of 32-bit data, we can treat it just as if it's 8-bit greyscale, but with more pixels
-            CalcMipScalar(mipData, otherData, bytes);
-            break;
-        case 16:
-            CalcMipScalar((unsigned short *)mipData, (const unsigned short*)otherData, bytes/2);
-            break;
-        default:
-            ALWAYS_ASSERT(0);
-    };
+        printf("=== bpp=%d ===\n", bpp);
+        unsigned char *bufferAs = new unsigned char[kTestBufferSize];
+        unsigned char *bufferAv = new unsigned char[kTestBufferSize];
+        unsigned char *bufferB = new unsigned char[kTestBufferSize];
+        for (size_t i = 0; i < kTestBufferSize; i++)
+        {
+            bufferAs[i] = random() & 0xFF;
+            bufferAv[i] = bufferAs[i];
+            bufferB[i] = random() & 0xFF;
+        }
+
+        CalcMipForBPP(bufferAs, bufferB, kTestBufferSize, bpp*8, false);
+        CalcMipForBPP(bufferAv, bufferB, kTestBufferSize, bpp*8);
+        size_t i;
+        for (i = 0; i < kTestBufferSize; i++)
+            if (bufferAs[i] != bufferAv[i])
+            {
+                printf(" -> WARNING: DISAGREEMENT!\n");
+                break;
+            }
+        if (i == kTestBufferSize)
+            printf(" -> Agreement\n");
+
+        delete[] bufferAs;
+        delete[] bufferAv;
+        delete[] bufferB;
+    }
 }
 
 void UpdateMipWithBitmap(NSBitmapImageRep *mipBitmap, NSBitmapImageRep *frameBitmap)
@@ -114,8 +141,9 @@ void CalcYZMip(NSBitmapImageRep *mipBitmap, int mipYPos, NSBitmapImageRep *frame
 		{
 			// No obvious way to do non-scalar, due to the fact that bytesPerRow may not be sufficiently aligned
 			// for the SSE instructions we would use for a vectorized implementation.
+            // TODO: is that really true? Surely I could just use unaligned loads...?
 			const unsigned char *otherRow = (const unsigned char *)(frameBitmap.bitmapData + frameBitmap.bytesPerRow * yToUse);
-			CalcMipScalarForBPP(mipRow, otherRow, frameBitmap.bytesPerRow, (int)mipBitmap.bitsPerPixel);
+			CalcMipForBPP(mipRow, otherRow, frameBitmap.bytesPerRow, (int)mipBitmap.bitsPerPixel, false/*scalar*/);
 		}
 	}
 }
@@ -190,6 +218,7 @@ void MakeMipFromImagesInFolder(NSString *sourceFolderPath, NSString *destFilenam
                                  const unsigned short *otherRow = (const unsigned short *)(frameBitmap.bitmapData + frameBitmap.bytesPerRow * yToUse);
                                  // No obvious way to do non-scalar, due to the fact that bytesPerRow may not be sufficiently aligned
                                  // for the SSE instructions we would use for a vectorized implementation.
+                                 // TODO: if I cared, I could presumably implement unaligned loads/stores in my MIP-calculating code
                                  CalcMipScalar(mipRow, otherRow, frameBitmap.pixelsWide);
                              }
                          }

@@ -81,6 +81,7 @@
             // Returns 0xFFFF where x <= y:
             return (vUInt16)_mm_cmpeq_epi16(_mm_subs_epu16((__m128i)x, (__m128i)y), _mm_setzero_si128());
         }
+
         inline vUInt16 vMax(vUInt16 a, vUInt16 b)
         {
             return vBlend(a, b, vCmpLE(a, b));
@@ -91,7 +92,7 @@
     // I have gone with unsigned, because I think that reflects the use of the absolute operator - but the result would also make sense
     // if interpreted as a signed integer (it will not overflow).
     // It surely makes sense for the input type to vAbs to be signed.
-    inline vUInt32 vAbs(vInt32 a)	{ return (vUInt32)__builtin_ia32_pabsd128(a); }
+    inline vUInt32 vAbs(vInt32 a)	{ return (vUInt32)__builtin_ia32_pabsd128(a); } // Note that this is only available with SSSE3
     inline vUInt64 vSad_u8_to_u64(vUInt8 a, vUInt8 b) { return (vUInt64)__builtin_ia32_psadbw128((vInt8)a, (vInt8)b); }    // See Note 1 on signed/unsigned, above
     /*  These next two functions mirror _mm_unpacklo/hi_epi16, but with proper type safety
         Frustratingly, those _mm_ intrinsics map to different code on different compilers, and neither seems to compile universally.
