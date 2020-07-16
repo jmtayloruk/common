@@ -103,7 +103,7 @@ void JMovieBuilder::DoInit(NSURL *destURL, const BoundsRect &bounds, double fram
     {
         if (outErr != nil)
         {
-            *outErr = error.code;
+            *outErr = (OSStatus)error.code;
             return;
         }
         else

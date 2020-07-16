@@ -17,79 +17,42 @@
 
 dispatch_queue_t processingQueue = dispatch_queue_create("mip processing queue", NULL);
 
-#ifndef __SSE4_1__
-static inline __m128i _mm_blendv_si128 (__m128i x, __m128i y, __m128i mask)
-{
-	// Replace bit in x with bit in y when matching bit in mask is set:
-	return _mm_or_si128(_mm_andnot_si128(mask, x), _mm_and_si128(mask, y));
-}
-
-static inline __m128i _mm_cmple_epu16 (__m128i x, __m128i y)
-{
-	// Returns 0xFFFF where x <= y:
-	return _mm_cmpeq_epi16(_mm_subs_epu16(x, y), _mm_setzero_si128());
-}
-#endif
-
 enum { kMipXY = 1, kMipXZ };
 const int gMipType = kMipXY;
 
-void CalcMip(unsigned char *mipPixels, const unsigned char *otherPixels, size_t numPixels)
+template<class VTYPE, class STYPE> void TCalcMip(STYPE *mipPixels, const STYPE *otherPixels, size_t numPixels)
 {
 #if 0
-	CalcMipScalar(mipPixels, otherPixels, numPixels);
+    CalcMipScalar(mipPixels, otherPixels, numPixels);
 #else
-	/* Vectorized MIP code.
-	 
-	 Basically this is not normally the bottleneck when image files need to be loaded from disk.
-	 I'm not sure what scenario I had previously looked at, where this was a performance bottleneck!
-	 */
-	size_t i;
-	for (i = 0; i < numPixels; i += 16)
-	{
-		__m128i x = *(__m128i*)&mipPixels[i];
-		__m128i y = *(__m128i*)&otherPixels[i];
-		*((__m128i*)&mipPixels[i]) = _mm_max_epu8(x, y);
-	}
-	for (; i < numPixels; i++)
-		mipPixels[i] = MAX(mipPixels[i], otherPixels[i]);
+    /*  Vectorized MIP code.
+     
+        Basically this is not normally the bottleneck when image files need to be loaded from disk.
+        I'm not sure what scenario I had previously looked at, where this was a performance bottleneck!
+     
+        If we don't have to load from disk, this is 3-4x as fast as the scalar code.
+        For unsigned short, we use the SSE4.1 instruction set if available,
+        or otherwise fallback code which seems to be only 5-10% slower in reality.  */
+    size_t i;
+    for (i = 0; i < numPixels; i += 16)
+    {
+        VTYPE x = *(VTYPE*)&mipPixels[i];
+        VTYPE y = *(VTYPE*)&otherPixels[i];
+        *((VTYPE*)&mipPixels[i]) = vMax(x, y);
+    }
+    for (; i < numPixels; i++)
+        mipPixels[i] = MAX(mipPixels[i], otherPixels[i]);
 #endif
+}
+
+void CalcMip(unsigned char *mipPixels, const unsigned char *otherPixels, size_t numPixels)
+{
+    TCalcMip<vUInt8, unsigned char>(mipPixels, otherPixels, numPixels);
 }
 
 void CalcMip(unsigned short *mipPixels, const unsigned short *otherPixels, size_t numPixels)
 {
-#if 0
-	CalcMipScalar(mipPixels, otherPixels, numPixels);
-#elif __SSE4_1__
-	// Vectorized MIP code using SSE4.1 instruction set
-	// On the macbook air (when manually enabled) this is only perhaps 5-10% faster than the code below.
-	size_t i;
-	for (i = 0; i < numPixels; i += 8)
-		*((__m128i*)&mipPixels[i]) = _mm_max_epu16(*(__m128i*)&mipPixels[i], *(__m128i*)&otherPixels[i]);
-	for (; i < numPixels; i ++)
-		mipPixels[i] = MAX(mipPixels[i], otherPixels[i]);
-#else
-	/* Vectorized MIP code. This uses substitute code emulating _mm_max_epu16,
-	 cribbed from http://www.alfredklomp.com/programming/sse-intrinsics/
-	 for systems that do not support SSE4.1. At the time of writing, this
-	 is true of most of the systems I am running the code on,
-	 and it seems that even on the macbook air these are not enabled by default,
-	 even though they are available.
-	 
-	 This version here runs at least 3x as fast as the scalar code on the macbook air,
-	 and 4x as fast on the mac pro. These results are true when the source images are cached from disk.
-	 When reading from disk, that is unsurprisingly the bottleneck and the net gains are less.
-	 */
-	size_t i;
-	for (i = 0; i < numPixels; i += 8)
-	{
-		__m128i x = *(__m128i*)&mipPixels[i];
-		__m128i y = *(__m128i*)&otherPixels[i];
-		*((__m128i*)&mipPixels[i]) = _mm_blendv_si128(x, y, _mm_cmple_epu16(x, y));
-	}
-	for (; i < numPixels; i++)
-		mipPixels[i] = MAX(mipPixels[i], otherPixels[i]);
-#endif
+    TCalcMip<vUInt16, unsigned short>(mipPixels, otherPixels, numPixels);
 }
 
 void CalcMipForBPP(unsigned char *mipData, const unsigned char *otherData, size_t bytes, int bitsPerPixel)

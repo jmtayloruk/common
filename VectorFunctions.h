@@ -16,6 +16,9 @@
 #include "VectorTypes.h"
 
 #if HAS_SSE     /* SSE instruction set for Intel processors */
+    /*  Note 1: On OS X at least, there are some builtins that expect a signed input, but the instruction definition is very clear that it operates on unsigned chars.
+        It may have something to do with the fact that the SSE headers on OS X do not attempt to distinguish between signed and unsigned types, for some reason.
+        This is rather odd, but can be accommodated by including a cast on a and b to make this work.   */
     #if __SSSE3__
         #include <tmmintrin.h>		// SSSE3 (supplemental SSE3)
 	#elif __SSE3__
@@ -57,15 +60,39 @@
 
 	inline vFloat vXOR(vFloat a, vFloat b) { return _mm_xor_ps(a, b); }
 
-    inline vUInt32 vOr(vUInt32 a, vUInt32 b) { return a | b; }
+    template<class T> T vAnd(T a, T b) { return a & b; }
+    template<class T> T vOr(T a, T b) { return a | b; }
+    template<class T> T vAndNot(T a, T b) { return ~a & b; }
+
+    inline vUInt8 vMax(vUInt8 a, vUInt8 b) { return (vUInt8)__builtin_ia32_pmaxub128((vInt8)a, (vInt8)b); }    // See Note 1 on signed/unsigned, above
+    #if __SSE4_1__
+        inline vUInt16 vMax(vUInt16 a, vUInt16 b) { return (vUInt16)__builtin_ia32_pmaxuw128((vInt16)a, (vInt16)b); }    // See Note 1 on signed/unsigned, above
+    #else
+        /* Before SSE4.1 we need to emulate _mm_max_epu16, using code cribbed from http://www.alfredklomp.com/programming/sse-intrinsics/
+            This only seems to be 5-10% slower than the dedicated instruction (bearing in mind that we probably need to read uncached inputs)   */
+        template<class T> T vBlend(T x, T y, T mask)    // Emulates _mm_blendv_si128
+        {
+            // Replace bit in x with bit in y when matching bit in mask is set
+            return vOr(vAndNot(mask, x), vAnd(mask, y));
+        }
+
+        inline vUInt16 vCmpLE(vUInt16 x, vUInt16 y)    // Emulates _mm_cmple_epu16
+        {
+            // Returns 0xFFFF where x <= y:
+            return (vUInt16)_mm_cmpeq_epi16(_mm_subs_epu16((__m128i)x, (__m128i)y), _mm_setzero_si128());
+        }
+        inline vUInt16 vMax(vUInt16 a, vUInt16 b)
+        {
+            return vBlend(a, b, vCmpLE(a, b));
+        }
+    #endif
+
     // Note: it is somewhat a matter of preference whether the return values from the next two functions are typed as signed or unsigned.
     // I have gone with unsigned, because I think that reflects the use of the absolute operator - but the result would also make sense
     // if interpreted as a signed integer (it will not overflow).
     // It surely makes sense for the input type to vAbs to be signed.
-    inline vUInt32 vAbs(vInt32 a)	{ return (vUInt32)__builtin_ia32_pabsd128( a ); }
-    // Strangely, the builtin expects a signed input, but the instruction definition is very clear that it operates on unsigned chars.
-    // I appear to have to include a cast on a and b to make this work.
-    inline vUInt64 vSad_u8_to_u64(vUInt8 a, vUInt8 b)	{ return (vUInt64)__builtin_ia32_psadbw128( (vInt8)a, (vInt8)b ); }
+    inline vUInt32 vAbs(vInt32 a)	{ return (vUInt32)__builtin_ia32_pabsd128(a); }
+    inline vUInt64 vSad_u8_to_u64(vUInt8 a, vUInt8 b) { return (vUInt64)__builtin_ia32_psadbw128((vInt8)a, (vInt8)b); }    // See Note 1 on signed/unsigned, above
     /*  These next two functions mirror _mm_unpacklo/hi_epi16, but with proper type safety
         Frustratingly, those _mm_ intrinsics map to different code on different compilers, and neither seems to compile universally.
         As a result, I just cast the inputs and call through to the _mm_ function, whatever it may be under the covers. */

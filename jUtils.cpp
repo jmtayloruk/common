@@ -92,6 +92,8 @@ LocalEnableDenormalFlushing::LocalEnableDenormalFlushing(void)
 	
 	// Set the MXCSR register with the new value.
 	_mm_setcsr( newmxcsr );
+  #else
+    #warning "Denormal flushing not available - I have only implemented this on processors that support SSE"
   #endif
 }
 
