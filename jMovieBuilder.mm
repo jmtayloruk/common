@@ -80,6 +80,11 @@ JMovieBuilder::JMovieBuilder(NSString *destPath, const BoundsRect &inBounds, dou
     DoInit(PathToURL(destPath), inBounds, inFrameRate, outErr, compressionFactor, channelCount);
 }
 
+JMovieBuilder::JMovieBuilder(const char *destPath, const BoundsRect &inBounds, double inFrameRate, OSStatus *outErr, double compressionFactor, int channelCount)
+{
+    DoInit(PathToURL([SWF:@"%s", destPath]), inBounds, inFrameRate, outErr, compressionFactor, channelCount);
+}
+
 void JMovieBuilder::DoInit(NSURL *destURL, const BoundsRect &bounds, double frameRate, OSStatus *outErr, double compressionFactor, int channelCount)
 {
     width = bounds.w;
@@ -178,7 +183,9 @@ void JMovieBuilder::AddFrame(const CVPixelBufferRef pixelBuffer)
         have sorted themselves out. */
     while (!writerInput.readyForMoreMediaData)
         [NSThread sleepForTimeInterval:0.05];
-    bool ok = [avAdaptor appendPixelBuffer:pixelBuffer withPresentationTime:CMTimeMake(frameCounter, desiredFramesPerSecond)];
+    // Note that CMTimeMake requires an integer timescale.
+    // The *1000 multipliers mean we end up with a very close approximation to whatever fps we were asked to run at
+    bool ok = [avAdaptor appendPixelBuffer:pixelBuffer withPresentationTime:CMTimeMake(frameCounter*1000, int(desiredFramesPerSecond*1000))];
     if (!ok)
         NSLog(@"Error from appendPixelBuffer: %d %d %@\n", (int)videoWriter.status, (int)videoWriter.error.code, videoWriter.error.description);
     ALWAYS_ASSERT(ok);
