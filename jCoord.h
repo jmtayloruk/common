@@ -245,7 +245,8 @@ template<class Type, class DoubleType> struct coordC3T
 
 	coordC3T<Type, DoubleType>() : x(), y(), z() { }
 	coordC3T<Type, DoubleType>(const Type &inX, const Type &inY, const Type &inZ) { Set(inX, inY, inZ); }
-	explicit coordC3T<Type, DoubleType>(coord3T<DoubleType> r) : x(r.x), y(r.y), z(r.z) { }
+
+    explicit coordC3T<Type, DoubleType>(const coord3T<DoubleType> &r) : x(r.x), y(r.y), z(r.z) { }
 	static coordC3T<Type, DoubleType> zero(void) { return coordC3T<Type, DoubleType>(DoubleType(0), DoubleType(0), DoubleType(0)); }
 
 	coordC3T<Type, DoubleType>& operator += (const coordC3T<Type, DoubleType> &n) { x += n.x; y += n.y; z += n.z; return *this; }
