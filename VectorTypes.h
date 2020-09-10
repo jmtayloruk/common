@@ -69,6 +69,7 @@
     #include <arm_neon.h>
     typedef uint32x4_t vUInt32;
     typedef int32x4_t vInt32;
+    typedef uint64x2_t vUInt64;
 #elif HAS_ALTIVEC
 	#if __SPU__
 		#include <spu_intrinsics.h>

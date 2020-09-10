@@ -51,7 +51,7 @@
 	inline vFloat vNegate( vFloat a ) { return _mm_xor_ps(a, (vFloat) { -0.0, -0.0, -0.0, -0.0 }); }
 	inline vFloat vNegateReal( vFloat a ) { return _mm_xor_ps(a, (vFloat) { -0.0, 0.0, -0.0, 0.0 }); }
 	inline vFloat vNegateImag( vFloat a ) { return _mm_xor_ps(a, (vFloat) { 0.0, -0.0, 0.0, -0.0 }); }
-    /*	nmsub:			result = Ð( arg1 * arg2 - arg3 )
+    /*	nmsub:			result = ï¿½( arg1 * arg2 - arg3 )
         equivalent to	result =  ( arg3 - arg1 * arg2 )*/
 	inline vFloat vNMSub(vFloat a, vFloat b, vFloat c) { return vSub( c, vMul(a, b) ); }
 	inline vFloat vAbs( vFloat a) { return _mm_andnot_ps((vFloat) { -0.0, -0.0, -0.0, -0.0 }, a); }
@@ -215,13 +215,16 @@
     /*  It seems that ARM accepts unaligned loads by default, so there is no need for special code here.
         Incidentally, it sounds like it may be possible to include "alignment specifiers" to make *aligned* loads faster,
         but I have not currently looked into that at all. */
-    inline vInt32 vLoadUnalignedInt32(void *addr) { return ((vInt32*)addr)[0]; }
-    inline vUInt32 vLoadUnalignedUInt32(void *addr) { return ((vUInt32*)addr)[0]; }
+    // inline vInt32 vLoadUnalignedInt32(void *addr) { return ((vInt32*)addr)[0]; }
+    // inline vUInt32 vLoadUnalignedUInt32(void *addr) { return ((vUInt32*)addr)[0]; }
+    template<class T> T vLoadUnaligned(T *addr) { return addr[0]; }
 
     inline vUInt32 vOr(vUInt32 a, vUInt32 b) { return vorrq_u32(a, b); }
+    inline vInt32 vSub(vUInt32 a, vUInt32 b) { return (vInt32)vsubq_u32( a, b ); }
     inline vInt32 vAdd(vInt32 a, vInt32 b)	{ return vaddq_s32( a, b ); }
     inline vInt32 vSub(vInt32 a, vInt32 b)	{ return vsubq_s32( a, b ); }
-    inline vInt32 vAbs(vInt32 a)            { return vabsq_s32( a ); }
+    inline vUInt32 vAbs(vInt32 a)      { return (vUInt32)vabsq_s32( a ); }
+    inline vUInt32 vAdd(vUInt32 a, vUInt32 b)	{ return vaddq_u32( a, b ); }
 #elif __SPU__     /* PS3 SPU vector instruction set */
     #include <spu_intrinsics.h>
     #include <spu_mfcio.h> /* constant declarations for the MFC */
@@ -273,7 +276,7 @@
     }
 
 #else       /* Minimal support for the case where no vector instruction set is available */
-    inline vUInt32 vZeroUInt32(void) { vUInt32 z = {{ 0, 0, 0, 0 }}; return z; }
+    inline vUInt32 vZeroUInt32(void) { vUInt32 z = { 0, 0, 0, 0 }; return z; }
 #endif
 
 
@@ -345,11 +348,13 @@
     // Direct access to vector elements is possible in C code. This may be better for the compiler than the generic code below this?
     inline uint32_t SumAcross(vUInt32 *i)
     {
+        vUInt32 l = i[0];
         return l[0] + l[1] + l[2] + l[3];
     }
 
     inline uint32_t OrAcross(vUInt32 *i)
     {
+        vUInt32 l = i[0];
         return l[0] | l[1] | l[2] | l[3];
     }
 #else
