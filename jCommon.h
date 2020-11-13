@@ -61,15 +61,21 @@ extern const int noSigPipe;
 
 #ifdef __GNUC__
     #define WANT_INLINE __attribute__((always_inline))
-    #define NORETURN __attribute__((__noreturn__))
-#else
-    // This alternative branch is probably for Windows.
-    // Note that we could write proper equivalent code here:
-    // We would check _WIN32 to identify Windows
-    // (or see https://sourceforge.net/p/predef/wiki/Home/)
-    // and the equivalent is probably e.g. __declspec(noreturn), and possibly __declspec(inline)
-    #define WANT_INLINE
     #define NORETURN
+#else
+    /*  This alternative branch is probably for Windows.
+        Note that we could write proper equivalent code here
+            We would check _WIN32 to identify Windows (or see https://sourceforge.net/p/predef/wiki/Home/)
+            The equivalent code is probably e.g. __declspec(noreturn), and possibly __declspec(inline)
+     
+        But things are rather awkward - it seems that a macro is not accepted as a stand-in for __attribute__(!?)
+        I'm therefore not sure how to do a conditional define like that.
+        I'm not convinced that defining __attribute__ is wise, but it might be a workaround.
+        Incidentally there's not much point testing #ifdef __attribute__, since it's not a macro on gcc!
+     */
+    #ifndef __attribute__
+        #define __attribute__()
+    #endif
 #endif
 
 /*	The intention here was to offer a macro to assist with branch prediction,
