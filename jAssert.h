@@ -22,10 +22,10 @@
 	class BaseAssertionHandler
 	{
 	  protected:
-		virtual void PullDownCode(void) __attribute__((__noreturn__));
+		virtual void PullDownCode(void) NORETURN;
 	  public:
 		virtual ~BaseAssertionHandler() { }
-		virtual void AssertionFailed(int line, const char *function, const char *file) __attribute__((__noreturn__));
+		virtual void AssertionFailed(int line, const char *function, const char *file) NORETURN;
 		virtual bool CheckCondition(bool condition, int line, const char *function, const char *file);
 	};
 	extern BaseAssertionHandler *assertionHandler;

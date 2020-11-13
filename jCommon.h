@@ -59,7 +59,18 @@ extern const int noSigPipe;
 
 #define SWF NSString stringWithFormat
 
-#define WANT_INLINE __attribute__((always_inline))
+#ifdef __GNUC__
+    #define WANT_INLINE __attribute__((always_inline))
+    #define NORETURN __attribute__((__noreturn__))
+#else
+    // This alternative branch is probably for Windows.
+    // Note that we could write proper equivalent code here:
+    // We would check _WIN32 to identify Windows
+    // (or see https://sourceforge.net/p/predef/wiki/Home/)
+    // and the equivalent is probably e.g. __declspec(noreturn), and possibly __declspec(inline)
+    #define WANT_INLINE
+    #define NORETURN
+#endif
 
 /*	The intention here was to offer a macro to assist with branch prediction,
 	by indicating whether the condition is expected to be true or false.
@@ -70,17 +81,5 @@ extern const int noSigPipe;
 	seemed to generate poor code. As a result, for now this macro doesn't do anything
 	beyond just evaluate the comparison	*/
 #define EXPECT(COMPARISON, RESULT) (COMPARISON)
-
-inline double random_01(void)
-{
-	// Return a random number between 0 and 1
-	return ((double)random()) / 2147483647.0;		// (2^31 - 1)
-}
-
-inline double random_pm1(void)
-{
-	// Return a random number between -1 and 1
-	return -1.0 + ((double)random()) / 1073741823.0;		// (2^30 - 1)
-}
 
 #endif
