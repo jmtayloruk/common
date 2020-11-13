@@ -13,14 +13,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/errno.h>
 #include <algorithm>
 
 #include "jOSMacros.h"		// Defines the macro OS_X, among other things!
 #if OS_X
 	// This should be a proper conditional (from ./configure script...), but for now I'll just use it for parameter checking
 	// on my OS X machines without worrying about availability on other machines.
-    #include <sys/cdefs.h>      // for __printflike
-    #define PRINTFLIKE(A,B) __printflike((A),(B))
+	#define PRINTFLIKE(A,B) __printflike((A),(B))
 #else
 	#define PRINTFLIKE(A,B) 
 #endif
@@ -59,24 +59,7 @@ extern const int noSigPipe;
 
 #define SWF NSString stringWithFormat
 
-#ifdef __GNUC__
-    #define WANT_INLINE __attribute__((always_inline))
-    #define NORETURN
-#else
-    /*  This alternative branch is probably for Windows.
-        Note that we could write proper equivalent code here
-            We would check _WIN32 to identify Windows (or see https://sourceforge.net/p/predef/wiki/Home/)
-            The equivalent code is probably e.g. __declspec(noreturn), and possibly __declspec(inline)
-     
-        But things are rather awkward - it seems that a macro is not accepted as a stand-in for __attribute__(!?)
-        I'm therefore not sure how to do a conditional define like that.
-        I'm not convinced that defining __attribute__ is wise, but it might be a workaround.
-        Incidentally there's not much point testing #ifdef __attribute__, since it's not a macro on gcc!
-     */
-    #ifndef __attribute__
-        #define __attribute__()
-    #endif
-#endif
+#define WANT_INLINE __attribute__((always_inline))
 
 /*	The intention here was to offer a macro to assist with branch prediction,
 	by indicating whether the condition is expected to be true or false.
@@ -87,5 +70,17 @@ extern const int noSigPipe;
 	seemed to generate poor code. As a result, for now this macro doesn't do anything
 	beyond just evaluate the comparison	*/
 #define EXPECT(COMPARISON, RESULT) (COMPARISON)
+
+inline double random_01(void)
+{
+	// Return a random number between 0 and 1
+	return ((double)random()) / 2147483647.0;		// (2^31 - 1)
+}
+
+inline double random_pm1(void)
+{
+	// Return a random number between -1 and 1
+	return -1.0 + ((double)random()) / 1073741823.0;		// (2^30 - 1)
+}
 
 #endif

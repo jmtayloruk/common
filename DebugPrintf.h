@@ -14,7 +14,8 @@
 #ifndef __DebugPrintf__
 #define __DebugPrintf__
 
-#include "jCommon.h"  // For PRINTFLIKE macro
+#include <sys/cdefs.h>      // for __printflike
+#include "jCommon.h"
 
 void DebugPrintf(const char *format, ...) PRINTFLIKE(1, 2);
 void DebugPrintfFatal(const char *errorIntro, const char *format, ...) PRINTFLIKE(2, 3);

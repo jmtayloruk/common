@@ -9,7 +9,6 @@
 #define __JASSERT_H__
 
 #include <stdio.h>
-#include "jCommon.h"
 #include "DebugPrintf.h"
 
 /*	There is the option of having asserts inline, but the preferred option is to call an
