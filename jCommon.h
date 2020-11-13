@@ -20,7 +20,8 @@
 #if OS_X
 	// This should be a proper conditional (from ./configure script...), but for now I'll just use it for parameter checking
 	// on my OS X machines without worrying about availability on other machines.
-	#define PRINTFLIKE(A,B) __printflike((A),(B))
+    #include <sys/cdefs.h>      // for __printflike
+    #define PRINTFLIKE(A,B) __printflike((A),(B))
 #else
 	#define PRINTFLIKE(A,B) 
 #endif
