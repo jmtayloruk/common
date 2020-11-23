@@ -213,7 +213,11 @@ template<> void CrossCorrelateImageWindows<kCorrelationSAD, unsigned char>(Image
             // Fallback code for when vector instructions are not available.
             // It is possible the compiler may auto-vectorise, although the SAD is specialised enough that I would be impressed
             // if it spontaneously came up with an even close to optimal instruction sequence.
-    #warning "Vector instruction set unavailable - falling back to slower scalar code for uint8 SAD"
+    #if _MSC_VER
+        #pragma message("Vector instruction set unavailable - falling back to slower scalar code for uint8 SAD")
+    #else//__GNUC__ - may need other defines for different compilers
+        #warning "Vector instruction set unavailable - falling back to slower scalar code for uint8 SAD"
+    #endif
             for (int y = 0; y < w1Height; y++)
                 for (int x = 0; x < w1Width; x++)
                     sum += abs(window1.PixelXY(x, y) - window2.PixelXY(x+dx, y+dy));
@@ -296,7 +300,11 @@ template<> void CrossCorrelateImageWindows<kCorrelationSAD, unsigned short>(Imag
                     sumVec = vAdd(sumVec, sad);
                 }
 #else
-    #warning "Vector instruction set unavailable - falling back to slower scalar code for uint16 SAD"
+    #if _MSC_VER
+        #pragma message("Vector instruction set unavailable - falling back to slower scalar code for uint16 SAD")
+    #else//__GNUC__ - may need other defines for different compilers
+        #warning "Vector instruction set unavailable - falling back to slower scalar code for uint16 SAD"
+    #endif
 #endif
                 for (; x < w1Width-inset; x++)
                     sum += abs(window1.PixelXY(x, y) - window2.PixelXY(x+dx, y+dy));
@@ -371,7 +379,11 @@ template<> void CrossCorrelateImageWindows<kCorrelationSAD, int>(ImageWindow<int
                 /*  TODO: see example code above (not yet implemented) that involves _mm_subs_epu8.
                     That would provide a fallback for the case where vAbs is not available. */
 #else
-    #warning "Vector instruction set unavailable - falling back to slower scalar code for int32 SAD"
+    #if _MSC_VER
+        #pragma message("Vector instruction set unavailable - falling back to slower scalar code for int32 SAD")
+    #else//__GNUC__ - may need other defines for different compilers
+        #warning "Vector instruction set unavailable - falling back to slower scalar code for int32 SAD"
+    #endif
 #endif
                 for (; x < w1Width; x++)
                     sum += abs(window1.PixelXY(x, y) - window2.PixelXY(x+dx, y+dy));
