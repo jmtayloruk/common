@@ -33,7 +33,8 @@
     #define ATOMIC_POSTDECREMENT(ADDR) __sync_fetch_and_sub(ADDR, 1)
 #else
     // This alternative branch is probably for Windows.
-    // Note that we could write proper equivalent code here:
+    #include <windows.h>
+    // Note that we could write proper equivalent code for the following no-op macros.
     // We would check _WIN32 to identify Windows, or _MSC_VER to identify MS compilers
     // (or see https://sourceforge.net/p/predef/wiki/Home/)
     // and the equivalent is probably e.g. __declspec(noreturn), and possibly __declspec(inline)
@@ -50,7 +51,6 @@
     #ifndef __attribute__
         #define __attribute__()
     #endif
-
 #endif
 
 /*	The intention here was to offer a macro to assist with branch prediction,
@@ -91,7 +91,9 @@ template<class T> T CUBE(const T &a) { return a*a*a; }
     #define LIMIT(N, L, U) (std::max(std::min((N), (U)), (L)))
 #endif
 
-#define SOCKET_ERROR        -1
+#ifndef _WIN32
+    #define SOCKET_ERROR        -1
+#endif
 extern const int noSigPipe;
 
 #define SWF NSString stringWithFormat
