@@ -40,7 +40,7 @@ template<class Type> struct BackingData
     
     void Release(void)
     {
-        size_t oldVal = __sync_fetch_and_sub(&refcount, 1);
+        size_t oldVal = ATOMIC_POSTDECREMENT(&refcount);
         ALWAYS_ASSERT(oldVal > 0);
         if (oldVal == 1)
             delete this;
@@ -156,8 +156,14 @@ template<class Type> class JPythonArray
         }
         else
         {
-            // Caller expects us to allocate and manage a data buffer
+            // Caller expects us to allocate and manage a data buffer.
+            // I'm pretty sure a stack-based array is faster than std::vector,
+            // but the former doesn't seem to be permitted under Visual Studio
+#if defined (_WIN32)
+            std::vector<npy_intp> tempStrides(inNum);
+#else
             npy_intp tempStrides[inNum];
+#endif
             if (inStrides == NULL)
             {
                 // Caller expects us to choose suitable strides. We will just make it contiguous.
@@ -167,7 +173,7 @@ template<class Type> class JPythonArray
                     tempStrides[n] = s;
                     s *= inDims[n];
                 }
-                inStrides = tempStrides;
+				inStrides = &(tempStrides[0]);
             }
             
             npy_intp largestStride = 0;
@@ -197,7 +203,7 @@ template<class Type> class JPythonArray
             backingData->Release();
         backingData = copy.backingData;
         if (backingData != NULL)
-            __sync_fetch_and_add(&backingData->refcount, 1);
+            ATOMIC_POSTINCREMENT(&backingData->refcount);
         return *this;
     }
     

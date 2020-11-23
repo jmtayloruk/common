@@ -26,6 +26,43 @@
 #endif
 #define RESTRICT __restrict
 
+#ifdef __GNUC__
+    #define WANT_INLINE __attribute__((always_inline))
+    #define NORETURN __attribute__((__noreturn__))
+    #define ATOMIC_POSTINCREMENT(ADDR) __sync_fetch_and_add(ADDR, 1)
+    #define ATOMIC_POSTDECREMENT(ADDR) __sync_fetch_and_sub(ADDR, 1)
+#else
+    // This alternative branch is probably for Windows.
+    // Note that we could write proper equivalent code here:
+    // We would check _WIN32 to identify Windows, or _MSC_VER to identify MS compilers
+    // (or see https://sourceforge.net/p/predef/wiki/Home/)
+    // and the equivalent is probably e.g. __declspec(noreturn), and possibly __declspec(inline)
+    #define WANT_INLINE
+    #define NORETURN
+    #define __PRETTY_FUNCTION__ __FUNCSIG__
+    // The following only work for 'long' data types
+    #define ATOMIC_POSTINCREMENT(ADDR) (InterlockedIncrement(ADDR)-1)
+    #define ATOMIC_POSTDECREMENT(ADDR) (InterlockedDecrement(ADDR)+1)
+
+    // I'm not convinced that defining __attribute__ is wise, but it might be a workaround.
+    // Incidentally there's not much point testing #ifndef __attribute__, since it's not a macro on gcc!
+    // But no harm in doing it just in case.
+    #ifndef __attribute__
+        #define __attribute__()
+    #endif
+
+#endif
+
+/*	The intention here was to offer a macro to assist with branch prediction,
+	by indicating whether the condition is expected to be true or false.
+	Intended use: 
+		if (EXPECT(COMPARISON, RESULT))
+			stuff;
+	However I found (around 2011 I suspect?) that on an intel mac __builtin_expect
+	seemed to generate poor code. As a result, for now this macro doesn't do anything
+	beyond just evaluate the comparison	*/
+#define EXPECT(COMPARISON, RESULT) (COMPARISON)
+
 #include "jAssert.h"
 #include "jHighPrecisionFloat.h"      // Will just define jreal as double, unless compile-time flag specifically set
 
@@ -58,34 +95,5 @@ template<class T> T CUBE(const T &a) { return a*a*a; }
 extern const int noSigPipe;
 
 #define SWF NSString stringWithFormat
-
-#ifdef __GNUC__
-    #define WANT_INLINE __attribute__((always_inline))
-    #define NORETURN
-#else
-    /*  This alternative branch is probably for Windows.
-        Note that we could write proper equivalent code here
-            We would check _WIN32 to identify Windows (or see https://sourceforge.net/p/predef/wiki/Home/)
-            The equivalent code is probably e.g. __declspec(noreturn), and possibly __declspec(inline)
-     
-        But things are rather awkward - it seems that a macro is not accepted as a stand-in for __attribute__(!?)
-        I'm therefore not sure how to do a conditional define like that.
-        I'm not convinced that defining __attribute__ is wise, but it might be a workaround.
-        Incidentally there's not much point testing #ifdef __attribute__, since it's not a macro on gcc!
-     */
-    #ifndef __attribute__
-        #define __attribute__()
-    #endif
-#endif
-
-/*	The intention here was to offer a macro to assist with branch prediction,
-	by indicating whether the condition is expected to be true or false.
-	Intended use: 
-		if (EXPECT(COMPARISON, RESULT))
-			stuff;
-	However I found (around 2011 I suspect?) that on an intel mac __builtin_expect
-	seemed to generate poor code. As a result, for now this macro doesn't do anything
-	beyond just evaluate the comparison	*/
-#define EXPECT(COMPARISON, RESULT) (COMPARISON)
 
 #endif

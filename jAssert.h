@@ -31,7 +31,7 @@
 	};
 	extern BaseAssertionHandler *assertionHandler;
 
-	#define ALWAYS_ASSERT(CONDITION) do { if (__builtin_expect(!(CONDITION), false)) { assertionHandler->AssertionFailed(__LINE__, __PRETTY_FUNCTION__, __FILE__); } } while (0)
+	#define ALWAYS_ASSERT(CONDITION) do { if (EXPECT(!(CONDITION), false)) { assertionHandler->AssertionFailed(__LINE__, __PRETTY_FUNCTION__, __FILE__); } } while (0)
 	#define CHECK(CONDITION) assertionHandler->CheckCondition((CONDITION), __LINE__, __PRETTY_FUNCTION__, __FILE__)
 #endif
 
