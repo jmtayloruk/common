@@ -9,7 +9,10 @@
 #include "jAssert.h"
 #include "assert.h"
 #include "DebugPrintf.h"
-#include <execinfo.h>
+#ifndef _MSC_VER
+    // Skip for MS Windows compilers - I don't know the equivalent code for that platform
+    #include <execinfo.h>
+#endif
 
 static BaseAssertionHandler defaultHandler;
 BaseAssertionHandler *assertionHandler = &defaultHandler;
@@ -20,6 +23,7 @@ void BaseAssertionHandler::AssertionFailed(int line, const char *function, const
 	// This code was moved out of assertion macro for code brevity and to make modification easier
 	DebugPrintfFatal("An assertion was failed and the program has crashed", "Assertion failed on line %d, function %s, file %s\n", line, function, file);
     
+#ifndef _MSC_VER
     void* callstack[128];
     int i, frames = backtrace(callstack, 128);
     char** strs = backtrace_symbols(callstack, frames);
@@ -27,6 +31,7 @@ void BaseAssertionHandler::AssertionFailed(int line, const char *function, const
         printf("%s\n", strs[i]);
     }
     free(strs);
+#endif
     
     fflush(stdout);
 	fflush(stderr);

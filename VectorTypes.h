@@ -15,10 +15,12 @@
 #define HAS_VECTOR_SUPPORT 1        /* will be overridden, below, if we are just using a scalar substitute */
 
 #if HAS_SSE
-    #if __SSSE3__
+	#if __SSSE3__
         #include <tmmintrin.h>		// SSSE3 (supplemental SSE3)
     #elif __SSE3__
 		#include <pmmintrin.h>
+    #elif __SSE2__
+        #include <emmintrin.h>
 	#else
 		#include <xmmintrin.h>
 	#endif
@@ -34,11 +36,28 @@
         it defines them all as __m128i. That would cause conflict with what I do here.
         I could solve that problem just by renaming my own types (everywhere!), but hopefully it won't come to that.
      
-        The following code seems to work on all machines I have tried, but has the problem that it
-        does not distinguish between signed and unsigned types (they are just synonymous with each other).
-        The subsequent alternative code does not work on all machines [TODO: I think... but I should retry now I understand things better]
-        but successfully distinguishes between signed and unsigned types on a mac.  */
-    #if 0
+        I have various different versions of code that I have tried, at various points:             */
+    #if _MSC_VER
+        /*  To compile SSE code on Windows, fundamentally the issue seems to be that I haven’t found a way
+            to have the different vector types be truly distinct.
+            If they all typedef to __m128i then the compiler can’t distinguish between them when expanding a template,
+            so I can’t write separate code for each type and just have e.g. a vAdd wrapper that works for any/all field widths.
+            And also, incidentally, operator- and similar are not available for vector types (of course, since they’re all just __m128i).
+         */
+	    typedef __m128i vUInt8;
+	    typedef __m128i vUInt16;
+	    typedef __m128i vUInt32;
+	    typedef __m128i vUInt64;
+	    typedef __m128i vInt8;
+	    typedef __m128i vInt16;
+	    typedef __m128i vInt32;
+	    typedef __m128i vInt64;
+		typedef __m128 vFloat;
+		typedef __m128d vDouble;
+	#elif 0
+        // This earlier code seems to work on all machines I have tried, but has the problem that it
+        // does not distinguish between signed and unsigned types (they are just synonymous with each other).
+
         typedef __v16qi                 vUInt8;
         typedef __v8hi                  vUInt16;
         typedef __v4si                  vUInt32;
@@ -52,6 +71,12 @@
         typedef __v4sf                  vFloat;
         typedef __v2df                  vDouble;
     #else
+        /*  The subsequent alternative code does not work on all machines or gcc versions
+            [TODO: I think... but I should retry now I understand things better]
+            but it successfully distinguishes between signed and unsigned types on a mac.
+            That is very useful for checking I am not mixing types unintentionally,
+            and I think it may also be vital now that I am using operator- to do subtraction
+            (since I think signed/unsigned subtraction are slightly different, aren't they?).   */
         typedef unsigned char           vUInt8          __attribute__ ((__vector_size__ (16)));
         typedef unsigned short          vUInt16         __attribute__ ((__vector_size__ (16)));
         typedef unsigned int            vUInt32         __attribute__ ((__vector_size__ (16)));
@@ -98,8 +123,28 @@
     // (but we can return a struct).
     typedef struct
     {
+        uint8_t i[16];
+    } vUInt8;
+    typedef struct
+    {
+        uint16_t i[8];
+    } vUInt16;
+    typedef struct
+    {
         uint32_t i[4];
     } vUInt32;
+    typedef struct
+    {
+        uint64_t i[2];
+    } vUInt64;
+    typedef struct
+    {
+        int8_t i[16];
+    } vInt8;
+    typedef struct
+    {
+        int16_t i[8];
+    } vInt16;
 #endif
 
 #if HAS_ALTIVEC || HAS_SSE
