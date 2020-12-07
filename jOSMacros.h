@@ -12,19 +12,25 @@
 #define __J_OS_MACROS_H__
 
 // Define OS-dependent macros
-// n.b. HAS_OS_X_GUI will be defined from within XCode.
 
+// n.b. HAS_OS_X_GUI will be defined from within XCode.
 #define OS_X __MACH__
 
-#if __SSE__
+/*  Test if SSE instructons are available.
+    Under gcc, testing for __SSE__ is sufficient, but on Windows
+    it seems more complicated than that, and I *think* that _M_IX86_FP
+    is *not* set on Windows if AVX (i.e. "more than basic SSE") is available */
+#if __SSE__ || _M_IX86_FP || __AVX__
 	#define HAS_SSE 1
 #else
 	#define HAS_SSE 0
 #endif
+
+// Test if AVX specifically is available
 #if __AVX__
-#define HAS_AVX 1
+    #define HAS_AVX 1
 #else
-#define HAS_AVX 0
+    #define HAS_AVX 0
 #endif
 
 #if __ppc__ || PS3 || __SPU__

@@ -9,6 +9,7 @@
 #define __JASSERT_H__
 
 #include <stdio.h>
+#include "jCommon.h"
 #include "DebugPrintf.h"
 
 /*	There is the option of having asserts inline, but the preferred option is to call an
@@ -22,15 +23,15 @@
 	class BaseAssertionHandler
 	{
 	  protected:
-		virtual void PullDownCode(void) __attribute__((__noreturn__));
+		virtual void PullDownCode(void) NORETURN;
 	  public:
 		virtual ~BaseAssertionHandler() { }
-		virtual void AssertionFailed(int line, const char *function, const char *file) __attribute__((__noreturn__));
+		virtual void AssertionFailed(int line, const char *function, const char *file) NORETURN;
 		virtual bool CheckCondition(bool condition, int line, const char *function, const char *file);
 	};
 	extern BaseAssertionHandler *assertionHandler;
 
-	#define ALWAYS_ASSERT(CONDITION) do { if (__builtin_expect(!(CONDITION), false)) { assertionHandler->AssertionFailed(__LINE__, __PRETTY_FUNCTION__, __FILE__); } } while (0)
+	#define ALWAYS_ASSERT(CONDITION) do { if (EXPECT(!(CONDITION), false)) { assertionHandler->AssertionFailed(__LINE__, __PRETTY_FUNCTION__, __FILE__); } } while (0)
 	#define CHECK(CONDITION) assertionHandler->CheckCondition((CONDITION), __LINE__, __PRETTY_FUNCTION__, __FILE__)
 #endif
 

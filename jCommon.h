@@ -13,18 +13,55 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/errno.h>
 #include <algorithm>
 
 #include "jOSMacros.h"		// Defines the macro OS_X, among other things!
 #if OS_X
 	// This should be a proper conditional (from ./configure script...), but for now I'll just use it for parameter checking
 	// on my OS X machines without worrying about availability on other machines.
-	#define PRINTFLIKE(A,B) __printflike((A),(B))
+    #include <sys/cdefs.h>      // for __printflike
+    #define PRINTFLIKE(A,B) __printflike((A),(B))
 #else
 	#define PRINTFLIKE(A,B) 
 #endif
 #define RESTRICT __restrict
+
+#ifdef __GNUC__
+    #define WANT_INLINE __attribute__((always_inline))
+    #define NORETURN __attribute__((__noreturn__))
+    #define ATOMIC_POSTINCREMENT(ADDR) __sync_fetch_and_add(ADDR, 1)
+    #define ATOMIC_POSTDECREMENT(ADDR) __sync_fetch_and_sub(ADDR, 1)
+#else
+    // This alternative branch is probably for Windows.
+    #include <windows.h>
+    // Note that we could write proper equivalent code for the following no-op macros.
+    // We would check _WIN32 to identify Windows, or _MSC_VER to identify MS compilers
+    // (or see https://sourceforge.net/p/predef/wiki/Home/)
+    // and the equivalent is probably e.g. __declspec(noreturn), and possibly __declspec(inline)
+    #define WANT_INLINE
+    #define NORETURN
+    #define __PRETTY_FUNCTION__ __FUNCSIG__
+    // The following only work for 'long' data types
+    #define ATOMIC_POSTINCREMENT(ADDR) (InterlockedIncrement(ADDR)-1)
+    #define ATOMIC_POSTDECREMENT(ADDR) (InterlockedDecrement(ADDR)+1)
+
+    // I'm not convinced that defining __attribute__ is wise, but it might be a workaround.
+    // Incidentally there's not much point testing #ifndef __attribute__, since it's not a macro on gcc!
+    // But no harm in doing it just in case.
+    #ifndef __attribute__
+        #define __attribute__()
+    #endif
+#endif
+
+/*	The intention here was to offer a macro to assist with branch prediction,
+	by indicating whether the condition is expected to be true or false.
+	Intended use: 
+		if (EXPECT(COMPARISON, RESULT))
+			stuff;
+	However I found (around 2011 I suspect?) that on an intel mac __builtin_expect
+	seemed to generate poor code. As a result, for now this macro doesn't do anything
+	beyond just evaluate the comparison	*/
+#define EXPECT(COMPARISON, RESULT) (COMPARISON)
 
 #include "jAssert.h"
 #include "jHighPrecisionFloat.h"      // Will just define jreal as double, unless compile-time flag specifically set
@@ -54,33 +91,11 @@ template<class T> T CUBE(const T &a) { return a*a*a; }
     #define LIMIT(N, L, U) (std::max(std::min((N), (U)), (L)))
 #endif
 
-#define SOCKET_ERROR        -1
+#ifndef _WIN32
+    #define SOCKET_ERROR        -1
+#endif
 extern const int noSigPipe;
 
 #define SWF NSString stringWithFormat
-
-#define WANT_INLINE __attribute__((always_inline))
-
-/*	The intention here was to offer a macro to assist with branch prediction,
-	by indicating whether the condition is expected to be true or false.
-	Intended use: 
-		if (EXPECT(COMPARISON, RESULT))
-			stuff;
-	However I found (around 2011 I suspect?) that on an intel mac __builtin_expect
-	seemed to generate poor code. As a result, for now this macro doesn't do anything
-	beyond just evaluate the comparison	*/
-#define EXPECT(COMPARISON, RESULT) (COMPARISON)
-
-inline double random_01(void)
-{
-	// Return a random number between 0 and 1
-	return ((double)random()) / 2147483647.0;		// (2^31 - 1)
-}
-
-inline double random_pm1(void)
-{
-	// Return a random number between -1 and 1
-	return -1.0 + ((double)random()) / 1073741823.0;		// (2^30 - 1)
-}
 
 #endif
