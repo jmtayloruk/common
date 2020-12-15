@@ -45,6 +45,18 @@ namespace fundamental_constants_r
 #include "jBigNum.h"
 #include "jCoord.h"
 
+inline double random_01(void)
+{
+    // Return a random number between 0 and 1
+    return ((double)random()) / 2147483647.0;        // (2^31 - 1)
+}
+
+inline double random_pm1(void)
+{
+    // Return a random number between -1 and 1
+    return -1.0 + ((double)random()) / 1073741823.0;        // (2^30 - 1)
+}
+
 void *void_aligned_malloc(size_t size, size_t align_size);
 void aligned_free(volatile void *inPtr);
 template<class C> C *aligned_malloc(size_t size, size_t align_size = 16)
