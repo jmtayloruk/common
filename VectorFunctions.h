@@ -18,7 +18,9 @@
 #if HAS_SSE     /* SSE instruction set for Intel processors */
     /*  Note 1: On OS X at least, there are some builtins that expect a signed input, but the instruction definition is very clear that it operates on unsigned chars.
         It may have something to do with the fact that the SSE headers on OS X do not attempt to distinguish between signed and unsigned types, for some reason.
-        This is rather odd, but can be accommodated by including a cast on a and b to make this work.   */
+        This is rather odd, but can be accommodated by including a cast on a and b to make this work.
+        Initially I casted to my equivalent signed type (e.g. vUInt16), but I am now casting to the generic __m128i.
+        That's ever so slightly less responsible with type safety, but it allows compatibility with the vector types I use under Windows */
     #if __SSSE3__
         #include <tmmintrin.h>		// SSSE3 (supplemental SSE3)
 	#elif __SSE3__
@@ -64,9 +66,9 @@
     template<class T> T vOr(T a, T b) { return a | b; }
     template<class T> T vAndNot(T a, T b) { return ~a & b; }
 
-    inline vUInt8 vMax(vUInt8 a, vUInt8 b) { return (vUInt8)__builtin_ia32_pmaxub128((vInt8)a, (vInt8)b); }    // See Note 1 on signed/unsigned, above
+    inline vUInt8 vMax(vUInt8 a, vUInt8 b) { return _mm_max_epu8(a, b); }
     #if __SSE4_1__
-        inline vUInt16 vMax(vUInt16 a, vUInt16 b) { return (vUInt16)__builtin_ia32_pmaxuw128((vInt16)a, (vInt16)b); }    // See Note 1 on signed/unsigned, above
+        inline vUInt16 vMax(vUInt16 a, vUInt16 b) { return _mm_max_epu16(a, b); }
     #else
         /* Before SSE4.1 we need to emulate _mm_max_epu16, using code cribbed from http://www.alfredklomp.com/programming/sse-intrinsics/
             This only seems to be 5-10% slower than the dedicated instruction (bearing in mind that we probably need to read uncached inputs)   */
@@ -92,8 +94,8 @@
     // I have gone with unsigned, because I think that reflects the use of the absolute operator - but the result would also make sense
     // if interpreted as a signed integer (it will not overflow).
     // It surely makes sense for the input type to vAbs to be signed.
-    inline vUInt32 vAbs(vInt32 a)	{ return (vUInt32)__builtin_ia32_pabsd128(a); } // Note that this is only available with SSSE3
-    inline vUInt64 vSad_u8_to_u64(vUInt8 a, vUInt8 b) { return (vUInt64)__builtin_ia32_psadbw128((vInt8)a, (vInt8)b); }    // See Note 1 on signed/unsigned, above
+    inline vUInt32 vAbs(vInt32 a)	{ return (vUInt32)_mm_abs_epi32(a); } // Note that this is only available with SSSE3
+    inline vUInt64 vSad_u8_to_u64(vUInt8 a, vUInt8 b) { return (vUInt64)_mm_sad_epu8(a, b); }    // See Note 1 on signed/unsigned, above
     /*  These next two functions mirror _mm_unpacklo/hi_epi16, but with proper type safety
         Frustratingly, those _mm_ intrinsics map to different code on different compilers, and neither seems to compile universally.
         As a result, I just cast the inputs and call through to the _mm_ function, whatever it may be under the covers. */
@@ -263,6 +265,20 @@
     #define vRSqrtEst vec_rsqrte
     #define vREst vec_re
     #define vNMSub vec_nmsub
+
+    /*  Note that VecUnion used to be in VectorTypes.h, for all SIMD platforms.
+        However, it's not immediately compatible with the 'vector class library'
+        I use on Windows. I have therefore moved this here, which I think is
+        the only place I use it in 'active' code at the moment  */
+    typedef union
+    {
+        vFloat    vf;
+        //    vUInt32    v32;
+        vUInt8    vc;
+        float    f[4];
+        long    l[4];
+        short    s[8];
+    } VecUnion;
 
     inline vFloat vSplatFirstValue(vFloat a) { return vec_splat(a, 0); }
     inline vFloat vSplatSecondValue(vFloat a) { return vec_splat(a, 1); }

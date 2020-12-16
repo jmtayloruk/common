@@ -37,23 +37,28 @@
         I could solve that problem just by renaming my own types (everywhere!), but hopefully it won't come to that.
      
         I have various different versions of code that I have tried, at various points:             */
+
     #if _MSC_VER
-        /*  To compile SSE code on Windows, fundamentally the issue seems to be that I haven’t found a way
-            to have the different vector types be truly distinct.
-            If they all typedef to __m128i then the compiler can’t distinguish between them when expanding a template,
+        /*  It's difficult to work with SSE code on Windows, because MSVC does not distinguish different integer vector types.
+            They are all __m128i. This means the compiler can’t distinguish between them when expanding a template,
             so I can’t write separate code for each type and just have e.g. a vAdd wrapper that works for any/all field widths.
-            And also, incidentally, operator- and similar are not available for vector types (of course, since they’re all just __m128i).
+            And also, operator- and similar are not available for vector types (of course, since they’re all just __m128i).
+            So, I have ended up using the types from Agner Fog's "vector class library".
+            I don't actually use all the features from there, although in retrospect it would be very useful for SSE
+            (although it doesn't support Neon or Altivec...). I just use the distinct datatypes (and operators) from there,
+            and pass them through to my functions in VectorFunctions.h just like I do on other platforms
          */
-	    typedef __m128i vUInt8;
-	    typedef __m128i vUInt16;
-	    typedef __m128i vUInt32;
-	    typedef __m128i vUInt64;
-	    typedef __m128i vInt8;
-	    typedef __m128i vInt16;
-	    typedef __m128i vInt32;
-	    typedef __m128i vInt64;
-		typedef __m128 vFloat;
-		typedef __m128d vDouble;
+        #include "vectori128.h"
+        typedef Vec16uc vUInt8;
+        typedef Vec8us  vUInt16;
+        typedef Vec4ui  vUInt32;
+        typedef Vec2uq  vUInt64;
+        typedef Vec16c  vInt8;
+        typedef Vec8s   vInt16;
+        typedef Vec4i   vInt32;
+        typedef Vec2q   vInt64;
+        typedef __m128 vFloat;
+        typedef __m128d vDouble;
 	#elif 0
         // This earlier code seems to work on all machines I have tried, but has the problem that it
         // does not distinguish between signed and unsigned types (they are just synonymous with each other).
@@ -145,18 +150,6 @@
     {
         int16_t i[8];
     } vInt16;
-#endif
-
-#if HAS_ALTIVEC || HAS_SSE
-	typedef union
-	{
-		vFloat	vf;
-	//	vUInt32	v32;
-		vUInt8	vc;
-		float	f[4];
-		long	l[4];
-		short	s[8];
-	} VecUnion;
 #endif
 
 #endif
