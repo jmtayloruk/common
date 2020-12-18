@@ -91,7 +91,18 @@
     // I have gone with unsigned, because I think that reflects the use of the absolute operator - but the result would also make sense
     // if interpreted as a signed integer (it will not overflow).
     // It surely makes sense for the input type to vAbs to be signed.
-    inline vUInt32 vAbs(vInt32 a)	{ return (vUInt32)_mm_abs_epi32((__m128i)a); } // Note that this is only available with SSSE3
+    #if __SSSE3__
+        // Direct function _mm_abs_epi32 available under SSSE3
+        inline vUInt32 vAbs(vInt32 a)	{ return (vUInt32)_mm_abs_epi32((__m128i)a); }
+    #else
+        // Fallback code
+        inline vUInt32 vAbs(vInt32 a)
+        {
+            __m128i sgn = _mm_srai_epi32((__m128i)a, 31);
+            __m128i inv = _mm_xor_si128((__m128i)a, sgn);
+            return (vUInt32)_mm_sub_epi32(inv, sgn);
+        }
+    #endif
     inline vUInt64 vSad_u8_to_u64(vUInt8 a, vUInt8 b) { return (vUInt64)_mm_sad_epu8((__m128i)a, (__m128i)b); }    // See Note 1 on signed/unsigned, above
     /*  These next two functions mirror _mm_unpacklo/hi_epi16, but with proper type safety
         Frustratingly, those _mm_ intrinsics map to different code on different compilers, and neither seems to compile universally.

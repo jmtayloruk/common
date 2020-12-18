@@ -198,7 +198,7 @@ template<> void CrossCorrelateImageWindows<kCorrelationSAD, unsigned char>(Image
             // n.b. at this point we could use vpaddq_u32 to concentrate the sum into the first two elements of sumVec,
             // but we are only doing this once, outside the xy loop, so we can just sum the scalar elements longhand.
             sum += SumAcross(&sumVec);
-#elif __SSE3__
+#elif __SSE2__
             vUInt64 sumVec = vZeroUInt64();
             for (int y = 0; y < w1Height; y++)
             {
@@ -277,7 +277,7 @@ template<> void CrossCorrelateImageWindows<kCorrelationSAD, unsigned short>(Imag
             for (int y = inset; y < w1Height-inset; y++)
             {
                 int x = inset;
-#if __SSE3__
+#if __SSE2__
                 vUInt16 zeros = vZeroUInt16();
                 for (; x <= w1Width - 8-inset; x += 8)
 				{
@@ -371,7 +371,7 @@ template<> void CrossCorrelateImageWindows<kCorrelationSAD, int>(ImageWindow<int
             for (int y = 0; y < w1Height; y++)
             {
                 int x = 0;
-#if __SSSE3__ || __ARM_NEON__
+#if __SSE2__ || __ARM_NEON__
                 // I have not documented why I have used unaligned loads here, but I suspect I decided it did not involve much of a speed penalty,
                 // and possibly I did have a use-case where this was necessary...
                 for (; x <= w1Width - 4; x += 4)
