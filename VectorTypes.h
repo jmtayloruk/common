@@ -57,8 +57,11 @@
         typedef Vec8s   vInt16;
         typedef Vec4i   vInt32;
         typedef Vec2q   vInt64;
-        typedef __m128 vFloat;
-        typedef __m128d vDouble;
+        // On Windows I have compile errors with my floating-point vector code.
+        // Since I don't have a need for that at the moment, I will just disable support for that here.
+        //typedef __m128 vFloat;
+        //typedef __m128d vDouble;
+        #define NO_FLOAT_VECTOR 1
 	#elif 0
         // This earlier code seems to work on all machines I have tried, but has the problem that it
         // does not distinguish between signed and unsigned types (they are just synonymous with each other).

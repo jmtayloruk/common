@@ -21,20 +21,15 @@
         This is rather odd, but can be accommodated by including a cast on a and b to make this work.
         Initially I casted to my equivalent signed type (e.g. vUInt16), but I am now casting to the generic __m128i.
         That's ever so slightly less responsible with type safety, but it allows compatibility with the vector types I use under Windows */
-    #if __SSSE3__
-        #include <tmmintrin.h>		// SSSE3 (supplemental SSE3)
-	#elif __SSE3__
-		#include <pmmintrin.h>
-	#else
-		#include <emmintrin.h>
-		#include <xmmintrin.h>
-	#endif
+    #include <immintrin.h>      // This will include headers for all vector families available in the current build
 
     inline vUInt16 vZeroUInt16(void) { return (vUInt16)_mm_setzero_si128(); }
     inline vUInt32 vZeroUInt32(void) { return (vUInt32)_mm_setzero_si128(); }
     inline vUInt64 vZeroUInt64(void) { return (vUInt64)_mm_setzero_si128(); }
-    inline vFloat vZero(void) { return _mm_setzero_ps(); }
-    inline vDouble vZeroD(void) { return _mm_setzero_pd(); }
+    #if !NO_FLOAT_VECTOR
+        inline vFloat vZero(void) { return _mm_setzero_ps(); }
+        inline vDouble vZeroD(void) { return _mm_setzero_pd(); }
+    #endif
 
     // This function can be used to guarantee that a load will succeed even if the address is unaligned.
     // Without this, the compiler will implicitly use an aligned load when an address is dereferenced.
@@ -46,29 +41,31 @@
     inline vInt8 vSub(vUInt8 a, vUInt8 b)	{ return (vInt8)(a - b); }
     inline vInt16 vSub(vUInt16 a, vUInt16 b)	{ return (vInt16)(a - b); }
     inline vInt32 vSub(vUInt32 a, vUInt32 b)	{ return (vInt32)(a - b); }
-    inline vFloat vSub(vFloat a, vFloat b)	{ return a - b; }
 
-	inline vFloat vMul( vFloat a, vFloat b )	{ return _mm_mul_ps( a, b ); }
-	inline vFloat vMAdd( vFloat a, vFloat b, vFloat c )	{ return vAdd( c, vMul( a, b ) ); }
-	inline vFloat vNegate( vFloat a ) { return _mm_xor_ps(a, (vFloat) { -0.0, -0.0, -0.0, -0.0 }); }
-	inline vFloat vNegateReal( vFloat a ) { return _mm_xor_ps(a, (vFloat) { -0.0, 0.0, -0.0, 0.0 }); }
-	inline vFloat vNegateImag( vFloat a ) { return _mm_xor_ps(a, (vFloat) { 0.0, -0.0, 0.0, -0.0 }); }
-    /*	nmsub:			result = �( arg1 * arg2 - arg3 )
-        equivalent to	result =  ( arg3 - arg1 * arg2 )*/
-	inline vFloat vNMSub(vFloat a, vFloat b, vFloat c) { return vSub( c, vMul(a, b) ); }
-	inline vFloat vAbs( vFloat a) { return _mm_andnot_ps((vFloat) { -0.0, -0.0, -0.0, -0.0 }, a); }
-	#define vRSqrtEst _mm_rsqrt_ps
-	#define vREst _mm_rcp_ps
+    #if !NO_FLOAT_VECTOR
+        inline vFloat vSub(vFloat a, vFloat b)	{ return a - b; }
 
-	inline vFloat vXOR(vFloat a, vFloat b) { return _mm_xor_ps(a, b); }
+        inline vFloat vMul( vFloat a, vFloat b )	{ return _mm_mul_ps( a, b ); }
+        inline vFloat vMAdd( vFloat a, vFloat b, vFloat c )	{ return vAdd( c, vMul( a, b ) ); }
+        inline vFloat vNegate( vFloat a ) { return _mm_xor_ps(a, (vFloat) { -0.0, -0.0, -0.0, -0.0 }); }
+        inline vFloat vNegateReal( vFloat a ) { return _mm_xor_ps(a, (vFloat) { -0.0, 0.0, -0.0, 0.0 }); }
+        inline vFloat vNegateImag( vFloat a ) { return _mm_xor_ps(a, (vFloat) { 0.0, -0.0, 0.0, -0.0 }); }
+        /*	nmsub:			result = �( arg1 * arg2 - arg3 )
+            equivalent to	result =  ( arg3 - arg1 * arg2 )*/
+        inline vFloat vNMSub(vFloat a, vFloat b, vFloat c) { return vSub( c, vMul(a, b) ); }
+        inline vFloat vAbs( vFloat a) { return _mm_andnot_ps((vFloat) { -0.0, -0.0, -0.0, -0.0 }, a); }
+        #define vRSqrtEst _mm_rsqrt_ps
+        #define vREst _mm_rcp_ps
 
+        inline vFloat vXOR(vFloat a, vFloat b) { return _mm_xor_ps(a, b); }
+    #endif
     template<class T> T vAnd(T a, T b) { return a & b; }
     template<class T> T vOr(T a, T b) { return a | b; }
     template<class T> T vAndNot(T a, T b) { return ~a & b; }
 
-    inline vUInt8 vMax(vUInt8 a, vUInt8 b) { return _mm_max_epu8(a, b); }
+    inline vUInt8 vMax(vUInt8 a, vUInt8 b) { return (vUInt8)_mm_max_epu8((__m128i)a, (__m128i)b); }
     #if __SSE4_1__
-        inline vUInt16 vMax(vUInt16 a, vUInt16 b) { return _mm_max_epu16(a, b); }
+        inline vUInt16 vMax(vUInt16 a, vUInt16 b) { return (vUInt16)_mm_max_epu16((__m128i)a, (__m128i)b); }
     #else
         /* Before SSE4.1 we need to emulate _mm_max_epu16, using code cribbed from http://www.alfredklomp.com/programming/sse-intrinsics/
             This only seems to be 5-10% slower than the dedicated instruction (bearing in mind that we probably need to read uncached inputs)   */
@@ -94,14 +91,15 @@
     // I have gone with unsigned, because I think that reflects the use of the absolute operator - but the result would also make sense
     // if interpreted as a signed integer (it will not overflow).
     // It surely makes sense for the input type to vAbs to be signed.
-    inline vUInt32 vAbs(vInt32 a)	{ return (vUInt32)_mm_abs_epi32(a); } // Note that this is only available with SSSE3
-    inline vUInt64 vSad_u8_to_u64(vUInt8 a, vUInt8 b) { return (vUInt64)_mm_sad_epu8(a, b); }    // See Note 1 on signed/unsigned, above
+    inline vUInt32 vAbs(vInt32 a)	{ return (vUInt32)_mm_abs_epi32((__m128i)a); } // Note that this is only available with SSSE3
+    inline vUInt64 vSad_u8_to_u64(vUInt8 a, vUInt8 b) { return (vUInt64)_mm_sad_epu8((__m128i)a, (__m128i)b); }    // See Note 1 on signed/unsigned, above
     /*  These next two functions mirror _mm_unpacklo/hi_epi16, but with proper type safety
         Frustratingly, those _mm_ intrinsics map to different code on different compilers, and neither seems to compile universally.
         As a result, I just cast the inputs and call through to the _mm_ function, whatever it may be under the covers. */
     inline vUInt32 vUnpackLo(vUInt16 a, vUInt16 b) { return (vUInt32)_mm_unpacklo_epi16((__m128i)a, (__m128i)b); }
     inline vUInt32 vUnpackHi(vUInt16 a, vUInt16 b) { return (vUInt32)_mm_unpackhi_epi16((__m128i)a, (__m128i)b); }
 
+  #if !NO_FLOAT_VECTOR
     inline vFloat vSplatFirstValue(vFloat a) { return (vFloat)_mm_shuffle_epi32((__m128i)a, _MM_SHUFFLE(0, 0, 0, 0)); }
 	inline vFloat vSplatSecondValue(vFloat a) { return (vFloat)_mm_shuffle_epi32((__m128i)a, _MM_SHUFFLE(1, 1, 1, 1)); }
 	inline vFloat vSplatThirdValue(vFloat a) { return (vFloat)_mm_shuffle_epi32((__m128i)a, _MM_SHUFFLE(2, 2, 2, 2)); }
@@ -211,6 +209,7 @@
 			return _mm_shuffle_pd(c, d, _MM_SHUFFLE2(0, 0));
 		}
 	#endif
+  #endif
 #elif __ARM_NEON__       /* NEON instruction set for ARM processors */
     // Note that ARM support here is incomplete - I am just adding functions as and when I need them
     inline vUInt32 vZeroUInt32(void) { return vmovq_n_u32(0); }
@@ -323,7 +322,7 @@
     inline vFloat vCombineLowHalves(vFloat a, vFloat b) { return vPermute(a, b, (vUInt8) { 0, 1, 2, 3, 4, 5, 6, 7, 16, 17, 18, 19, 20, 21, 22, 23 }); }
 #endif
 
-#if HAS_SSE || HAS_ALTIVEC
+#if (HAS_SSE || HAS_ALTIVEC) && (!NO_FLOAT_VECTOR)
 //	inline vFloat vCMul(vFloat a, vFloat b, vFloat sum) { return vNMSub(vSplatImag(a), vSwapReIm(b), vMAdd(vSplatReal(a), vNegateImag(b), sum)); }
 	inline vFloat vCMul(vFloat a, vFloat b, vFloat sum) { return vMAdd(vSplatImag(a), vNegateReal(vSwapReIm(b)), vMAdd(vSplatReal(a), b, sum)); }
     inline vFloat vCMul(vFloat a, vFloat b) { return vMAdd(vSplatImag(a), vNegateReal(vSwapReIm(b)), vMul(vSplatReal(a), b)); }

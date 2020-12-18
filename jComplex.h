@@ -31,7 +31,8 @@ using std::complex;
 
 #include "jCommon.h"
 #include "jComplexAsStd.h"
-#if __SSE3__
+#include "VectorTypes.h"        // So that NO_FLOAT_VECTOR will be set if appropriate
+#if __SSE3__ && (!NO_FLOAT_VECTOR)
 	#include "jComplexAsVector.h"
 #endif
 
