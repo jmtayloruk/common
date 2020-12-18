@@ -62,6 +62,53 @@
         //typedef __m128 vFloat;
         //typedef __m128d vDouble;
         #define NO_FLOAT_VECTOR 1
+		
+        /*  Unlike everybody else in the world, MSVC does not define the lesser instruction sets
+            that are also available, e.g. __SSE2__ etc. We'll have to set those up here ourselves, which is a bit tedious. */
+        #if defined ( __SSE4_2__ )
+            // SSSE4.2
+            #ifndef __SSE4_1__
+                #define __SSE4_1__ 1
+            #endif
+            #ifndef __SSSE3__
+                #define __SSSE3__ 1
+            #endif
+            #ifndef __SSE3__
+                #define __SSE3__ 1
+            #endif
+            #ifndef __SSE2__
+                #define __SSE2__ 1
+            #endif
+        #elif defined ( __SSE4_1__ )
+            // SSSE4.1
+            #ifndef __SSSE3__
+                #define __SSSE3__ 1
+            #endif
+            #ifndef __SSE3__
+                #define __SSE3__ 1
+            #endif
+            #ifndef __SSE2__
+                #define __SSE2__ 1
+            #endif
+        #elif defined ( __SSSE3__ )
+            // SSSE3
+            #ifndef __SSE3__
+                #define __SSE3__ 1
+            #endif
+            #ifndef __SSE2__
+                #define __SSE2__ 1
+            #endif
+        #elif defined( __SSE3__ )
+            // SSE3
+            #ifndef __SSE2__
+                #define __SSE2__ 1
+            #endif
+        #elif defined(_M_AMD64) || defined(_M_X64) || defined(__x86_64__) || (_M_IX86_FP == 2)
+            // SSE2
+            #ifndef __SSE2__
+                #define __SSE2__ 1
+            #endif
+        #endif		
 	#elif 0
         // This earlier code seems to work on all machines I have tried, but has the problem that it
         // does not distinguish between signed and unsigned types (they are just synonymous with each other).
