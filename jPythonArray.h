@@ -167,7 +167,7 @@ template<class Type> class JPythonArray
             if (inStrides == NULL)
             {
                 // Caller expects us to choose suitable strides. We will just make it contiguous.
-                int s = 1;
+                npy_intp s = 1;
                 for (int n = inNum - 1; n >= 0; n--)
                 {
                     tempStrides[n] = s;
