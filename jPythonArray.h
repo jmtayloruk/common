@@ -1,5 +1,3 @@
-// new (fails)
-
 #ifndef __JPYTHONARRAY_H__
 #define __JPYTHONARRAY_H__ 1
 
