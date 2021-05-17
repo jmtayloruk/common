@@ -15,54 +15,7 @@
 #define HAS_VECTOR_SUPPORT 1        /* will be overridden, below, if we are just using a scalar substitute */
 
 #if HAS_SSE
-	#if __SSSE3__
-        #include <tmmintrin.h>		// SSSE3 (supplemental SSE3)
-    #elif __SSE3__
-		#include <pmmintrin.h>
-    #elif __SSE2__
-        #include <emmintrin.h>
-	#else
-		#include <xmmintrin.h>
-	#endif
-
-    /*  It has turned out to be a bit of a nightmare to handle vector types in a way that:
-            1. Is portable across all platforms, including totally different instruction sets
-            2. Is type-safe, i.e. does not allow accidential re-interpretation of e.g. vUInt8 as vInt32.
-        On the mac, clang seems to default to -flax-vector-conversions, which makes all these type distinctions synonymous anyway.
-        If I want to do proper type safety checks I need to explicitly specify -fno-lax-vector-conversions.
-
-        I should also watch out: it is possible that on old versions of gcc there may be problems, at least on OS X.
-        vecLibTypes.h (included by Accelerate.h) defines the same types that I use, but on gcc versions <3.3 it looks like
-        it defines them all as __m128i. That would cause conflict with what I do here.
-        I could solve that problem just by renaming my own types (everywhere!), but hopefully it won't come to that.
-     
-        I have various different versions of code that I have tried, at various points:             */
-
     #if _MSC_VER
-        /*  It's difficult to work with SSE code on Windows, because MSVC does not distinguish different integer vector types.
-            They are all __m128i. This means the compiler can’t distinguish between them when expanding a template,
-            so I can’t write separate code for each type and just have e.g. a vAdd wrapper that works for any/all field widths.
-            And also, operator- and similar are not available for vector types (of course, since they’re all just __m128i).
-            So, I have ended up using the types from Agner Fog's "vector class library".
-            I don't actually use all the features from there, although in retrospect it would be very useful for SSE
-            (although it doesn't support Neon or Altivec...). I just use the distinct datatypes (and operators) from there,
-            and pass them through to my functions in VectorFunctions.h just like I do on other platforms
-         */
-        #include "vectori128.h"
-        typedef Vec16uc vUInt8;
-        typedef Vec8us  vUInt16;
-        typedef Vec4ui  vUInt32;
-        typedef Vec2uq  vUInt64;
-        typedef Vec16c  vInt8;
-        typedef Vec8s   vInt16;
-        typedef Vec4i   vInt32;
-        typedef Vec2q   vInt64;
-        // On Windows I have compile errors with my floating-point vector code.
-        // Since I don't have a need for that at the moment, I will just disable support for that here.
-        //typedef __m128 vFloat;
-        //typedef __m128d vDouble;
-        #define NO_FLOAT_VECTOR 1
-		
         /*  Unlike everybody else in the world, MSVC does not define the lesser instruction sets
             that are also available, e.g. __SSE2__ etc. We'll have to set those up here ourselves, which is a bit tedious. */
         #if defined ( __SSE4_2__ )
@@ -109,29 +62,48 @@
                 #define __SSE2__ 1
             #endif
         #endif		
-	#elif 0
-        // This earlier code seems to work on all machines I have tried, but has the problem that it
-        // does not distinguish between signed and unsigned types (they are just synonymous with each other).
+    #endif
 
-        typedef __v16qi                 vUInt8;
-        typedef __v8hi                  vUInt16;
-        typedef __v4si                  vUInt32;
-        typedef __v2di                  vUInt64;
+	#if __SSSE3__
+        #include <tmmintrin.h>		// SSSE3 (supplemental SSE3)
+    #elif __SSE3__
+		#include <pmmintrin.h>
+    #elif __SSE2__
+        #include <emmintrin.h>
+	#else
+		#include <xmmintrin.h>
+	#endif
 
-        typedef __v16qi                 vInt8;
-        typedef __v8hi                  vInt16;
-        typedef __v4si                  vInt32;
-        typedef __v2di                  vInt64;
+    /*  It has turned out to be a bit of a nightmare to handle vector types in a way that:
+            1. Is portable across all platforms, including totally different instruction sets
+            2. Is type-safe, i.e. does not allow accidential re-interpretation of e.g. vUInt8 as vInt32.
+        On the mac, clang seems to default to -flax-vector-conversions, which makes all these type distinctions synonymous anyway.
+        If I want to do proper type safety checks I need to explicitly specify -fno-lax-vector-conversions.
+     */
 
-        typedef __v4sf                  vFloat;
-        typedef __v2df                  vDouble;
+    #if _MSC_VER
+        /*  It's difficult to work with SSE code on Windows, because MSVC does not distinguish different integer vector types.
+            They are all __m128i. To be able to distinguish between them when expanding a template,
+            we need separate wrapper classes for each type, to replace some of the roles of the GCC types
+         */
+        #include "vectori128.h"
+        typedef Vec16uc vUInt8;
+        typedef Vec8us  vUInt16;
+        typedef Vec4ui  vUInt32;
+        typedef Vec2uq  vUInt64;
+        typedef Vec16c  vInt8;
+        typedef Vec8s   vInt16;
+        typedef Vec4i   vInt32;
+        typedef Vec2q   vInt64;
+        // On Windows I have compile errors with my floating-point vector code.
+        // Since I don't have a need for that at the moment, I will just disable support for that here.
+        //typedef __m128 vFloat;
+        //typedef __m128d vDouble;
+        #define NO_FLOAT_VECTOR 1
     #else
         /*  The subsequent alternative code does not work on all machines or gcc versions
-            [TODO: I think... but I should retry now I understand things better]
             but it successfully distinguishes between signed and unsigned types on a mac.
-            That is very useful for checking I am not mixing types unintentionally,
-            and I think it may also be vital now that I am using operator- to do subtraction
-            (since I think signed/unsigned subtraction are slightly different, aren't they?).   */
+            That is very useful for checking I am not mixing types unintentionally.   */
         typedef unsigned char           vUInt8          __attribute__ ((__vector_size__ (16)));
         typedef unsigned short          vUInt16         __attribute__ ((__vector_size__ (16)));
         typedef unsigned int            vUInt32         __attribute__ ((__vector_size__ (16)));

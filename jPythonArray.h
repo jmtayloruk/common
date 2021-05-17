@@ -1,5 +1,3 @@
-// new (fails)
-
 #ifndef __JPYTHONARRAY_H__
 #define __JPYTHONARRAY_H__ 1
 
@@ -19,6 +17,7 @@
 #include "numpy/arrayobject.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <vector>
 #include <stdexcept>
 #include "jAssert.h"
 

@@ -7,6 +7,7 @@
 //
 
 #include <stdint.h>         // Seems to be needed on some platforms
+#include <float.h>         // Seems to be needed on some platforms
 #include "PIVImageWindow.h"
 #include "VectorTypes.h"
 #include "VectorFunctions.h"
@@ -396,13 +397,13 @@ template<> void CrossCorrelateImageWindows<kCorrelationSAD, int>(ImageWindow<int
 /*	I haven't worked out a neat way of avoiding link errors due to these not being instantiated,
 	so I just force their instantiation. I suspect I should just have all the specializations in a header file,
 	but that seems a bit messy in terms of dependencies?	*/
-template void CrossCorrelateImageWindows<kCorrelationSAD, unsigned short>(ImageWindow<unsigned short> &window1, ImageWindow<unsigned short> &window2, ImageWindow<double> &result);
+//template void CrossCorrelateImageWindows<kCorrelationSAD, unsigned short>(ImageWindow<unsigned short> &window1, ImageWindow<unsigned short> &window2, ImageWindow<double> &result);
 template void CrossCorrelateImageWindows<kCorrelationSSD, unsigned short>(ImageWindow<unsigned short> &window1, ImageWindow<unsigned short> &window2, ImageWindow<double> &result);
 template void CrossCorrelateImageWindows<kCorrelationDCC, unsigned short>(ImageWindow<unsigned short> &window1, ImageWindow<unsigned short> &window2, ImageWindow<double> &result);
 template void CrossCorrelateImageWindows<kCorrelationSAD, double>(ImageWindow<double> &window1, ImageWindow<double> &window2, ImageWindow<double> &result);
 template void CrossCorrelateImageWindows<kCorrelationSSD, double>(ImageWindow<double> &window1, ImageWindow<double> &window2, ImageWindow<double> &result);
 template void CrossCorrelateImageWindows<kCorrelationDCC, double>(ImageWindow<double> &window1, ImageWindow<double> &window2, ImageWindow<double> &result);
-template void CrossCorrelateImageWindows<kCorrelationSAD, unsigned char>(ImageWindow<unsigned char> &window1, ImageWindow<unsigned char> &window2, ImageWindow<double> &result);
+//template void CrossCorrelateImageWindows<kCorrelationSAD, unsigned char>(ImageWindow<unsigned char> &window1, ImageWindow<unsigned char> &window2, ImageWindow<double> &result);
 template void CrossCorrelateImageWindows<kCorrelationSSD, unsigned char>(ImageWindow<unsigned char> &window1, ImageWindow<unsigned char> &window2, ImageWindow<double> &result);
-template void CrossCorrelateImageWindows<kCorrelationSAD, int>(ImageWindow<int> &window1, ImageWindow<int> &window2, ImageWindow<double> &result);
+//template void CrossCorrelateImageWindows<kCorrelationSAD, int>(ImageWindow<int> &window1, ImageWindow<int> &window2, ImageWindow<double> &result);
 template void CrossCorrelateImageWindows<kCorrelationSSD, int>(ImageWindow<int> &window1, ImageWindow<int> &window2, ImageWindow<double> &result);
