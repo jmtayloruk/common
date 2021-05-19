@@ -257,7 +257,10 @@ template<> void CrossCorrelateImageWindows<kCorrelationSAD, unsigned short>(Imag
     // on how large a correlation matrix we can process without overflowing our data types.
 #ifdef Py_ERRORS_H
 	if (maxDX * maxDY >= (1<<15))
-		PyErr_Format(PyErr_NewException((char*)"exceptions.TypeError", NULL, NULL), "WOAH - that's a seriously big correlation matrix! This integer-based SAD code only accepts IWs that lead to correlation matrices with up to 2^15 entries.");
+    {
+		PyErr_Format(PyExc_TypeError, "WOAH - that's a seriously big correlation matrix! This integer-based SAD code only accepts IWs that lead to correlation matrices with up to 2^15 entries.");
+        throw std::invalid_argument("correlation matrix too large");
+    }
 #else
 	ALWAYS_ASSERT(maxDX * maxDY < (1<<15));
 #endif
@@ -337,7 +340,10 @@ void Check16BitData(ImageWindow<int> &window1)
 	int result = orRest | OrAcross(&orVec);
 #ifdef Py_ERRORS_H
 	if (result & 0xFFFF0000)
-        PyErr_Format(PyErr_NewException((char*)"exceptions.TypeError", NULL, NULL), "ERROR - you passed in values greater than 2^16 - 1 to the fast SAD code!");
+    {
+        PyErr_Format(PyExc_TypeError, "ERROR - you passed in values greater than 2^16 - 1 to the fast SAD code!");
+        throw std::invalid_argument("value out of range");
+    }
 #else
 	ALWAYS_ASSERT(!(result & 0xFFFF0000));
 #endif
@@ -358,7 +364,10 @@ template<> void CrossCorrelateImageWindows<kCorrelationSAD, int>(ImageWindow<int
 	Check16BitData(window2);
 #ifdef Py_ERRORS_H
 	if (maxDX * maxDY >= (1<<15))
-		PyErr_Format(PyErr_NewException((char*)"exceptions.TypeError", NULL, NULL), "WOAH - that's a seriously big correlation matrix! This integer-based SAD code only accepts IWs that lead to correlation matrices with up to 2^15 entries.");
+    {
+		PyErr_Format(PyExc_TypeError, "WOAH - that's a seriously big correlation matrix! This integer-based SAD code only accepts IWs that lead to correlation matrices with up to 2^15 entries.");
+        throw std::invalid_argument("correlation matrix too large");
+    }
 #else
 	ALWAYS_ASSERT(maxDX * maxDY < (1<<15));
 #endif

@@ -103,7 +103,7 @@ template<class Type> class JPythonArray
         {
             // If this error is hit then the wrong array type was passed to the JPythonArray class
             // Note that array enums can be checked at anaconda/lib/python3.5/site-packages/numpy/core/include/numpy/ndarraytypes.h
-            PyErr_Format(PyErr_NewException((char*)"exceptions.TypeError", NULL, NULL), "Array type %d (%s) didn't match expected type %d (%s)", PyArray_TYPE(obj), StringForPythonType(PyArray_TYPE(obj)), ArrayType(), StringForPythonType(ArrayType()));
+            PyErr_Format(PyExc_TypeError, "Array type %d (%s) didn't match expected type %d (%s)", PyArray_TYPE(obj), StringForPythonType(PyArray_TYPE(obj)), ArrayType(), StringForPythonType(ArrayType()));
             printf("Array type %d (%s) didn't match expected type %d (%s)\n", PyArray_TYPE(obj), StringForPythonType(PyArray_TYPE(obj)), ArrayType(), StringForPythonType(ArrayType()));
             throw std::invalid_argument("array type incorrect");
         }
@@ -111,7 +111,7 @@ template<class Type> class JPythonArray
         if ((expectedDims != 0) && (dimCount != expectedDims))
         {
             // If this error is hit then an array with the wrong dimensions was passed to the JPythonArray class
-            PyErr_Format(PyErr_NewException((char*)"exceptions.TypeError", NULL, NULL), "Array type check failed: array had the wrong number of dimensions (got %d, expected %d)\n", dimCount, expectedDims);
+            PyErr_Format(PyExc_TypeError, "Array type check failed: array had the wrong number of dimensions (got %d, expected %d)\n", dimCount, expectedDims);
             printf("Array type check failed: array had the wrong number of dimensions (got %d, expected %d)\n", dimCount, expectedDims);
             throw std::invalid_argument("array dimensions incorrect");
         }
@@ -140,7 +140,8 @@ template<class Type> class JPythonArray
         else
         {
             // If this error is hit then the wrong array type was passed to the JPythonArray class
-            PyErr_Format(PyErr_NewException((char*)"exceptions.TypeError", NULL, NULL), "Object is not an array object");
+            PyErr_Format(PyExc_TypeError, "Object is not an array object");
+            throw std::invalid_argument("not an array object");
         }
     }
     
