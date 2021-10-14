@@ -227,16 +227,17 @@
     /*  It seems that ARM accepts unaligned loads by default, so there is no need for special code here.
         Incidentally, it sounds like it may be possible to include "alignment specifiers" to make *aligned* loads faster,
         but I have not currently looked into that at all. */
+    template<class T> T vLoadUnaligned(T *addr) { return addr[0]; }
+    // Fallback code if the template doesn't work (but it seems to)
     // inline vInt32 vLoadUnalignedInt32(void *addr) { return ((vInt32*)addr)[0]; }
     // inline vUInt32 vLoadUnalignedUInt32(void *addr) { return ((vUInt32*)addr)[0]; }
-    template<class T> T vLoadUnaligned(T *addr) { return addr[0]; }
 
     inline vUInt32 vOr(vUInt32 a, vUInt32 b) { return vorrq_u32(a, b); }
-    inline vInt32 vSub(vUInt32 a, vUInt32 b) { return (vInt32)vsubq_u32( a, b ); }
     inline vInt32 vAdd(vInt32 a, vInt32 b)	{ return vaddq_s32( a, b ); }
-    inline vInt32 vSub(vInt32 a, vInt32 b)	{ return vsubq_s32( a, b ); }
-    inline vUInt32 vAbs(vInt32 a)      { return (vUInt32)vabsq_s32( a ); }
     inline vUInt32 vAdd(vUInt32 a, vUInt32 b)	{ return vaddq_u32( a, b ); }
+    inline vInt32 vSub(vInt32 a, vInt32 b)	{ return vsubq_s32( a, b ); }
+    inline vInt32 vSub(vUInt32 a, vUInt32 b) { return (vInt32)vsubq_u32( a, b ); }
+    inline vUInt32 vAbs(vInt32 a)      { return (vUInt32)vabsq_s32( a ); }
 #elif __SPU__     /* PS3 SPU vector instruction set */
     #include <spu_intrinsics.h>
     #include <spu_mfcio.h> /* constant declarations for the MFC */

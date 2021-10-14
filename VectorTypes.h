@@ -172,6 +172,10 @@
     {
         int16_t i[8];
     } vInt16;
+    typedef struct
+    {
+        int16_t i[8];
+    } vInt32;
 #endif
 
 #endif
