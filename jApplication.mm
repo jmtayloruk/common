@@ -48,6 +48,12 @@ JApplication *baseApp = nil;
 	{
 		// Register that config dictionary with NSUserDefaults
 		NSString *configPath = [[NSBundle mainBundle] pathForResource:self.configFilename ofType:@"plist"];
+        if (configPath == nil)
+        {
+            [self alertWithText:[SWF:@"Config file \"%@\" not found", self.configFilename]
+                    andExplanation:[SWF:@"The program will now quit. If you want to pick another file, hold down the alt key and relaunch the program."]];
+            [self terminate:nil];
+        }
 		ALWAYS_ASSERT(configPath != nil);
 		[[NSUserDefaults standardUserDefaults] registerDefaults:[NSDictionary dictionaryWithContentsOfFile:configPath]];
 	}
