@@ -29,6 +29,7 @@
 -(void)setUpSheetOnWindow:(NSWindow *)win;
 -(void)closeSheetAndRelease;
 -(void)closeWindowAndRelease;
+-(void)resetStartTime;
 -(void)resetTimeEstimate;
 -(void)deltaProgress:(double)delta;
 -(void)internalUpdateProgress:(double)newProgress;

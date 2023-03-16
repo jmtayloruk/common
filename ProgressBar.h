@@ -39,6 +39,7 @@ class BaseProgressBar
 	void				UpdateLength(double newLength);
 
 	void				GetElapsedTime(int *hours, int *mins, double *secs);
+    void                ResetStartTime(void);
 	void				ResetTimeEstimate(void);
 	bool/*estimate obtained*/	EstimateTimeRemaining(int *hours, int *mins, double *secs);
 	

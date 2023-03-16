@@ -148,7 +148,7 @@ NSArray *DumpDiffsFromFrameInFolder(NSString *path)
 	NSNumber *timestamp = [self valueForKeyPath:@"frame.time_exposed"];
 	if (timestamp == nil)
 	{
-		timestamp = [self valueForKeyPath:@"frame.time_received3"];	// I used this for a brief while before remaining it to time_exposed
+		timestamp = [self valueForKeyPath:@"frame.time_received3"];	// I used this for a brief while before renaming it to time_exposed
 		if (timestamp == nil)
 			timestamp = [self valueForKeyPath:@"frame.time_received"];
 	}

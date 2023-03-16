@@ -66,6 +66,13 @@ void BaseProgressBar::GetElapsedTime(int *hours, int *mins, double *secs)
 	*secs -= *mins * 60;
 }
 
+void BaseProgressBar::ResetStartTime(void)
+{
+    // Under some specific circumstances we might want to not start counting until the action has properly begun,
+    // in which case we might want to reset the start time here.
+    startTime = GetTime();
+}
+
 void BaseProgressBar::ResetTimeEstimate(void)
 {
 	// Don't worry about how long it's taken to complete the items so far,

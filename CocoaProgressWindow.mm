@@ -183,6 +183,12 @@ void CocoaProgressWindowHelper::InternalUpdateProgress(double newProgress)
 	[remaining setNeedsDisplay];
 }
 
+-(void)resetStartTime
+{
+    _base->ResetStartTime();
+    [self resetTimeEstimate];
+}
+    
 -(void)resetTimeEstimate
 {
 	_base->ResetTimeEstimate();
