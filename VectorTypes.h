@@ -117,7 +117,7 @@
         typedef float                   vFloat          __attribute__ ((__vector_size__ (16)));
         typedef double                  vDouble         __attribute__ ((__vector_size__ (16)));
     #endif
-#elif __arm__
+#elif __ARM_NEON__
     #include <arm_neon.h>
     typedef uint32x4_t vUInt32;
     typedef int32x4_t vInt32;
