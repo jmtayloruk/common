@@ -565,7 +565,7 @@ NSBitmapImageRep *TintBitmap(NSBitmapImageRep *srcBitmap, NSColor *tint, NSColor
 			val = ((unsigned short*)srcData)[pos] * invMaxVal;
 		else
 			val = ((unsigned char*)srcData)[pos] * invMaxVal;
-		if (val == 1.0)
+		if (val >= 0.998)
 		{
 			destData[pos*4] = saturatedRGB[0];
 			destData[pos*4+1] = saturatedRGB[1];
