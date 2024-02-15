@@ -215,3 +215,12 @@ void LinearFit(std::vector<double> &x, std::vector<double> &y, double *alpha, do
 	*beta = (xyMean - xMean * yMean) / (x2Mean - SQUARE(xMean));
 	*alpha = yMean - *beta * xMean;
 }
+
+bool CheckSymbolExists(volatile void *symbol)
+{
+    // The compiler *really* wants to optimise out a test of a symbol being equal to NULL.
+    // This use of volatiles and typecasts seems to work (on Xcode 9.2).
+    // Caller should pass the address of a symbol that we want to check e.g. CheckSymbolExists((volatile void *)&spinSystemGetInstance)
+    volatile size_t symbolAsInt = (size_t)symbol;
+    return symbolAsInt != 0;
+}
