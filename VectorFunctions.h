@@ -224,6 +224,7 @@
 #elif __ARM_NEON__       /* NEON instruction set for ARM processors */
     // Note that ARM support here is incomplete - I am just adding functions as and when I need them
     inline vUInt32 vZeroUInt32(void) { return vmovq_n_u32(0); }
+    inline vUInt64 vZeroUInt64(void) { return vmovq_n_u64(0); }
     /*  It seems that ARM accepts unaligned loads by default, so there is no need for special code here.
         Incidentally, it sounds like it may be possible to include "alignment specifiers" to make *aligned* loads faster,
         but I have not currently looked into that at all. */
@@ -373,6 +374,12 @@
 
 #if __ARM_NEON__
     // Direct access to vector elements is possible in C code. This may be better for the compiler than the generic code below this?
+    inline uint64_t SumAcross(vUInt64 *i)
+    {
+        vUInt64 l = i[0];
+        return l[0] + l[1];
+    }
+
     inline uint32_t SumAcross(vUInt32 *i)
     {
         vUInt32 l = i[0];

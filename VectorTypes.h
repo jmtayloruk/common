@@ -119,9 +119,11 @@
     #endif
 #elif __ARM_NEON__
     #include <arm_neon.h>
+    typedef uint8x8_t vUInt8;
+    typedef uint8x8_t vUInt16;
     typedef uint32x4_t vUInt32;
-    typedef int32x4_t vInt32;
     typedef uint64x2_t vUInt64;
+    typedef int32x4_t vInt32;
 #elif HAS_ALTIVEC
 	#if __SPU__
 		#include <spu_intrinsics.h>
