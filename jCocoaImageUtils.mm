@@ -14,7 +14,7 @@
 #import "NSPointArithmetic.h"
 #import "CocoaProgressWindow.h"
 #include "jCommon.h"
-#include "../driver-installs/tiff-4.0.9/libtiff/tiffio.h"
+#include "tiffio.h"
 #include <fts.h>
 
 void ForEveryImageFileInDirectory(NSString *dir, void (^callback)(NSString *))

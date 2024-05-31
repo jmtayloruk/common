@@ -12,7 +12,7 @@
 #import <Cocoa/Cocoa.h>
 #include "jAssert.h"
 #import "jCocoaImageUtils.h"
-#include "../driver-installs/tiff-4.0.9/libtiff/tiffio.h"
+#include "tiffio.h"  // Which can be found in my driver-installs submodule, if not installed by some other means
 #include "MetadataParser.h"
 #include "ProgressBar.h"
 
