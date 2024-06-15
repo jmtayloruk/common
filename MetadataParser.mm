@@ -187,9 +187,9 @@ NSArray *DumpDiffsFromFrameInFolder(NSString *path)
 -(NSString *)frameDescNoPath
 {
 	if (self.parser.frameCount > 1)
-		return [SWF:@"%@ [%zd]", self.parser.imagePath.lastPathComponent, self.arrayIndex];
+		return [SWF:@"%@ [%zd]", self.parser.imageFilename, self.arrayIndex];
 	else
-		return self.parser.imagePath.lastPathComponent;
+		return self.parser.imageFilename;
 }
 
 -(bool)metadataAvailable { return self.parser.metadataAvailable; }
