@@ -10,6 +10,20 @@
 #ifndef __J_COCOA_IMAGE_UTILS_H__
 #define __J_COCOA_IMAGE_UTILS_H__ 1
 
+class Tinter
+{
+protected:
+    int _maxVal;
+    NSColor *_tint;
+    NSColor *_saturation;
+    double _exposureOnScreen;
+public:
+    std::vector<uint32_t> valLookup;
+    
+    Tinter(NSBitmapImageRep *scratchBitmap, int maxVal, NSColor *tint, NSColor *saturation, double exposureOnScreen);
+    bool MatchesSettings(int maxVal, NSColor *tint, NSColor *saturation, double exposureOnScreen);
+};
+
 NSArray *AllRawBitmapsFromImage(const NSImage *image);
 NSBitmapImageRep *RawBitmapFromImage(const NSImage *image);
 NSBitmapImageRep *RawBitmapFromImagePath(NSString *imagePath);
@@ -20,8 +34,7 @@ NSPoint FractionalCoordWithinImageView(const NSPoint &thePoint, const NSImageVie
 NSPoint ImageViewCoordToImageCoord(const NSPoint &thePoint, const NSImageView *theView);
 NSPoint ImageCoordToImageViewCoord(const NSPoint &thePoint, const NSImageView *theView);
 void BrightenNSImage(NSImage *image, int factor);
-NSImage *TintImage(NSImage *srcImage, NSColor *tint, NSColor *saturation, double exposureOnScreen);
-NSBitmapImageRep *TintBitmap(NSBitmapImageRep *srcBitmap, NSColor *tint, NSColor *saturation, double exposureOnScreen);
+NSBitmapImageRep *TintBitmap(NSBitmapImageRep *destBitmap, NSBitmapImageRep *srcBitmap, Tinter *tinter);
 void AddNoiseToImage(NSImage *image, double level);
 
 @interface NSBitmapImageRep (JBitmapExtensions)
