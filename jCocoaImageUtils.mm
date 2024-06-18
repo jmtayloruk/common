@@ -546,7 +546,7 @@ Tinter::Tinter(NSBitmapImageRep *scratchBitmap, int maxVal, NSColor *tint, NSCol
     double tintRGB[3] = { (double)destData[0], (double)destData[1], (double)destData[2] };
     unsigned char saturatedRGB[3] = { destData[4], destData[5], destData[6] };
 
-    ALWAYS_ASSERT(maxVal < 65536);
+    ALWAYS_ASSERT(maxVal < 65536);  // Sanity check we haven't been given a crazy bit depth by accident
     double invMaxVal = 1.0 / maxVal;
     for (int i = 0; i < 65536; i++)
     {
@@ -609,7 +609,9 @@ NSPoint ImageViewCoordToImageCoord(const NSPoint &thePoint, const NSImageView *t
 	/*	Converts from a point in an NSImageView (e.g. a mouse click) to the equivalent pixel coord
 		in the image that is being shown in the view.
 		This makes (hopefully reasonable!) assumptions about how the NSImageView draws the NSImage.
-		Note that we have to allow for whitespace due to aspect ratio mismatches	*/
+		Note that we have to allow for whitespace due to aspect ratio mismatches.
+        Note also that this is somewhat obsolete now I am using my own CameraFrameView etc within Spim GUI,
+        which defines its own conversion functions equivalent to this one.       	*/
 	double imageAspectRatio = theView.image.size.width / theView.image.size.height;
 	double scaleFactor;
 	NSPoint viewOrigin;
@@ -637,7 +639,9 @@ NSPoint ImageCoordToImageViewCoord(const NSPoint &thePoint, const NSImageView *t
 	/*	Converts from a pixel coord in an image to a screen coordinate in an NSImageView
 		that is displaying the image.
 		This makes (hopefully reasonable!) assumptions about how the NSImageView draws the NSImage.
-		Note that we have to allow for whitespace due to aspect ratio mismatches	*/
+		Note that we have to allow for whitespace due to aspect ratio mismatches.
+        Note also that this is somewhat obsolete now I am using my own CameraFrameView etc within Spim GUI,
+        which defines its own conversion functions equivalent to this one. */
 	double imageAspectRatio = theView.image.size.width / theView.image.size.height;
 	double scaleFactor;
 	NSPoint viewOrigin;
