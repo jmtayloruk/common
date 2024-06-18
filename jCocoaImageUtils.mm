@@ -586,12 +586,12 @@ NSBitmapImageRep *TintBitmap(NSBitmapImageRep *destBitmap, NSBitmapImageRep *src
     unsigned char *srcData = srcBitmap.bitmapData;
     unsigned char *destData = destBitmap.bitmapData;
     bool sixteenBit = (srcBitmap.bitsPerPixel == 16) ? true : false;
-    int width = srcBitmap.pixelsWide, height = srcBitmap.pixelsHigh;
+    NSInteger width = srcBitmap.pixelsWide, height = srcBitmap.pixelsHigh;
     std::vector<uint32_t> *valLookup = &tinter->valLookup;
     for (int y = 0, srcPos = 0; y < height; y++)
     {
         uint32_t *destRow = (uint32_t*)(destData + y * destBitmap.bytesPerRow);
-        for (int destRowPos = 0; destRowPos < width; destRowPos++, srcPos++)
+        for (NSInteger destRowPos = 0; destRowPos < width; destRowPos++, srcPos++)
         {
             int val;
             if (sixteenBit)

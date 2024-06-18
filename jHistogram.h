@@ -53,7 +53,7 @@ class jHistogram
 	int NumMissed(void) const { return numMissed; }
 	int MissedVal(void) const { return missedVal; }
 	size_t NumBins(void) const { return histogram.size(); }
-	double BinStartVal(int binNumber) const { /* Value at the lower boundary of this bin */ return firstBinStart + binNumber * binWidth; }
+	double BinStartVal(size_t binNumber) const { /* Value at the lower boundary of this bin */ return firstBinStart + binNumber * binWidth; }
 	int BinForVal(double val) const { /* Bin into which this value falls (no bounds checking) */return int((val - firstBinStart) / binWidth); }
 	double MaxVal(void) const;
 	void Print(void);
