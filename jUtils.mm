@@ -33,7 +33,7 @@ NSURL *PathToURL(NSString *path, NSURL *relativeTo)
 		When the error appeared, there did not seem to be anything controversial about the URL path, it just had some spaces in it.
      */
     CHECK(relativeTo != nil);       // Otherwise should call PathToURL(path)
-    if (false)//selectorAvailable)
+    if ((false))//selectorAvailable)
     {
         // I was experimenting with this code branch, but I am doubtful about whether I am
         // handling the path in an appropriate way for all encodings.
