@@ -541,7 +541,10 @@ JCache *imageCache = [JCache new];
 -(NSImage *)multiPageImage
 {
 	// Load the image if necessary, but attempt to cache it since it will probably be used again pretty soon.
-	NSImage *result = [imageCache objectForKey:self.imagePath];
+    // Note that resolving self.imagePath is actually costly in itself!
+    // I at least cache that once at the start of this function now.
+    NSString *imagePath = self.imagePath;
+	NSImage *result = [imageCache objectForKey:imagePath];
 	if (result != nil)
 	{
 		// Success - file is in cache
@@ -554,13 +557,13 @@ JCache *imageCache = [JCache new];
 		The upshot is that this has a big memory footprint on 32-bit systems.
 		Because of this I just load the damn thing myself using libtiff!	*/
 	NSImage *theImage;
-	if ([self.imagePath hasSuffix:@".tif"] ||
-		[self.imagePath hasSuffix:@".tiff"])
+	if ([imagePath hasSuffix:@".tif"] ||
+		[imagePath hasSuffix:@".tiff"])
 	{
-		theImage = NSImageFromTiffFile(self.imagePath);
+		theImage = NSImageFromTiffFile(imagePath);
 	}
 	else
-		theImage = [[[NSImage alloc] initWithContentsOfFile:self.imagePath] autorelease];
+		theImage = [[[NSImage alloc] initWithContentsOfFile:imagePath] autorelease];
 	if (theImage == nil)
 	{
 		/*	In the past (some time before Jan 2018) I've encountered problems where we occasionally fail to load
@@ -568,8 +571,8 @@ JCache *imageCache = [JCache new];
 			I wanted to see if an immediate second try helps or not.
 			(I suspect we are much less likely to encounter that problem anyway, nowadays, since I am encouraging
 			people to disable spotlight indexing in folders where they are saving video files, for performance reasons)	*/
-		NSLog(@"File not found at %@. Trying again\n", self.imagePath);
-		theImage = [[[NSImage alloc] initWithContentsOfFile:self.imagePath] autorelease];
+		NSLog(@"File not found at %@. Trying again\n", imagePath);
+		theImage = [[[NSImage alloc] initWithContentsOfFile:imagePath] autorelease];
 		if (theImage == nil)
 			NSLog(@"Retry failed\n");
 		else
@@ -585,7 +588,7 @@ JCache *imageCache = [JCache new];
 		if ([rep isKindOfClass:[NSBitmapImageRep class]])
 			size += rep.bytesPerPlane * rep.numberOfPlanes;
 	}
-	[imageCache setObject:theImage forKey:self.imagePath cost:size];
+	[imageCache setObject:theImage forKey:imagePath cost:size];
 	
 	return theImage;
 }
