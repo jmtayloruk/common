@@ -264,7 +264,19 @@ JApplication *baseApp = nil;
 
 -(int)intForDefault:(NSString *)key
 {
-	NSNumber *num = [self getObjectForDefault:key requiringClass:[NSNumber class] mayBeAbsent:false];
+	NSNumber *num = [self getObjectForDefault:key requiringClass:[NSNumber class] mayBeAbsent:true];
+    if (num == nil)
+    {
+        // We didn't find a number for this key, but see if the key is present as a string that we can convert to a number
+        // (this feature is convenient for allowing us to enter readable hex values into the plist)
+        NSString *str = [self getObjectForDefault:key requiringClass:[NSString class] mayBeAbsent:false];
+        // Try converting the string to a number
+        char *endPtr;
+        const char *strUTF8 = str.UTF8String;
+        num = [NSNumber numberWithLong:strtoul(strUTF8, &endPtr, 0)];
+        ALWAYS_ASSERT(endPtr >= strUTF8 + strlen(strUTF8));
+    }
+    
 	return num.intValue;
 }
 
@@ -279,6 +291,14 @@ JApplication *baseApp = nil;
 -(double)doubleForDefault:(NSString *)key
 {
 	NSNumber *num = [self getObjectForDefault:key requiringClass:[NSNumber class] mayBeAbsent:false];
+	return num.doubleValue;
+}
+
+-(double)doubleForDefault:(NSString *)key usingIfAbsent:(double)def
+{
+	NSNumber *num = [self getObjectForDefault:key requiringClass:[NSNumber class] mayBeAbsent:false];
+    if (num == nil)
+        return def;
 	return num.doubleValue;
 }
 

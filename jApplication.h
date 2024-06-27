@@ -31,6 +31,7 @@
 -(int)intForDefault:(NSString *)key;
 -(int)intForDefault:(NSString *)key usingIfAbsent:(int)def;
 -(double)doubleForDefault:(NSString *)key;
+-(double)doubleForDefault:(NSString *)key usingIfAbsent:(double)def;
 +(NSString *)buildVersionString;
 +(NSString *)dateTimeStringForDate:(NSDate *)date;
 +(FILE *)timestampedLogFileWithIdentifier:(NSString *)identifier;
