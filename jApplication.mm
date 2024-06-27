@@ -274,7 +274,7 @@ JApplication *baseApp = nil;
         char *endPtr;
         const char *strUTF8 = str.UTF8String;
         num = [NSNumber numberWithLong:strtoul(strUTF8, &endPtr, 0)];
-        ALWAYS_ASSERT(endPtr >= strUTF8 + strlen(strUTF8));
+        CHECK(endPtr == strUTF8 + strlen(strUTF8)); // Check the whole string was converted, with nothing else unexpected
     }
     
 	return num.intValue;
@@ -296,7 +296,7 @@ JApplication *baseApp = nil;
 
 -(double)doubleForDefault:(NSString *)key usingIfAbsent:(double)def
 {
-	NSNumber *num = [self getObjectForDefault:key requiringClass:[NSNumber class] mayBeAbsent:false];
+	NSNumber *num = [self getObjectForDefault:key requiringClass:[NSNumber class] mayBeAbsent:true];
     if (num == nil)
         return def;
 	return num.doubleValue;
