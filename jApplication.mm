@@ -225,7 +225,7 @@ JApplication *baseApp = nil;
 		[baseApp alertWithText:[SWF:@"Compulsory key '%@' not found in config file", key] andExplanation:[SWF:@"Needs to be present in the plist file '%@' - speak to Jonny (version %@)", self.configFilename, self.buildVersionString] iconName:NSImageNameCaution];
 		ALWAYS_ASSERT(0);
 	}
-	if ((obj != nil) && (![obj isKindOfClass:c]))
+	if ((obj != nil) && (c != nil) && (![obj isKindOfClass:c]))
 	{
 		[baseApp alertWithText:[SWF:@"Key '%@' in config file was not in expected format", key] andExplanation:[SWF:@"Expected '%@' got '%@' - speak to Jonny (version %@)", NSStringFromClass(c), NSStringFromClass([obj class]), self.buildVersionString] iconName:NSImageNameCaution];
 		ALWAYS_ASSERT(0);
@@ -264,20 +264,27 @@ JApplication *baseApp = nil;
 
 -(int)intForDefault:(NSString *)key
 {
-	NSNumber *num = [self getObjectForDefault:key requiringClass:[NSNumber class] mayBeAbsent:true];
-    if (num == nil)
+	NSNumber *num = [self getObjectForDefault:key requiringClass:nil mayBeAbsent:true];
+    if ((num != nil) && ([num isKindOfClass:[NSNumber class]]))
+        return num.intValue;
+    else if ((num != nil) && ([num isKindOfClass:[NSString class]]))
     {
-        // We didn't find a number for this key, but see if the key is present as a string that we can convert to a number
+        // We didn't find a number for this key, but the key is present as a string that we can convert to a number
         // (this feature is convenient for allowing us to enter readable hex values into the plist)
-        NSString *str = [self getObjectForDefault:key requiringClass:[NSString class] mayBeAbsent:false];
-        // Try converting the string to a number
+        NSString *str = (NSString *)num;    // Typecast - this was actually an NSString
         char *endPtr;
         const char *strUTF8 = str.UTF8String;
         num = [NSNumber numberWithLong:strtoul(strUTF8, &endPtr, 0)];
         CHECK(endPtr == strUTF8 + strlen(strUTF8)); // Check the whole string was converted, with nothing else unexpected
+        return num.intValue;
     }
-    
-	return num.intValue;
+    else
+    {
+        // We did not find what we were looking for.
+        // Search again, insisting this time, just to cause a suitable error dialog to be shown
+        [self getObjectForDefault:key requiringClass:[NSNumber class] mayBeAbsent:false];
+        return nil; 
+    }
 }
 
 -(int)intForDefault:(NSString *)key usingIfAbsent:(int)def
