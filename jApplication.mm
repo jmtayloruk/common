@@ -134,7 +134,7 @@ JApplication *baseApp = nil;
 	if (CHECK(versionFile != NULL))
 	{
 		char versionChars[1000];
-		fscanf(versionFile, "%1000s", versionChars);
+		fscanf(versionFile, "%999s", versionChars);
 		fclose(versionFile);
 		return [SWF:@"%s", versionChars];
 	}
