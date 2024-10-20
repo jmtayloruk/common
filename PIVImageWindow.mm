@@ -157,49 +157,7 @@ template<> void CrossCorrelateImageWindows<kCorrelationSAD, unsigned char>(Image
                 especially on ARM where I have not found a natural and simple set of instructions to use.
                 As a consequence, I have not been able to abstract this code using my wrappers in VectorFunctions.h,
                 and have had to actually write separate code branches for different instruction sets.   */
-#if __ARM_NEON__
-            vUInt32 sumVec = vZeroUInt32();
-            for (int y = 0; y < w1Height; y++)
-            {
-                uint16x8_t rowSumVec = vmovq_n_u16(0);
-                int x = 0;
-    #if 0
-                // Original strategy, processing 8 bytes at a time.
-                // TODO: use vget_low_u8 to be able to use vabal while looping in 16 byte chunks
-                for (; x <= w1Width - 8; x += 8)
-                {
-                    uint8x8_t a = vld1_u8((uint8_t*)window1.PixelXYAddr(x, y));
-                    uint8x8_t b = vld1_u8((uint8_t*)window2.PixelXYAddr(x+dx, y+dy));
-                    // Calculate the sum of absolute differences, accumulating in eight 16-bit vector elements
-                    rowSumVec = vabal_u8(rowSumVec, a, b);
-                }
-    #else
-                // Alternative strategy, processing 16 bytes at a time. This seems to perform better
-                for (; x <= w1Width - 16; x += 16)
-                {
-                    uint8x16_t a = vld1q_u8((uint8_t*)window1.PixelXYAddr(x, y));
-                    uint8x16_t b = vld1q_u8((uint8_t*)window2.PixelXYAddr(x+dx, y+dy));
-                    // Calculate the sum of absolute differences
-                    uint8x16_t sad = vabdq_u8(a, b);
-                    // Sum pairs into 16-bit vector elements, and accumulate into rowSumVec
-                    rowSumVec = vaddq_u16(rowSumVec, vpaddlq_u8(sad));
-                }
-    #endif
-                for (; x < w1Width; x++)
-                    sum += abs(window1.PixelXY(x, y) - window2.PixelXY(x+dx, y+dy));
-                /*  We now have 8 uint16 elements in rowSumVec, which together form our SAD for this row.
-                    However, we cannot sustain accumulation in 16-bit elements for the whole image (we will overflow).
-                    After each row we need to transfer into a larger-capacity sum.
-                    It would be nice to use vaddlvq, which sums across the vector, but sadly that is only available on ARM64.
-                    However, vpaddlq_u16 is a nifty instruction that does a pairwise add, returning 4 uint32 elements.
-                    That's great, and we can just accumulate that in sumVec.    */
-                sumVec = vaddq_u32(sumVec, vpaddlq_u16(rowSumVec));
-            }
-            // We have now done all our summing, but need to bring together all the partial sums in sumVec.
-            // n.b. at this point we could use vpaddq_u32 to concentrate the sum into the first two elements of sumVec,
-            // but we are only doing this once, outside the xy loop, so we can just sum the scalar elements longhand.
-            sum += SumAcross(&sumVec);
-#elif __SSE2__
+#elif __SSE2__ || __ARM_NEON__
             vUInt64 sumVec = vZeroUInt64();
             for (int y = 0; y < w1Height; y++)
             {
@@ -281,26 +239,13 @@ template<> void CrossCorrelateImageWindows<kCorrelationSAD, unsigned short>(Imag
             for (int y = inset; y < w1Height-inset; y++)
             {
                 int x = inset;
-#if __SSE2__
+#if __SSE2__ || __ARM_NEON__
                 vUInt16 zeros = vZeroUInt16();
                 for (; x <= w1Width - 8-inset; x += 8)
 				{
 					vUInt16 a = vLoadUnaligned((vUInt16*)window1.PixelXYAddr(x, y));
 					vUInt16 b = vLoadUnaligned((vUInt16*)window2.PixelXYAddr(x+dx, y+dy));
-					/*	Unpack the low/high (unsigned) shorts into ints and then do the SAD processing on ints.
-                        It was not obvious to me that we could do this in one go, on 16-bit ints all the way.
-                        TODO: but see example code above (not yet implemented) that involves _mm_subs_epu8.
-                        I suspect that a 16-bit version would be faster than this code here. 
-                        The _mm_madd_epi16 instruction might be handy for promoting to a larger data type	*/
-                    vUInt32 oddA = vUnpackLo(a, zeros);
-                    vUInt32 oddB = vUnpackLo(b, zeros);
-                    // Note I have been slightly cheeky here with casting the result of vSub,
-                    // which is operating on unsigned variables - but I know they will not be negative.
-                    vUInt32 sad = vAbs((vInt32)vSub(oddA, oddB));
-                    sumVec = vAdd(sumVec, sad);
-                    vUInt32 evenA = vUnpackHi(a, zeros);
-                    vUInt32 evenB = vUnpackHi(b, zeros);
-                    sad = vAbs((vInt32)vSub(evenA, evenB));
+                    vUInt32 sad = vSad_u16_to_u32(a, b);
                     sumVec = vAdd(sumVec, sad);
                 }
 #else

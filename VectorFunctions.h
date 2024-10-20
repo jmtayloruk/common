@@ -104,6 +104,26 @@
         }
     #endif
     inline vUInt64 vSad_u8_to_u64(vUInt8 a, vUInt8 b) { return (vUInt64)_mm_sad_epu8((__m128i)a, (__m128i)b); }    // See Note 1 on signed/unsigned, above
+    inline vUInt32 vSad_u16_to_u32(vUInt16 a, vUInt16 b)
+    {
+        // Note the perverse return type (driven by what I could manage to implement easily in the SSE implementation).
+        // This limits how many SADs we can accumulate before needing to sum across and promote to a wider type.
+
+        // Unpack the low/high (unsigned) shorts into ints and then do the SAD processing on ints.
+        // Note that there's code in PIVImageWindow.mm that suggests a possible alternative strategy
+        // based around _mm_subs_epu8 and its 16-bit counterparts
+        vUInt16 zeros = vZeroUInt16();
+        vUInt32 oddA = vUnpackLo(a, zeros);
+        vUInt32 oddB = vUnpackLo(b, zeros);
+        // Note I have been slightly cheeky here with casting the result of vSub,
+        // which is operating on unsigned variables - but I know they will not be negative.
+        vUInt32 sad = vAbs((vInt32)vSub(oddA, oddB));
+        sumVec = vAdd(sumVec, sad);
+        vUInt32 evenA = vUnpackHi(a, zeros);
+        vUInt32 evenB = vUnpackHi(b, zeros);
+        return vAbs((vInt32)vSub(evenA, evenB));
+    }
+    
     /*  These next two functions mirror _mm_unpacklo/hi_epi16, but with proper type safety
         Frustratingly, those _mm_ intrinsics map to different code on different compilers, and neither seems to compile universally.
         As a result, I just cast the inputs and call through to the _mm_ function, whatever it may be under the covers. */
@@ -236,9 +256,44 @@
     inline vUInt32 vOr(vUInt32 a, vUInt32 b) { return vorrq_u32(a, b); }
     inline vInt32 vAdd(vInt32 a, vInt32 b)	{ return vaddq_s32( a, b ); }
     inline vUInt32 vAdd(vUInt32 a, vUInt32 b)	{ return vaddq_u32( a, b ); }
+    inline vUInt64 vAdd(vUInt64 a, vUInt64 b) { return vaddq_u64( a, b ); }
     inline vInt32 vSub(vInt32 a, vInt32 b)	{ return vsubq_s32( a, b ); }
     inline vInt32 vSub(vUInt32 a, vUInt32 b) { return (vInt32)vsubq_u32( a, b ); }
     inline vUInt32 vAbs(vInt32 a)      { return (vUInt32)vabsq_s32( a ); }
+    inline vUInt8 vMax(vUInt8 a, vUInt8 b) { return vmaxq_u8(a, b); }
+    inline vUInt16 vMax(vUInt16 a, vUInt16 b) { return vmaxq_u16(a, b); }
+
+    inline vUInt64 vSad_u8_to_u64(vUInt8 a, vUInt8 b)
+    {
+        // In-place computation of the absolute difference
+        vUInt8 absvec = vabdq_u8(a, b);
+        // Sum across. Neon gives a scalar result, but the calling code is expecting
+        // a vector result (in line with how the SSE SAD instruction works).
+        // We therefore do a bit of extra work providing a result in that format.
+        // This is a bit inefficient, but I suspect this can be folded into the pipeline
+        // at little or no actual cost to execution speed.
+        vUInt64 resultVec = { 0, 0 };
+        resultVec[0] = vaddlvq_u8(absvec);
+        /*  I have a note in old code that says:
+                It would be nice to use vaddlvq, which sums across the vector, but sadly that is only available on ARM64.
+                However, vpaddlq_u16 is a nifty instruction that does a pairwise add, returning 4 uint32 elements.
+                That's great, and we can just accumulate that in sumVec.
+                    sumVec = vaddq_u32(sumVec, vpaddlq_u16(rowSumVec));
+            I am not sure where ARM64 was *not* available - perhaps on the RPi?
+            If I run into compile errors, I can reactivate this alternative code    */
+        return resultVec;
+    }
+    
+    inline vUInt32 vSad_u16_to_u32(vUInt16 a, vUInt16 b)
+    {
+        // Follows the same structure as in vSad_u8_to_u64
+        // Note the perverse return type (to match what was possible in the SSE implementation).
+        // This limits how many SADs we can accumulate before needing to sum across and promote to a wider type.
+        vUInt16 absvec = vabdq_u16(a, b);
+        vUInt32 resultVec = { 0, 0, 0, 0 };
+        resultVec[0] = vaddlvq_u16(absvec);
+        return resultVec;
+    }
 #elif __SPU__     /* PS3 SPU vector instruction set */
     #include <spu_intrinsics.h>
     #include <spu_mfcio.h> /* constant declarations for the MFC */

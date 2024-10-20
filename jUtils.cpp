@@ -92,6 +92,12 @@ LocalEnableDenormalFlushing::LocalEnableDenormalFlushing(void)
 	
 	// Set the MXCSR register with the new value.
 	_mm_setcsr( newmxcsr );
+  #elif __ARM_NEON__
+    /*  It seems that denormal flushing is always on, for ARM Neon:
+        https://developer.arm.com/documentation/den0018/a/NEON-Instruction-Set-Architecture/Flush-to-zero-mode
+        ... although this forum post questions whether that is actually happening:
+        https://forums.developer.apple.com/forums/thread/44015
+    */  
   #else
     #warning "Denormal flushing not available - I have only implemented this on processors that support SSE"
   #endif

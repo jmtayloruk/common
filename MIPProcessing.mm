@@ -14,6 +14,7 @@
 #ifdef __SSE4_1__
     #import <smmintrin.h>		// SSE4.1
 #endif
+#include <VectorFunctions.h>
 
 dispatch_queue_t processingQueue = dispatch_queue_create("mip processing queue", NULL);
 
