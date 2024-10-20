@@ -103,6 +103,13 @@
             return (vUInt32)_mm_sub_epi32(inv, sgn);
         }
     #endif
+
+    /*  These next two functions mirror _mm_unpacklo/hi_epi16, but with proper type safety
+        Frustratingly, those _mm_ intrinsics map to different code on different compilers, and neither seems to compile universally.
+        As a result, I just cast the inputs and call through to the _mm_ function, whatever it may be under the covers. */
+    inline vUInt32 vUnpackLo(vUInt16 a, vUInt16 b) { return (vUInt32)_mm_unpacklo_epi16((__m128i)a, (__m128i)b); }
+    inline vUInt32 vUnpackHi(vUInt16 a, vUInt16 b) { return (vUInt32)_mm_unpackhi_epi16((__m128i)a, (__m128i)b); }
+
     inline vUInt64 vSad_u8_to_u64(vUInt8 a, vUInt8 b) { return (vUInt64)_mm_sad_epu8((__m128i)a, (__m128i)b); }    // See Note 1 on signed/unsigned, above
     inline vUInt32 vSad_u16_to_u32(vUInt16 a, vUInt16 b)
     {
@@ -117,19 +124,13 @@
         vUInt32 oddB = vUnpackLo(b, zeros);
         // Note I have been slightly cheeky here with casting the result of vSub,
         // which is operating on unsigned variables - but I know they will not be negative.
-        vUInt32 sad = vAbs((vInt32)vSub(oddA, oddB));
-        sumVec = vAdd(sumVec, sad);
+        vUInt32 sadO = vAbs((vInt32)vSub(oddA, oddB));
         vUInt32 evenA = vUnpackHi(a, zeros);
         vUInt32 evenB = vUnpackHi(b, zeros);
-        return vAbs((vInt32)vSub(evenA, evenB));
+        vUInt32 sadE = vAbs((vInt32)vSub(evenA, evenB));
+        return vAdd(sadO, sadE);
     }
     
-    /*  These next two functions mirror _mm_unpacklo/hi_epi16, but with proper type safety
-        Frustratingly, those _mm_ intrinsics map to different code on different compilers, and neither seems to compile universally.
-        As a result, I just cast the inputs and call through to the _mm_ function, whatever it may be under the covers. */
-    inline vUInt32 vUnpackLo(vUInt16 a, vUInt16 b) { return (vUInt32)_mm_unpacklo_epi16((__m128i)a, (__m128i)b); }
-    inline vUInt32 vUnpackHi(vUInt16 a, vUInt16 b) { return (vUInt32)_mm_unpackhi_epi16((__m128i)a, (__m128i)b); }
-
   #if !NO_FLOAT_VECTOR
     inline vFloat vSplatFirstValue(vFloat a) { return (vFloat)_mm_shuffle_epi32((__m128i)a, _MM_SHUFFLE(0, 0, 0, 0)); }
 	inline vFloat vSplatSecondValue(vFloat a) { return (vFloat)_mm_shuffle_epi32((__m128i)a, _MM_SHUFFLE(1, 1, 1, 1)); }
@@ -246,8 +247,12 @@
     inline vUInt32 vZeroUInt32(void) { return vmovq_n_u32(0); }
     inline vUInt64 vZeroUInt64(void) { return vmovq_n_u64(0); }
     /*  It seems that ARM accepts unaligned loads by default, so there is no need for special code here.
+        Corroborated by https://community.arm.com/support-forums/f/dev-platforms-forum/8806/loads-and-stores-for-unaligned-memory-addresses
+        Note that in spite of this, the Undefined Behaviour Sanitizer warns about misaligned loads.
+        I can only assume it is being overly fussy...
         Incidentally, it sounds like it may be possible to include "alignment specifiers" to make *aligned* loads faster,
-        but I have not currently looked into that at all. */
+        but I have not currently looked into that at all.
+    */
     template<class T> T vLoadUnaligned(T *addr) { return addr[0]; }
     // Fallback code if the template doesn't work (but it seems to)
     // inline vInt32 vLoadUnalignedInt32(void *addr) { return ((vInt32*)addr)[0]; }
