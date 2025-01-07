@@ -213,3 +213,14 @@ id ResurrectAndShowWeakWindowRef(MAZeroingWeakRef *&ref, BlockReturningObject re
 	[win makeKeyAndOrderFront:nil];
 	return ref.target;
 }
+
+void dispatch_groups_async(dispatch_group_t group1, dispatch_group_t group2, dispatch_queue_t queue, dispatch_block_t block)
+{
+    if (group2 != nil)
+        dispatch_group_enter(group2);
+    dispatch_group_async(group1, queue, ^{
+        block();
+        if (group2 != nil)
+            dispatch_group_leave(group2);
+    });
+}

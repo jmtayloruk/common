@@ -132,6 +132,7 @@ void LinearFit(std::vector<double> &x, std::vector<double> &y, double *alpha, do
 		@class MetadataForFrame;
 		void ForEveryFrameInDirectory(NSString *dir, void (^callback)(MetadataForFrame *));
 		void ForEveryFrameInDirectory(NSString *dir, void (^callback)(NSBitmapImageRep *, MetadataForFrame *));
+        void dispatch_groups_async(dispatch_group_t group1, dispatch_group_t group2, dispatch_queue_t queue, dispatch_block_t block);
   #endif
     NSString *FirstImageFileNameInDirectory(NSString *dir);
     MetadataForFrame *FirstMetadataInDirectory(NSString *dirPath);
