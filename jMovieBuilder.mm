@@ -187,7 +187,12 @@ void JMovieBuilder::AddFrame(const CVPixelBufferRef pixelBuffer)
     // The *1000 multipliers mean we end up with a very close approximation to whatever fps we were asked to run at
     bool ok = [avAdaptor appendPixelBuffer:pixelBuffer withPresentationTime:CMTimeMake(frameCounter*1000, int(desiredFramesPerSecond*1000))];
     if (!ok)
+    {
         NSLog(@"Error from appendPixelBuffer: %d %d %@\n", (int)videoWriter.status, (int)videoWriter.error.code, videoWriter.error.description);
+        NSDictionary *userInfo = videoWriter.error.userInfo;
+        NSError *underlyingError = [userInfo objectForKey:NSUnderlyingErrorKey];
+        NSLog(@"Underlying error from appendPixelBuffer: %d %@\n", (int)underlyingError.code, underlyingError.description);
+    }
     ALWAYS_ASSERT(ok);
     CVPixelBufferUnlockBaseAddress(pixelBuffer, 0);
     CVPixelBufferRelease(pixelBuffer);
