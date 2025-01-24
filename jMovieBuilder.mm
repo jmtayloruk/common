@@ -97,8 +97,14 @@ void JMovieBuilder::DoInit(NSURL *destURL, const BoundsRect &bounds, double fram
         so we have to delete any existing file manually.    */
     if ([[NSFileManager defaultManager] fileExistsAtPath:destURL.path])
     {
-        BOOL success = [[NSFileManager defaultManager] removeItemAtPath:destURL.path error:nil];
+        NSError *err;
+        BOOL success = [[NSFileManager defaultManager] removeItemAtPath:destURL.path error:&err];
         CHECK(success);
+        if (!success)
+        {
+            *outErr = (int)err.code;
+            return;
+        }
     }
     NSError *error = nil;
     videoWriter = [[AVAssetWriter alloc] initWithURL:destURL

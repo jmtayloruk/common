@@ -543,6 +543,7 @@ JCache *imageCache = [JCache new];
 	// Load the image if necessary, but attempt to cache it since it will probably be used again pretty soon.
     // Note that resolving self.imagePath is actually costly in itself!
     // I at least cache that once at the start of this function now.
+    // Note also that libtiff allows the option of lazy loading, although this would take some work to benefit from (bug #232)
     NSString *imagePath = self.imagePath;
 	NSImage *result = [imageCache objectForKey:imagePath];
 	if (result != nil)
