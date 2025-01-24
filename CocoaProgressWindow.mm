@@ -61,13 +61,13 @@ void CocoaProgressWindowHelper::InternalUpdateProgress(double newProgress)
 {
 	if (_base->Length() == 0)
 	{
-		[indicator setIndeterminate:YES];
+		indicator.indeterminate = YES;
 		[indicator startAnimation:nil];
 	}
 	else
     {
-        [indicator setIndeterminate:NO];
-		[indicator setMaxValue:_base->Length()];
+        indicator.indeterminate = NO;
+		indicator.maxValue = _base->Length();
     }
 	
 	[super awakeFromNib];
@@ -124,8 +124,8 @@ void CocoaProgressWindowHelper::InternalUpdateProgress(double newProgress)
 	_base->UpdateLength(inLength);
 	_base->UpdateProgress(0);		// I imagine we will always want this, and doing this here
 									// allows us to use this function to "restart" with a second chunk of work if we want
-	[indicator setIndeterminate:(inLength == 0)];
-	[indicator setMaxValue:inLength];
+	indicator.indeterminate = (inLength == 0);
+	indicator.maxValue = inLength;
 	[indicator startAnimation:nil];
 	_base->ResetTimeEstimate();
 }
@@ -166,7 +166,7 @@ void CocoaProgressWindowHelper::InternalUpdateProgress(double newProgress)
 	// This currently updates for every single delta progress.
 	// TODO: I should instigate some sort of flow control in here
 	// Possibly just do the updating based on a timer.
-	[indicator setDoubleValue:newProgress];
+	indicator.doubleValue = newProgress;
 	[fraction setStringValue:[SWF:@"%d/%d", (int)newProgress, (int)_base->Length()]];
 
 	int hours, mins;
