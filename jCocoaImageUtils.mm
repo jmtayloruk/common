@@ -494,6 +494,37 @@ NSBitmapImageRep *RawBitmapFromImagePath(NSString *imagePath)
 	return RawBitmapFromImage(theImage);
 }
 
+NSBitmapImageRep *CropBitmap(NSBitmapImageRep *originalBitmap, BoundsRect cropRect)
+{
+    // Return a bitmap formed from the image, cropped according to cropRect.
+    if ((cropRect.w == 0) && (cropRect.h == 0))
+        return originalBitmap;
+    NSRect thisCropRect = NSIntersectionRect(cropRect.AsNSRect(), NSMakeRect(0, 0, originalBitmap.pixelsWide, originalBitmap.pixelsHigh));
+    NSBitmapImageRep *croppedBitmap = [[NSBitmapImageRep alloc]
+                                       initWithBitmapDataPlanes:NULL		// Bitmap allocates and releases the necessary memory for us
+                                       pixelsWide:thisCropRect.size.width
+                                       pixelsHigh:thisCropRect.size.height
+                                       bitsPerSample:originalBitmap.bitsPerSample
+                                       samplesPerPixel:originalBitmap.samplesPerPixel
+                                       hasAlpha:originalBitmap.hasAlpha
+                                       isPlanar:NO
+                                       colorSpaceName:originalBitmap.colorSpaceName
+                                       bytesPerRow:(originalBitmap.bitsPerPixel+7)/8 * thisCropRect.size.width
+                                       bitsPerPixel:0];
+    ALWAYS_ASSERT(croppedBitmap != nil);
+    [NSGraphicsContext saveGraphicsState];
+    NSGraphicsContext *newContext = [NSGraphicsContext graphicsContextWithBitmapImageRep:croppedBitmap];
+    [NSGraphicsContext setCurrentContext:newContext];
+    [originalBitmap drawInRect:NSMakeRect(0, 0, thisCropRect.size.width, thisCropRect.size.height)
+                        fromRect:thisCropRect
+                       operation:NSCompositeCopy
+                        fraction:1.0
+                  respectFlipped:false
+                           hints:nil];
+    [NSGraphicsContext restoreGraphicsState];
+    return [croppedBitmap autorelease];
+}
+
 NSImage *AllocNSImageFromFile(const char *path)
 {
 	// Not sure if I use this for anything any more, but it was intended to allow C code

@@ -10,6 +10,8 @@
 #ifndef __J_COCOA_IMAGE_UTILS_H__
 #define __J_COCOA_IMAGE_UTILS_H__ 1
 
+#import "BoundsRect.h"
+
 class Tinter
 {
 protected:
@@ -27,6 +29,7 @@ public:
 NSArray *AllRawBitmapsFromImage(const NSImage *image);
 NSBitmapImageRep *RawBitmapFromImage(const NSImage *image);
 NSBitmapImageRep *RawBitmapFromImagePath(NSString *imagePath);
+NSBitmapImageRep *CropBitmap(NSBitmapImageRep *originalBitmap, BoundsRect cropRect);
 NSImage *NSImageFromTiffFile(NSString *tiffPath);
 bool /*sizes matched*/ PopulateArrayFromBitmap(const NSBitmapImageRep *bitmap, double *destArray, int destWidth, int destHeight, int downsampleFactor, bool assertOnSizeMismatch);
 void CopyNSImageToGWorld(const NSImage *image, GWorldPtr gWorldPtr, const CGRect *cropRect, double gain);
