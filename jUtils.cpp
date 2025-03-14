@@ -9,6 +9,7 @@
 #include <sys/times.h>
 #include <sys/resource.h>
 #include <netinet/in.h>
+#include "jUtils.h"
 
 #ifdef USES_GSL
 	#define USES_MATRIX 1
