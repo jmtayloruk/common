@@ -467,7 +467,15 @@ JCache *imageCache = [JCache new];
 	{
 		// Edit down the frame array to only contain the one relevant object
 		NSMutableArray *frameArray = [NSMutableArray arrayWithArray:[result objectForKey:@"frames"]];
-		NSMutableDictionary *frameDictionary = [NSMutableDictionary dictionaryWithDictionary:[frameArray objectAtIndex:arrayIndex]];
+		NSMutableDictionary *frameDictionary;
+        if (frameArray.count == 0)
+        {
+            // This special case avoids hitting an exception if we have an empty dictionary.
+            // That will be the case if we don't actually have any frames in this batch (and therefore no metadata).
+            // I am not sure why I haven't hit this issue before, but this is my attempted workaround
+            [frameArray addObject:[NSMutableDictionary dictionary]];
+        }
+        frameDictionary = [NSMutableDictionary dictionaryWithDictionary:[frameArray objectAtIndex:arrayIndex]];
         if (obj == nil)
             [frameDictionary removeObjectForKey:key];
         else
@@ -505,20 +513,27 @@ JCache *imageCache = [JCache new];
     else
     {
         // Current file version
-        NSMutableDictionary *cam = [NSMutableDictionary dictionaryWithDictionary:[result getRequiredDictionaryForKey:firstComponent]];
-        if (components.count == 2)
+        if (components.count == 1)
         {
-            [cam setObject:obj forKey:lastComponent];
+            [result setObject:obj forKey:firstComponent];
         }
         else
         {
-            NSString *secondComponent = [components objectAtIndex:1];
-            ALWAYS_ASSERT(components.count == 3);   // Only this implemented so far
-            NSMutableDictionary *prop = [NSMutableDictionary dictionaryWithDictionary:[cam getRequiredDictionaryForKey:secondComponent]];
-            [prop setObject:obj forKey:lastComponent];
-            [cam setObject:prop forKey:secondComponent];
+            NSMutableDictionary *cam = [NSMutableDictionary dictionaryWithDictionary:[result getRequiredDictionaryForKey:firstComponent]];
+            if (components.count == 2)
+            {
+                [cam setObject:obj forKey:lastComponent];
+            }
+            else
+            {
+                NSString *secondComponent = [components objectAtIndex:1];
+                ALWAYS_ASSERT(components.count == 3);   // Only this implemented so far
+                NSMutableDictionary *prop = [NSMutableDictionary dictionaryWithDictionary:[cam getRequiredDictionaryForKey:secondComponent]];
+                [prop setObject:obj forKey:lastComponent];
+                [cam setObject:prop forKey:secondComponent];
+            }
+            [result setObject:cam forKey:firstComponent];
         }
-        [result setObject:cam forKey:firstComponent];
     }
 	self.dict = result;
 	metadataWasEdited = true;
