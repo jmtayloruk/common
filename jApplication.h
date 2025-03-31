@@ -12,7 +12,7 @@
 {
 	bool		_terminating;
 	NSString	*_buildVersionString;
-	NSString            *_configFilename;
+	NSString    *_configFilename;
 }
 
 -(void)applicationDidFinishLaunching:(NSNotification *)note;
@@ -41,7 +41,7 @@
 
 +(NSString *)currentDateTimeString;
 
-@property (readonly, retain) NSString *configFilename;
+@property (readwrite, retain) NSString *configFilename;
 @property (readonly, retain) NSString *buildVersionString;
 @property (readonly, retain) NSString *currentDateTimeString;
 @property (readonly) bool debugBuild;

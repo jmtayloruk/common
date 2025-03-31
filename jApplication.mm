@@ -15,7 +15,6 @@ JApplication *baseApp = nil;
 
 @interface JApplication()
 	@property (readwrite, retain) NSString *buildVersionString;
-	@property (readwrite, retain) NSString *configFilename;
 	@property (readwrite) bool terminating;
 @end
 
@@ -41,22 +40,6 @@ JApplication *baseApp = nil;
 -(void)applicationDidFinishLaunching:(NSNotification *)note
 {
 	self.buildVersionString = [JApplication buildVersionString];
-
-	// Identify a config file to use
-    self.configFilename = [ConfigSelector determineConfigFileToUse];
-	if ((self.configFilename != nil) && (self.configFilename.length > 0))
-	{
-		// Register that config dictionary with NSUserDefaults
-		NSString *configPath = [[NSBundle mainBundle] pathForResource:self.configFilename ofType:@"plist"];
-        if (configPath == nil)
-        {
-            [self alertWithText:[SWF:@"Config file \"%@\" not found", self.configFilename]
-                    andExplanation:[SWF:@"The program will now quit. If you want to pick another file, hold down the alt key and relaunch the program."]];
-            [self terminate:nil];
-        }
-		ALWAYS_ASSERT(configPath != nil);
-		[[NSUserDefaults standardUserDefaults] registerDefaults:[NSDictionary dictionaryWithContentsOfFile:configPath]];
-	}
 
     baseApp = self;
 
