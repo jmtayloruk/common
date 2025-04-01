@@ -157,7 +157,7 @@ template<> void CrossCorrelateImageWindows<kCorrelationSAD, unsigned char>(Image
                 especially on ARM where I have not found a natural and simple set of instructions to use.
                 As a consequence, I have not been able to abstract this code using my wrappers in VectorFunctions.h,
                 and have had to actually write separate code branches for different instruction sets.   */
-#elif __SSE2__ || __ARM_NEON__
+#if __SSE2__ || __ARM_NEON__
             vUInt64 sumVec = vZeroUInt64();
             for (int y = 0; y < w1Height; y++)
             {
@@ -240,7 +240,6 @@ template<> void CrossCorrelateImageWindows<kCorrelationSAD, unsigned short>(Imag
             {
                 int x = inset;
 #if __SSE2__ || __ARM_NEON__
-                vUInt16 zeros = vZeroUInt16();
                 for (; x <= w1Width - 8-inset; x += 8)
 				{
 					vUInt16 a = vLoadUnaligned((vUInt16*)window1.PixelXYAddr(x, y));

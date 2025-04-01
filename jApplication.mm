@@ -266,7 +266,7 @@ JApplication *baseApp = nil;
         // We did not find what we were looking for.
         // Search again, insisting this time, just to cause a suitable error dialog to be shown
         [self getObjectForDefault:key requiringClass:[NSNumber class] mayBeAbsent:false];
-        return nil; 
+        return 0; 
     }
 }
 

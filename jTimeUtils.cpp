@@ -21,6 +21,7 @@ double GetTimeAbsolute(void)
 	// I think this ought to give better resolution on OS X:
 	// Note that UpTime is deprecated - if I want to faff with replacing it then
 	// I can look at mach_absolute_time and mach_timebase_info... or just use gettimeofday!
+    // Also: evidently on ARM mach_absolute_time does not give a time in ns and we are advised to use clock_gettime_nsec_np(CLOCK_UPTIME_RAW)
 	Nanoseconds ns = AbsoluteToNanoseconds(UpTime());
 	return ns.lo * 1e-9 + ns.hi * (1e-9 * (1LL<<32));
 #else
