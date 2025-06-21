@@ -256,6 +256,17 @@ void MakeMipFromImagesInFolder(NSString *sourceFolderPath, NSString *destFilenam
 	[pool drain];
 }
 
+bool ShouldIncludeDirectoryInMIP(NSURL *contentsURL)
+{
+	if (!IsDirectory(contentsURL))
+        return false;
+    if (FirstImageFileNameInDirectory(contentsURL.path) == nil)
+        return false;
+    if ([contentsURL.path.lastPathComponent hasPrefix:@"ref-frames-"])
+        return false;
+    return true;
+}
+
 void ProcessStacksIntoMIPsSavingAt(NSArray *inURLs, NSURL *destinationURL, void (^completionBlock)(int mipCounter, NSURL *destinationURL))
 {
 	// Sort filenames in chronological order
@@ -272,7 +283,6 @@ void ProcessStacksIntoMIPsSavingAt(NSArray *inURLs, NSURL *destinationURL, void 
 					   int mipCounter = 0;
 					   for (NSURL *url in urls)
 					   {
-						   printf("File %s\n", url.path.UTF8String);
 						   NSAutoreleasePool *pool = [NSAutoreleasePool new];
 						   
 						   // Process each of the image folders contained within the stack folder
@@ -283,12 +293,8 @@ void ProcessStacksIntoMIPsSavingAt(NSArray *inURLs, NSURL *destinationURL, void 
 						   int numCamFolders = 0;
 						   for (NSString *cameraFolderPath in dirContents)
 						   {
-							   NSURL *contentsURL = PathToURL(cameraFolderPath, url);
-							   if ((IsDirectory(contentsURL)) &&
-								   (FirstImageFileNameInDirectory(contentsURL.path) != nil))
-							   {
+							   if (ShouldIncludeDirectoryInMIP(PathToURL(cameraFolderPath, url)))
 								   numCamFolders++;
-							   }
 						   }
 						   if (FirstImageFileNameInDirectory(url.path) != nil)
 						   {
@@ -303,8 +309,7 @@ void ProcessStacksIntoMIPsSavingAt(NSArray *inURLs, NSURL *destinationURL, void 
 						   {
 							   NSString *cameraFolderName = cameraFolderPath.lastPathComponent;
 							   NSURL *contentsURL = PathToURL(cameraFolderPath, url);
-							   if ((IsDirectory(contentsURL)) &&
-								   (FirstImageFileNameInDirectory(contentsURL.path) != nil))
+							   if (ShouldIncludeDirectoryInMIP(contentsURL))
 							   {
 								   // This is a genuine camera folder containing images.
 								   // Process a MIP for them, saving it into the appropriate folder
