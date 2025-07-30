@@ -95,14 +95,17 @@
 	{
 //		printf("About to add key %s cost %zd\n", key.UTF8String, cost);
 		if (totalCost > self.totalCostLimit)
+        {
+//            printf("Removing all objects (%ld exceeds limit of %ld)\n", totalCost, self.totalCostLimit);
 			[self removeAllObjects];
+        }
 		else if (totalCost + cost > self.totalCostLimit)
 			[self purgeToSize:self.totalCostLimit-cost];
 		if (CHECK([cachedObjects objectForKey:key] == nil))
 		{
 			[cachedObjects setObject:[ObjectAndCost ocForObject:obj cost:cost] forKey:key];
 			totalCost += cost;
-//			printf("Total cost now %zd\n", totalCost);
+//			printf("Total cost now %zd/%zd\n", totalCost, self.totalCostLimit);
 		}
 	}
 }

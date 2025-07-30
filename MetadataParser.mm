@@ -248,7 +248,11 @@ NSArray *DumpDiffsFromFrameInFolder(NSString *path)
 	promises about how strictly the cost limit is enforced, and even what order things will be
 	evicted from the cache! As a result I don't have total confidence that this will protect me
 	from using up all memory. However, I think I will try it and see if we encounter problems.	*/
-const NSUInteger kMaxCacheSizeInBytes = (NSUInteger)1e9;
+#if __i386__
+    const NSUInteger kMaxCacheSizeInBytes = (NSUInteger)1e9;
+#else
+    const NSUInteger kMaxCacheSizeInBytes = (NSUInteger)8e9;
+#endif
 JCache *imageCache = [JCache new];
 
 +(id)parserForImagePath:(NSString *)imagePath
