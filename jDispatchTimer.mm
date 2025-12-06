@@ -217,6 +217,7 @@
 		CHECK(0);
 		dispatch_source_cancel(timerSource);
 	}
+    dispatch_release(timerSource);
 	
 	[super dealloc];
 //	printf("Done dealloc timer %p\n", self);
