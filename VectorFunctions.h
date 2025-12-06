@@ -249,11 +249,12 @@
     /*  It seems that ARM accepts unaligned loads by default, so there is no need for special code here.
         Corroborated by https://community.arm.com/support-forums/f/dev-platforms-forum/8806/loads-and-stores-for-unaligned-memory-addresses
         Note that in spite of this, the Undefined Behaviour Sanitizer warns about misaligned loads.
-        I can only assume it is being overly fussy...
-        Incidentally, it sounds like it may be possible to include "alignment specifiers" to make *aligned* loads faster,
-        but I have not currently looked into that at all.
+        This is supposedly because of how the C compiler has defined the vector type to require it to be aligned.
+        Apparently the solution is to call vld1q_u8, which accepts a uint8* with no conditions on alignment.
+        Incidentally *aligned* loads are supposed to be faster,
+        but in the SAD calculations I can't always guarantee the address will be aligned.
     */
-    template<class T> T vLoadUnaligned(T *addr) { return addr[0]; }
+    template<class T> T vLoadUnaligned(T *addr) { return vld1q_u8((const unsigned char *)addr); }
     // Fallback code if the template doesn't work (but it seems to)
     // inline vInt32 vLoadUnalignedInt32(void *addr) { return ((vInt32*)addr)[0]; }
     // inline vUInt32 vLoadUnalignedUInt32(void *addr) { return ((vUInt32*)addr)[0]; }
