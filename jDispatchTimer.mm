@@ -107,7 +107,7 @@
 					for our own 'release' calls to take the retain count down to zero	*/
 //				printf("%p cancel %p\n", self, timerSource);
 				dispatch_source_cancel(timerSource);
-
+                dispatch_release(timerSource);
 				[self release];
 			}
 		});
@@ -217,7 +217,6 @@
 		CHECK(0);
 		dispatch_source_cancel(timerSource);
 	}
-    dispatch_release(timerSource);
 	
 	[super dealloc];
 //	printf("Done dealloc timer %p\n", self);
