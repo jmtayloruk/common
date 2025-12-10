@@ -53,7 +53,7 @@ JApplication *baseApp = nil;
 	//   immediately before the beginning. Thus, for example, if your app is in the background
 	//   and not receiving events, then the autorelease pool will not be drained. That's why
 	//   your memory drops significantly when you click the mouse or switch applications.
-    [JDispatchTimer allocRepeatingTimerOnQueue:dispatch_get_main_queue() atInterval:5.0 flex:1.0 critical:true withHandler:^{
+    mainLoopTickler = [JDispatchTimer allocRepeatingTimerOnQueue:dispatch_get_main_queue() atInterval:5.0 flex:1.0 critical:true withHandler:^{
 		NSEvent *event = [NSEvent otherEventWithType:NSApplicationDefined location:NSZeroPoint modifierFlags:0 timestamp:[NSDate timeIntervalSinceReferenceDate] windowNumber:0 context:nil subtype:0 data1:0 data2:0];
 		[NSApp postEvent:event atStart:YES];
 	}];
@@ -64,6 +64,7 @@ JApplication *baseApp = nil;
 	self.terminating = true;
     [[NSNotificationCenter defaultCenter] removeObserver:self];
 	SendImmediateNotificationOnThisThread(CloseSheetsForTermination, self);
+    [mainLoopTickler cancel];
 }
 
 -(bool)debugBuild

@@ -8,11 +8,14 @@
 
 #import <Cocoa/Cocoa.h>
 
+@class JDispatchTimer;
+
 @interface JApplication : NSApplication
 {
-	bool		_terminating;
-	NSString	*_buildVersionString;
-	NSString    *_configFilename;
+	bool		    _terminating;
+	NSString	    *_buildVersionString;
+	NSString        *_configFilename;
+    JDispatchTimer  *mainLoopTickler;
 }
 
 -(void)applicationDidFinishLaunching:(NSNotification *)note;
