@@ -12,9 +12,9 @@
 const char *getPropertyType(objc_property_t property)
 {
     const char *attributes = property_getAttributes(property);
-    char buffer[1 + strlen(attributes)];
-    strcpy(buffer, attributes);
-    char *state = buffer, *attribute;
+    std::vector<char> buffer(1 + strlen(attributes));
+    strcpy(&buffer[0], attributes);
+    char *state = &buffer[0], *attribute;
     while ((attribute = strsep(&state, ",")) != NULL) {
         if (attribute[0] == 'T') {
             if (strlen(attribute) <= 4) {

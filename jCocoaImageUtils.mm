@@ -305,9 +305,9 @@ NSArray *ListImageFilesInDirectory(NSString *dir, bool sorted, bool useTimestamp
 	// Get a pointer to the first in a tree of structures representing the contents of the directory
 	ALWAYS_ASSERT(dir != nil);
 	size_t len = strlen(dir.UTF8String) + 1;
-	char pathBuffer[len];
-	snprintf(pathBuffer, len, "%s", dir.UTF8String);
-	char * const pathArray[2] = { pathBuffer, NULL };
+    std::vector<char> pathBuffer(len);
+	snprintf(&pathBuffer[0], len, "%s", dir.UTF8String);
+	char * const pathArray[2] = { &pathBuffer[0], NULL };
 	FTS *ftsHandle = fts_open(pathArray, FTS_LOGICAL | FTS_NOSTAT, NULL);
 	// We do not actually use this next result, just need to do this before call to fts_children.
 	// May possibly be better just to repeatedly do fts_read?

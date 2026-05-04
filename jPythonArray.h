@@ -157,13 +157,7 @@ template<class Type> class JPythonArray
         else
         {
             // Caller expects us to allocate and manage a data buffer.
-            // I'm pretty sure a stack-based array is faster than std::vector,
-            // but the former doesn't seem to be permitted under Visual Studio
-#if defined (_WIN32)
             std::vector<npy_intp> tempStrides(inNum);
-#else
-            npy_intp tempStrides[inNum];
-#endif
             if (inStrides == NULL)
             {
                 // Caller expects us to choose suitable strides. We will just make it contiguous.
