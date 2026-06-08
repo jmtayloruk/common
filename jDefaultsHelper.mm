@@ -120,7 +120,16 @@
 			the key is absent. We will therefore get spurious warnings here.
 			I think I will leave it for now, and hopefully there won't be too much console spam. */
 		if (CHECK(val != nil))
-			[self.target.target setValue:val forKeyPath:key];
+        {
+            if([val isKindOfClass:[NSArray class]])
+            {
+                [self.target.target setValue:[val mutableCopy] forKeyPath:key];
+            }
+            else
+            {
+                [self.target.target setValue:val forKeyPath:key];
+            }
+        }
 		else
 			DebugPrintf("Missing key in defaults %s\n", key.UTF8String);
 	}
