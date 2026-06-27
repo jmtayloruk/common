@@ -123,7 +123,7 @@
         {
             if([val isKindOfClass:[NSArray class]])
             {
-                [self.target.target setValue:[val mutableCopy] forKeyPath:key];
+                [self.target.target setValue:[[val mutableCopy] autorelease] forKeyPath:key];
             }
             else
             {
