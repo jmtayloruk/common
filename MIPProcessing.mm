@@ -39,7 +39,7 @@ template<class VTYPE, class STYPE, int vectorElements> void TCalcMip(STYPE *mipP
         For unsigned short, we use the SSE4.1 instruction set if available,
         or otherwise fallback code which seems to be only 5-10% slower in reality.  */
     size_t i;
-    for (i = 0; i <= numPixels-vectorElements; i += vectorElements)
+    for (i = 0; i + vectorElements <= numPixels; i += vectorElements)
     {
         VTYPE x = *(VTYPE*)&mipPixels[i];
         VTYPE y = *(VTYPE*)&otherPixels[i];
