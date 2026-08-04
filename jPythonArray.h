@@ -298,7 +298,7 @@ template<class Type> class JPythonArray
                 for (i = 0; i < numDims; i++)
                     offset += strides[i] * indices[i];
                 data[offset] = inData[inPos++];
-                for (i = numDims; i >= 0; i--)
+                for (i = numDims-1; i >= 0; i--)
                 {
                     indices[i]++;
                     if (indices[i] == dims[i])
