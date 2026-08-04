@@ -73,7 +73,9 @@
 {
 	@synchronized(self)
 	{
-		ObjectAndCost *obj = [cachedObjects objectForKey:key];
+        // Apparently [NSDictionary objectForKey:] does not retain/autorelease,
+        // so we should do that here to avoid a window condition potentially leading to a crash.
+		ObjectAndCost *obj = [[[cachedObjects objectForKey:key] retain] autorelease];
 //		double temp = obj.timeLastAccessed;
 		obj.timeLastAccessed = GetTime();
 //		printf("Accessing key %s last accessed %lf now %lf\n", key.UTF8String, temp, obj.timeLastAccessed);
