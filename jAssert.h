@@ -32,7 +32,12 @@
 	extern BaseAssertionHandler *assertionHandler;
 
 	#define ALWAYS_ASSERT(CONDITION) do { if (EXPECT(!(CONDITION), false)) { assertionHandler->AssertionFailed(__LINE__, __PRETTY_FUNCTION__, __FILE__); } } while (0)
-	#define CHECK(CONDITION) assertionHandler->CheckCondition((CONDITION), __LINE__, __PRETTY_FUNCTION__, __FILE__)
+    #define CHECK(CONDITION)                                                            \
+    ({                                                                                  \
+        int _r = !!(CONDITION);                                                         \
+        assertionHandler->CheckCondition(_r, __LINE__, __PRETTY_FUNCTION__, __FILE__);  \
+        _r;                                                                             \
+    })
 #endif
 
 /* Note: a good place to go looking for a definition of old-style error codes is:
