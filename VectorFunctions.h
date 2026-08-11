@@ -253,11 +253,15 @@
         Apparently the solution is to call vld1q_u8, which accepts a uint8* with no conditions on alignment.
         Incidentally *aligned* loads are supposed to be faster,
         but in the SAD calculations I can't always guarantee the address will be aligned.
+
+        Note: I used to have the following templated load function:
+            template<class T> T vLoadUnaligned(T *addr) { return vld1q_u8((const unsigned char *)addr); }
+        but it seems that 2026 compilers don't like the implicit typecast.
+        As a result, I've explicitly implemented the three datatypes that I need, below.
     */
-    template<class T> T vLoadUnaligned(T *addr) { return vld1q_u8((const unsigned char *)addr); }
-    // Fallback code if the template doesn't work (but it seems to)
-    // inline vInt32 vLoadUnalignedInt32(void *addr) { return ((vInt32*)addr)[0]; }
-    // inline vUInt32 vLoadUnalignedUInt32(void *addr) { return ((vUInt32*)addr)[0]; }
+    inline vUInt8 vLoadUnaligned(const vUInt8 *addr) { return vld1q_u8((const unsigned char *)addr); }
+    inline vUInt16 vLoadUnaligned(const vUInt16 *addr) { return vld1q_u16((const unsigned short *)addr); }
+    inline vUInt32 vLoadUnaligned(const vUInt32 *addr) { return vld1q_u32((const unsigned int *)addr); }
 
     inline vUInt32 vOr(vUInt32 a, vUInt32 b) { return vorrq_u32(a, b); }
     inline vInt32 vAdd(vInt32 a, vInt32 b)	{ return vaddq_s32( a, b ); }
