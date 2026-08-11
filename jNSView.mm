@@ -10,16 +10,22 @@
 
 @implementation JNSView
 
--(void)awakeFromNib
+-(void)viewWillMoveToWindow:(NSWindow *)newWindow
 {
-    [self addObserver:self forKeyPath:@"viewNeedsRedraw_dummyProperty" options:0 context:NULL];
-    [super awakeFromNib];
-}
-
--(void)dealloc
-{
-    [self removeObserver:self forKeyPath:@"viewNeedsRedraw_dummyProperty"];
-    [super dealloc];
+    if (newWindow != nil)
+    {
+        [self addObserver:self forKeyPath:@"viewNeedsRedraw_dummyProperty" options:0 context:NULL];
+        _observingForRedraw = true;
+    }
+    else
+    {
+        if (_observingForRedraw)
+        {
+            [self removeObserver:self forKeyPath:@"viewNeedsRedraw_dummyProperty"];
+            _observingForRedraw = false;
+        }
+    }
+    [super viewWillMoveToWindow:newWindow];
 }
 
 -(void)observeValueForKeyPath:(NSString *)keyPath
