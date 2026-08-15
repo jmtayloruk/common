@@ -21,8 +21,10 @@
 	// on my OS X machines without worrying about availability on other machines.
     #include <sys/cdefs.h>      // for __printflike
     #define PRINTFLIKE(A,B) __printflike((A),(B))
+    #define SCANFLIKE(A,B)  __scanflike((A),(B))
 #else
 	#define PRINTFLIKE(A,B) 
+    #define SCANFLIKE(A,B)
 #endif
 #define RESTRICT __restrict
 
