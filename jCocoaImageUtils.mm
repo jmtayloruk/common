@@ -286,6 +286,11 @@ bool IsImageFile(NSString *theFilename)
 
 NSArray *ListImageFilesInDirectory(NSString *dir, bool sorted, bool useTimestamps, bool fullPath, CocoaProgressWindow *progress)
 {
+    return ListFilesInDirectory(dir, IsImageFile, sorted, useTimestamps, fullPath, progress);
+}
+
+NSArray *ListFilesInDirectory(NSString *dir, bool (*FilterFilenames)(NSString *filename), bool sorted, bool useTimestamps, bool fullPath, CocoaProgressWindow *progress)
+{
 	// Returns an array containing NSStrings for each image file in a directory
 #if 0
 	// (Old version that I think is probably slower)
@@ -324,7 +329,7 @@ NSArray *ListImageFilesInDirectory(NSString *dir, bool sorted, bool useTimestamp
 		/*	Note that this actual traversal and filtering doesn't seem to take
 			a significant amount of time compared with the fts calls above	*/
 		NSString *thisFile = [SWF:@"%s", child->fts_name];
-		if (IsImageFile(thisFile))
+		if ((FilterFilenames == NULL) || (FilterFilenames(thisFile)))
 			[dirContents2 addObject:thisFile];
 		child = child->fts_link;
 	}
