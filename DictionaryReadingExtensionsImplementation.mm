@@ -52,12 +52,18 @@
 	return str;
 }
 
+-(NSArray *)getRequiredArrayForKey:(NSString *)key
+{
+    return [self getRequiredArrayForKey:key ofLength:0];
+}
+
 -(NSArray *)getRequiredArrayForKey:(NSString *)key ofLength:(int)length
 {
 	ALWAYS_ASSERT([self isKindOfClass:[DICTIONARY_CLASS class]]);
 	NSArray *arr = [self valueForKeyPath:key];
 	ALWAYS_ASSERT([arr isKindOfClass:[NSArray class]]);
-	ALWAYS_ASSERT(arr.count == (NSUInteger)length);
+    if (length != 0)
+        ALWAYS_ASSERT(arr.count == (NSUInteger)length);
 	return arr;
 }
 
