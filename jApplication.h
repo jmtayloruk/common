@@ -21,7 +21,7 @@
 -(void)applicationDidFinishLaunching:(NSNotification *)note;
 -(void)applicationWillTerminate:(NSNotification *)notification;
 -(void)alertWithText:(NSString *)mainText andExplanation:(NSString *)text2;
--(void)alertWithText:(NSString *)mainText andExplanation:(NSString *)text2 iconName:(NSString*)iconName;
+-(void)alertWithText:(NSString *)mainText andExplanation:(NSString *)text2 iconName:(NSString*)iconName onWindow:(NSWindow *)onWindow;
 
 -(void)addGlobalMetadataToDictionary:(NSMutableDictionary *)dict;
 

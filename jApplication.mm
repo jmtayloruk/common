@@ -84,11 +84,12 @@ JApplication *baseApp = nil;
 
 -(void)alertWithText:(NSString *)mainText andExplanation:(NSString *)text2
 {
-	[self alertWithText:mainText andExplanation:text2 iconName:nil];
+	[self alertWithText:mainText andExplanation:text2 iconName:nil onWindow:nil];
 }
 
--(void)alertWithText:(NSString *)mainText andExplanation:(NSString *)text2 iconName:(NSString*)iconName
+-(void)alertWithText:(NSString *)mainText andExplanation:(NSString *)text2 iconName:(NSString*)iconName onWindow:(NSWindow *)onWindow
 {
+    // If onWindow is nil then we will raise an application-modal alert. Otherwise we will raise a sheet on the specified window.
 	if (self.terminating)
 		printf("Suppress alert as we are terminating. %s. %s\n", mainText.UTF8String, text2.UTF8String);
 	else
@@ -100,7 +101,10 @@ JApplication *baseApp = nil;
 							 informativeTextWithFormat:@"%@", text2];
 		if (iconName != nil)
 			alert.icon = [NSImage imageNamed:iconName];
-		[alert runModal];
+        if (onWindow != nil)
+            [alert beginSheetModalForWindow:onWindow completionHandler:nil];
+        else
+            [alert runModal];
 	}
 }
 
@@ -206,12 +210,12 @@ JApplication *baseApp = nil;
 	id obj = [[NSUserDefaults standardUserDefaults] objectForKey:key];
 	if ((!mayBeAbsent) && (obj == nil))
 	{
-		[baseApp alertWithText:[SWF:@"Compulsory key '%@' not found in config file", key] andExplanation:[SWF:@"Needs to be present in the plist file '%@' - speak to Jonny (version %@)", self.configFilename, self.buildVersionString] iconName:NSImageNameCaution];
+		[baseApp alertWithText:[SWF:@"Compulsory key '%@' not found in config file", key] andExplanation:[SWF:@"Needs to be present in the plist file '%@' - speak to Jonny (version %@)", self.configFilename, self.buildVersionString] iconName:NSImageNameCaution onWindow:nil];
 		ALWAYS_ASSERT(0);
 	}
 	if ((obj != nil) && (c != nil) && (![obj isKindOfClass:c]))
 	{
-		[baseApp alertWithText:[SWF:@"Key '%@' in config file was not in expected format", key] andExplanation:[SWF:@"Expected '%@' got '%@' - speak to Jonny (version %@)", NSStringFromClass(c), NSStringFromClass([obj class]), self.buildVersionString] iconName:NSImageNameCaution];
+		[baseApp alertWithText:[SWF:@"Key '%@' in config file was not in expected format", key] andExplanation:[SWF:@"Expected '%@' got '%@' - speak to Jonny (version %@)", NSStringFromClass(c), NSStringFromClass([obj class]), self.buildVersionString] iconName:NSImageNameCaution onWindow:nil];
 		ALWAYS_ASSERT(0);
 	}
 	return obj;
