@@ -11,9 +11,27 @@
 	// Obtain the NSNumber associated with the specified key.
 	// Will fail assertion if the key value is absent or is not an NSNumber.
 	ALWAYS_ASSERT([self isKindOfClass:[DICTIONARY_CLASS class]]);
-	NSNumber *num = [self valueForKeyPath:key];
-	ALWAYS_ASSERT([num isKindOfClass:[NSNumber class]]);
-	return num;
+	id value = [self valueForKeyPath:key];
+    if (CHECK([value isKindOfClass:[NSNumber class]]))
+        return value;
+    if ([value isKindOfClass:[NSString class]])
+    {
+        // Attempt to convert an NSString into a number.
+        // We shouldn't get here, but it's better than asserting (and we will have flagged this via the CHECK, above)
+        NSString *string = [(NSString *)value stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+        if ([string caseInsensitiveCompare:@"YES"] == NSOrderedSame)
+            return @YES;
+        if ([string caseInsensitiveCompare:@"NO"] == NSOrderedSame)
+            return @NO;
+
+        NSNumberFormatter *formatter = [[NSNumberFormatter new] autorelease];
+        formatter.numberStyle = NSNumberFormatterDecimalStyle;
+        NSNumber *num = [formatter numberFromString:value];
+        if (num != nil)
+            return num;
+    }
+    ALWAYS_ASSERT(0);
+    return nil;
 }
 
 -(NSNumber *)getOptionalNumberForKey:(NSString *)key defaultVal:(NSNumber *)def
@@ -22,11 +40,10 @@
 	// If the key is not present in the dictionary, return the supplied default value instead.
 	// Will fail assertion if the key value is present but is not an NSNumber.
 	ALWAYS_ASSERT([self isKindOfClass:[DICTIONARY_CLASS class]]);
-	NSNumber *num = [self valueForKeyPath:key];
-	if (num == nil)
+	id value = [self valueForKeyPath:key];
+	if (value == nil)
 		return def;
-	ALWAYS_ASSERT([num isKindOfClass:[NSNumber class]]);
-	return num;
+    return [self getRequiredNumberForKey:key];
 }
 
 -(int)getRequiredIntForKey:(NSString *)key
