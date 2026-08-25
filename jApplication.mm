@@ -165,7 +165,7 @@ JApplication *baseApp = nil;
     return outFile;
 }
 
-+ (NSString *)runCommand:(NSString *)commandToRun
++(NSString *)runCommand:(NSString *)commandToRun result:(int *)outResult
 {
     // Utility function from https://stackoverflow.com/questions/3145701/relaunching-a-cocoa-app
     // (I am not sure whether that is in turn copied from somewhere else)
@@ -199,6 +199,9 @@ JApplication *baseApp = nil;
     NSData *data = [[pipe fileHandleForReading] readDataToEndOfFile];
     
     [task waitUntilExit];
+    
+    if (outResult != NULL)
+        *outResult = [task terminationStatus];
     
     NSString *output =
     [[[NSString alloc] initWithData:data
