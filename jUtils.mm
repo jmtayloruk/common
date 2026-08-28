@@ -183,12 +183,32 @@ bool StringIsInList(NSString *s, ...)
 	return false;
 }
 
-NSString *SizeStringInGBOrMB(double sizeInBytes)
+int Precision(double x)
+{
+    // AI written code to give two significant figures of precision for %.*lf
+    int decimals = 1 - (int)floor(log10(fabs(x)));
+    if (decimals < 0)
+        decimals = 0;
+    return decimals;
+}
+
+NSString *SizeStringInGBOrMB(double sizeInBytes, bool includeTiffCompressionEstimate)
 {
     double size = sizeInBytes / 1e6;
-    if (size > 100.0)
-        return [SWF:@"%.1lf GB", size/1e3];
-    return [SWF:@"%.1lf MB", size];
+    if (includeTiffCompressionEstimate && (size > 0))
+    {
+        // Give some sort of indicator of effects of tiff compression
+        size *= 0.8;        // Estimate of minimal compression. Good compression might be half this (per code below)
+        if (size > 100.0)
+            return [SWF:@"%.*lf-%.*lf GB", Precision(size/2e3), size/2e3, Precision(size/1e3), size/1e3];
+        return [SWF:@"%.*lf-%.*lf MB", Precision(size/2), size/2, Precision(size), size];
+    }
+    else
+    {
+        if (size > 100.0)
+            return [SWF:@"%.*lf GB", Precision(size/1e3), size/1e3];
+        return [SWF:@"%.*lf MB", Precision(size), size];
+    }
 }
 
 id ResurrectWeakRef(MAZeroingWeakRef *&ref, BlockReturningObject resurrectionBlock)

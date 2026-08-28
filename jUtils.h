@@ -120,7 +120,7 @@ void LinearFit(std::vector<double> &x, std::vector<double> &y, double *alpha, do
 	void UpdateKeys(id owner, ...) NS_REQUIRES_NIL_TERMINATION;
 	bool StringIsInList(NSString *s, ...) NS_REQUIRES_NIL_TERMINATION;
 
-    NSString *SizeStringInGBOrMB(double sizeInBytes);
+    NSString *SizeStringInGBOrMB(double sizeInBytes, bool includeTiffCompressionEstimate);
 
 	typedef id (^BlockReturningObject)(void);
 	@class MAZeroingWeakRef;
