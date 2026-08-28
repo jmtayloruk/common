@@ -40,7 +40,7 @@
 +(FILE *)timestampedLogFileWithIdentifier:(NSString *)identifier;
 +(NSString *)logFileDirectoryPath;
 +(NSString *)timestampedLogFilePathWithIdentifier:(NSString *)identifier;
-+(NSString*)runCommand:(NSString*)commandToRun;
++(NSString*)runCommand:(NSString*)commandToRun result:(int *)outResult;
 
 +(NSString *)currentDateTimeString;
 

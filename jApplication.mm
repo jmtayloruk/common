@@ -165,41 +165,53 @@ JApplication *baseApp = nil;
     return outFile;
 }
 
-+(NSString*)runCommand:(NSString*)commandToRun;
++(NSString *)runCommand:(NSString *)commandToRun result:(int *)outResult
 {
     // Utility function from https://stackoverflow.com/questions/3145701/relaunching-a-cocoa-app
     // (I am not sure whether that is in turn copied from somewhere else)
-    NSTask *task;
-    task = [[NSTask alloc] init];
-    [task setLaunchPath: @"/bin/bash"];
+    // Further modified by ChatGPT to give a minimal environment and avoid issues with PATH not pointing to the correct python
+    NSTask *task = [[[NSTask alloc] init] autorelease];
+    [task setLaunchPath:@"/bin/bash"];
     
     NSArray *arguments = [NSArray arrayWithObjects:
-                          @"-c" ,
-                          [NSString stringWithFormat:@"%@", commandToRun],
+                          @"-l",
+                          @"-c",
+                          commandToRun,
                           nil];
-    //NSLog(@"run command: %@",commandToRun);
-    [task setArguments: arguments];
+    [task setArguments:arguments];
     
-    NSPipe *pipe;
-    pipe = [NSPipe pipe];
-    [task setStandardOutput: pipe];
+    // Give bash a minimal environment so that macOS's inherited GUI-app
+    // PATH doesn't override the user's login-shell configuration.
+    NSMutableDictionary *environment =
+    [NSMutableDictionary dictionaryWithObjectsAndKeys:
+     NSHomeDirectory(), @"HOME",
+     NSUserName(), @"USER",
+     nil];
     
-    NSFileHandle *file;
-    file = [pipe fileHandleForReading];
+    [task setEnvironment:environment];
+    
+    NSPipe *pipe = [NSPipe pipe];
+    [task setStandardOutput:pipe];
+    [task setStandardError:pipe];
     
     [task launch];
     
-    NSData *data;
-    data = [file readDataToEndOfFile];
+    NSData *data = [[pipe fileHandleForReading] readDataToEndOfFile];
     
-    [task autorelease];
+    [task waitUntilExit];
     
-    NSString *output;
-    output = [[[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding] autorelease];
-    if (output.length >= 1)
-        return [output substringToIndex:output.length-1];       // Strip final newline
-    else
-        return output;
+    if (outResult != NULL)
+        *outResult = [task terminationStatus];
+    
+    NSString *output =
+    [[[NSString alloc] initWithData:data
+                           encoding:NSUTF8StringEncoding] autorelease];
+    
+    // Remove trailing newline(s), if present.
+    while ([output hasSuffix:@"\n"] || [output hasSuffix:@"\r"])
+        output = [output substringToIndex:[output length] - 1];
+    
+    return output;
 }
 
 #pragma mark -
