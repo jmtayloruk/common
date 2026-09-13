@@ -65,6 +65,9 @@ template<class C> C *aligned_malloc(size_t size, size_t align_size = 16)
 	return (C *)void_aligned_malloc(size * sizeof(C), align_size);
 }
 
+extern const double kWeakTiffCompressionFactor;
+extern const double kLikelyTiffCompressionFactor;
+
 class LocalEnableDenormalFlushing
 {
   protected:

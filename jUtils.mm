@@ -12,6 +12,9 @@
 // Determine whether this selector is available - it's useful, but not available in old OS versions
 static bool selectorAvailable = [NSURL respondsToSelector:@selector(fileURLWithFileSystemRepresentation:isDirectory:relativeToURL:)];
 
+const double kWeakTiffCompressionFactor = 0.8;
+const double kLikelyTiffCompressionFactor = 0.4;
+
 NSURL *PathToURL(NSString *path, NSURL *relativeTo)
 {
 	/*  Convert a path into an NSURL object, relative to another specified URL
@@ -198,10 +201,11 @@ NSString *SizeStringInGBOrMB(double sizeInBytes, bool includeTiffCompressionEsti
     if (includeTiffCompressionEstimate && (size > 0))
     {
         // Give some sort of indicator of effects of tiff compression
-        size *= 0.8;        // Estimate of minimal compression. Good compression might be half this (per code below)
-        if (size > 100.0)
-            return [SWF:@"%.*lf-%.*lf GB", Precision(size/2e3), size/2e3, Precision(size/1e3), size/1e3];
-        return [SWF:@"%.*lf-%.*lf MB", Precision(size/2), size/2, Precision(size), size];
+        double upperSize = size * kWeakTiffCompressionFactor;        // Estimate of poorest compression ratio.
+        double likelySize = size * kLikelyTiffCompressionFactor;     // Estimate of more likely compression ratio.
+        if (upperSize > 100.0)
+            return [SWF:@"%.*lf-%.*lf GB", Precision(likelySize/1e3), likelySize/1e3, Precision(upperSize/1e3), upperSize/1e3];
+        return [SWF:@"%.*lf-%.*lf MB", Precision(likelySize/2), likelySize/2, Precision(upperSize), upperSize];
     }
     else
     {
