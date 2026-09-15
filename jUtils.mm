@@ -205,7 +205,7 @@ NSString *SizeStringInGBOrMB(double sizeInBytes, bool includeTiffCompressionEsti
         double likelySize = size * kLikelyTiffCompressionFactor;     // Estimate of more likely compression ratio.
         if (upperSize > 100.0)
             return [SWF:@"%.*lf-%.*lf GB", Precision(likelySize/1e3), likelySize/1e3, Precision(upperSize/1e3), upperSize/1e3];
-        return [SWF:@"%.*lf-%.*lf MB", Precision(likelySize/2), likelySize/2, Precision(upperSize), upperSize];
+        return [SWF:@"%.*lf-%.*lf MB", Precision(likelySize), likelySize, Precision(upperSize), upperSize];
     }
     else
     {
