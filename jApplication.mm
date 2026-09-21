@@ -214,6 +214,18 @@ JApplication *baseApp = nil;
     return output;
 }
 
+-(NSColor *)defaultUITextColour
+{
+    // Colour to be used for UI text (when we are not setting the colour manually to e.g. red).
+    // Usually this would be black, but in dark mode we need it to be white.
+    // Interestingly, it looks like this one colour object we return automatically updates
+    // when switching between light and dark mode, without this function having to be called again.
+    if ([NSColor respondsToSelector:@selector(labelColor)])
+        return NSColor.labelColor;
+    else
+        return NSColor.controlTextColor;
+}
+
 #pragma mark -
 #pragma mark Defaults
 

@@ -49,6 +49,7 @@
 @property (readonly, retain) NSString *currentDateTimeString;
 @property (readonly) bool debugBuild;
 @property (readonly) bool terminating;
+@property (readonly) NSColor *defaultUITextColour;
 
 @end
 
