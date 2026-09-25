@@ -632,6 +632,11 @@ JCache *imageCache = [JCache new];
 	return result;
 }
 
+-(size_t)bitmapFrameCount
+{
+    return self.multiPageImage.representations.count;
+}
+
 @synthesize frameMetadataArray = _frameMetadataArray;
 @synthesize folderAlias = _folderAlias;
 @synthesize imageFilename = _imageFilename;

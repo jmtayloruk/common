@@ -108,6 +108,10 @@ const int kCurrentMetadataVersion = kMultiTiffMetadataVersion;
 -(void)setNewObject:(id)obj forCommonKey:(NSString *)key arrayIndex:(size_t)arrayIndex;
 -(void)saveMetadataIfNeeded;
 -(bool)metadataAvailable;
+// Number of image representations actually present in the image file. This can
+// differ from frameCount when an accompanying metadata plist is incomplete or
+// does not match the TIFF it describes.
+-(size_t)bitmapFrameCount;
 
 @property (readonly) size_t frameCount;
 @property (readonly) JAlias *folderAlias;
