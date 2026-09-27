@@ -232,6 +232,14 @@ JApplication *baseApp = nil;
 -(id)getObjectForDefault:(NSString *)key requiringClass:(Class)c mayBeAbsent:(bool)mayBeAbsent
 {
 	id obj = [[NSUserDefaults standardUserDefaults] objectForKey:key];
+    // Preserve literal defaults keys, but also allow dotted paths into config dictionaries.
+    if ((obj == nil) && ([key rangeOfString:@"."].location != NSNotFound))
+    {
+        NSArray *components = [key componentsSeparatedByString:@"."];
+        obj = [[NSUserDefaults standardUserDefaults] objectForKey:components[0]];
+        for (NSUInteger i = 1; i < components.count; i++)
+            obj = [obj isKindOfClass:[NSDictionary class]] ? [obj objectForKey:components[i]] : nil;
+    }
 	if ((!mayBeAbsent) && (obj == nil))
 	{
 		[baseApp alertWithText:[SWF:@"Compulsory key '%@' not found in config file", key] andExplanation:[SWF:@"Needs to be present in the plist file '%@' - speak to Jonny (version %@)", self.configFilename, self.buildVersionString] iconName:NSImageNameCaution onWindow:nil];
