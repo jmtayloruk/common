@@ -502,6 +502,7 @@ NSBitmapImageRep *RawBitmapFromImagePath(NSString *imagePath)
 NSBitmapImageRep *CropBitmap(NSBitmapImageRep *originalBitmap, BoundsRect cropRect)
 {
     // Return a bitmap formed from the image, cropped according to cropRect.
+    // cropRect uses bottom-left image coordinates, as required by AppKit's fromRect.
     if ((cropRect.w == 0) && (cropRect.h == 0))
         return originalBitmap;
     NSRect thisCropRect = NSIntersectionRect(cropRect.AsNSRect(), NSMakeRect(0, 0, originalBitmap.pixelsWide, originalBitmap.pixelsHigh));
