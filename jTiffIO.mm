@@ -108,7 +108,8 @@ bool SaveTiffFromSpool(NSString *spoolPath, NSString *destPath, int numImages, N
     bool outOfPlists = false;
     for (int n = 0; n < numImages; n++, plistIndex++)
     {
-        fread(data, bytesPerImage, 1, spoolFile);
+        if (!CHECK(fread(data, bytesPerImage, 1, spoolFile) == 1))
+            break;
 
         size_t width = w, height = h;
         NSInteger samplesPerPixel = 1, bytesPerSample = 2;
