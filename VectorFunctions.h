@@ -20,7 +20,12 @@
         It may have something to do with the fact that the SSE headers on OS X do not attempt to distinguish between signed and unsigned types, for some reason.
         This is rather odd, but can be accommodated by including a cast on a and b to make this work.
         Initially I casted to my equivalent signed type (e.g. vUInt16), but I am now casting to the generic __m128i.
-        That's ever so slightly less responsible with type safety, but it allows compatibility with the vector types I use under Windows */
+        That's ever so slightly less responsible with type safety, but it allows compatibility with the vector types I use under Windows
+        
+        Note 2: the behaviour of which output lane gets what contribution of the SAD calculation (in vSad_u8_to_u64 etc)
+        may very from one vector instruction set to another - this is not an issue as long
+        as we sum across before examining the result.
+        */
     #include <immintrin.h>      // This will include headers for all vector families available in the current build
 
     inline vUInt16 vZeroUInt16(void) { return (vUInt16)_mm_setzero_si128(); }
@@ -110,9 +115,15 @@
     inline vUInt32 vUnpackLo(vUInt16 a, vUInt16 b) { return (vUInt32)_mm_unpacklo_epi16((__m128i)a, (__m128i)b); }
     inline vUInt32 vUnpackHi(vUInt16 a, vUInt16 b) { return (vUInt32)_mm_unpackhi_epi16((__m128i)a, (__m128i)b); }
 
-    inline vUInt64 vSad_u8_to_u64(vUInt8 a, vUInt8 b) { return (vUInt64)_mm_sad_epu8((__m128i)a, (__m128i)b); }    // See Note 1 on signed/unsigned, above
+    inline vUInt64 vSad_u8_to_u64(vUInt8 a, vUInt8 b)
+    {
+        // See Note 1 on signed/unsigned, above
+        // See Note 2 on compatibility between different vector instruction sets
+        return (vUInt64)_mm_sad_epu8((__m128i)a, (__m128i)b);
+    }
     inline vUInt32 vSad_u16_to_u32(vUInt16 a, vUInt16 b)
     {
+        // See Note 2 on compatibility between different vector instruction sets
         // Note the perverse return type (driven by what I could manage to implement easily in the SSE implementation).
         // This limits how many SADs we can accumulate before needing to sum across and promote to a wider type.
 
@@ -174,24 +185,22 @@
 			a = _mm_xor_ps(a, (vFloat) { 0.0, -0.0, 0.0, -0.0 });
 			return vAdd(sum, (vFloat)_mm_shuffle_epi32((__m128i)a, _MM_SHUFFLE(2, 3, 0, 1)));
 		}
-		inline vFloat vSpecialCMul(vFloat a, vFloat b, vFloat sum)
-		{
-			vFloat c = vMul(a, (vFloat)_mm_shuffle_epi32((__m128i)b, _MM_SHUFFLE(2, 3, 0, 1)));
-			a = _mm_xor_ps(c, (vFloat) { 0.0, -0.0, 0.0, -0.0 });
-			return vAdd(sum, c);
-		}
+        inline vFloat vSpecialCMul(vFloat a, vFloat b, vFloat sum)
+        {
+            vFloat c = vMul(a, (vFloat)_mm_shuffle_epi32((__m128i)b, _MM_SHUFFLE(2, 3, 0, 1)));
+            return vAdd(sum, vNegateReal(c));
+        }
 		inline vFloat vCMulRearrangeSwapAndAdd(vFloat a, vFloat sum)
 		{
 			// Negate the imaginary parts, then swap the real and imaginary parts and add to sum
 			a = _mm_xor_ps(a, (vFloat) { 0.0, -0.0, 0.0, -0.0 });
 			return vAdd(sum, (vFloat)_mm_shuffle_epi32((__m128i)a, _MM_SHUFFLE(0, 1, 2, 3)));
 		}
-		inline vFloat vSpecialCMulSwapHiLoOnP2(vFloat a, vFloat b, vFloat sum)
-		{	
-			vFloat c = vMul(a, (vFloat)_mm_shuffle_epi32((__m128i)b, _MM_SHUFFLE(0, 1, 2, 3)));
-			a = _mm_xor_ps(c, (vFloat) { 0.0, -0.0, 0.0, -0.0 });
-			return vAdd(sum, c);
-		}
+        inline vFloat vSpecialCMulSwapHiLoOnP2(vFloat a, vFloat b, vFloat sum)
+        {
+            vFloat c = vMul(a, (vFloat)_mm_shuffle_epi32((__m128i)b, _MM_SHUFFLE(0, 1, 2, 3)));
+            return vAdd(sum, vNegateReal(c));
+        }
 	#endif
 
 	// Multiply by -i: return { a1, -a0, a3, -a2 }
@@ -276,6 +285,7 @@
     inline vUInt64 vSad_u8_to_u64(vUInt8 a, vUInt8 b)
     {
         // In-place computation of the absolute difference
+        // See Note 2 on compatibility between different vector instruction sets
         vUInt8 absvec = vabdq_u8(a, b);
         // Sum across. Neon gives a scalar result, but the calling code is expecting
         // a vector result (in line with how the SSE SAD instruction works).
@@ -299,6 +309,7 @@
         // Follows the same structure as in vSad_u8_to_u64
         // Note the perverse return type (to match what was possible in the SSE implementation).
         // This limits how many SADs we can accumulate before needing to sum across and promote to a wider type.
+        // See Note 2 on compatibility between different vector instruction sets
         vUInt16 absvec = vabdq_u16(a, b);
         vUInt32 resultVec = { 0, 0, 0, 0 };
         resultVec[0] = vaddlvq_u16(absvec);
