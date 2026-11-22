@@ -27,7 +27,8 @@
       public:
                 JMovieBuilder(NSString *destPath, const BoundsRect &inBounds, double inFrameRate, OSStatus *outErr, double compressionFactor, int channelCount);
                 JMovieBuilder(const char *destPath, const BoundsRect &bounds, double frameRate, OSStatus *outErr, double compressionFactor, int channelCount);
-        void	AddFrame(const NSImage *frameImage, const NSRect *cropRect) { }
+        OSStatus AddFrame(const NSImage *frameImage, const NSRect *cropRect) { return 0; }
+        OSStatus Finish() { return 0; }
     };
 
 #else
@@ -47,13 +48,14 @@
         double						desiredFramesPerSecond;
         int							frameCounter;
         
-        AVAssetWriter               *videoWriter;
-        AVAssetWriterInput          *writerInput;
-        AVAssetWriterInputPixelBufferAdaptor *avAdaptor;
+        AVAssetWriter               *videoWriter = nil;
+        AVAssetWriterInput          *writerInput = nil;
+        AVAssetWriterInputPixelBufferAdaptor *avAdaptor = nil;
         
-        void	DoInit(NSURL *destURL, const BoundsRect &bounds, double frameRate, OSStatus *outErr, double compressionFactor, int channelCount);
+        OSStatus DoInit(NSURL *destURL, const BoundsRect &bounds, double frameRate, double compressionFactor, int channelCount);
 
       public:
+                // If initialization reports an error through outErr, destroy the builder.
                 JMovieBuilder(NSString *destPath, const BoundsRect &inBounds, double inFrameRate, OSStatus *outErr, double compressionFactor, int channelCount);
                 // This next constructor required for 'scatter' project, which calls this from C code.
                 JMovieBuilder(const char *destPath, const BoundsRect &bounds, double frameRate, OSStatus *outErr, double compressionFactor, int channelCount);
@@ -67,10 +69,12 @@
         #ifdef __COREFOUNDATION__ doesn't seem to work (defined in some of my apparently c-only files)
         Haven't yet found a specific option that identifies files where NSImage is defined
         Trying just objc switch. I don't ~think~ I've got any C++ code that uses AddFrame...	*/
+        // A nonzero status from AddFrame means the caller should stop exporting and destroy the builder.
     #ifdef __OBJC__
-        void	AddFrame(const NSImage *frameImage, const NSRect *cropRect);
+        OSStatus AddFrame(const NSImage *frameImage, const NSRect *cropRect);
     #endif
-        void	AddFrame(const CVPixelBufferRef pixelBuffer);
+        OSStatus AddFrame(const CVPixelBufferRef pixelBuffer); // Takes ownership, including on failure.
+        OSStatus Finish(); // Call on the export queue and report any error before destroying the builder.
     };
 
 #endif

@@ -12,6 +12,7 @@
 #include "jMovieBuilder.h"
 #import "jCocoaImageUtils.h"
 #include <AVFoundation/AVFoundation.h>
+#include <climits>
 
 void GetMovieDestinationDetailsUsingSheetOnWindow(NSWindow *sheetOnWindow, void (^handler)(NSInteger result, NSSavePanel *savePanel))
 {
@@ -32,6 +33,16 @@ void GetMovieDestinationDetailsUsingSheetOnWindow(NSWindow *sheetOnWindow, void 
 
 #if HAS_OS_X_GUI
 
+static OSStatus MovieWriterError(NSError *error)
+{
+    if (error != nil)
+    {
+        NSLog(@"Movie writer error: %@", error);
+        return (OSStatus)error.code;
+    }
+    return ioErr;
+}
+
 CVPixelBufferRef FastImageFromNSImage(const NSImage *image, const NSRect cropRect)
 {
     CVPixelBufferRef buffer = NULL;
@@ -41,23 +52,30 @@ CVPixelBufferRef FastImageFromNSImage(const NSImage *image, const NSRect cropRec
     size_t width = (size_t)actualCropRect.size.width;
     size_t height = (size_t)actualCropRect.size.height;
     size_t bitsPerComponent = 8; // *not* CGImageGetBitsPerComponent(image);
-    CGColorSpaceRef cs = CGColorSpaceCreateWithName(kCGColorSpaceGenericRGB);
     CGBitmapInfo bi = kCGImageAlphaNoneSkipFirst; // *not* CGImageGetBitmapInfo(image);
     NSDictionary *d = [NSDictionary dictionaryWithObjectsAndKeys:[NSNumber numberWithBool:YES], kCVPixelBufferCGImageCompatibilityKey,
 					   [NSNumber numberWithBool:YES], kCVPixelBufferCGBitmapContextCompatibilityKey, nil];
 	
 	
     // create pixel buffer
-    CVPixelBufferCreate(kCFAllocatorDefault, width, height, k32ARGBPixelFormat, (CFDictionaryRef)d, &buffer);
-    CVPixelBufferLockBaseAddress(buffer, 0);
+    if (CVPixelBufferCreate(kCFAllocatorDefault, width, height, k32ARGBPixelFormat, (CFDictionaryRef)d, &buffer) != kCVReturnSuccess)
+        return NULL;
+    if (CVPixelBufferLockBaseAddress(buffer, 0) != kCVReturnSuccess)
+    {
+        CVPixelBufferRelease(buffer);
+        return NULL;
+    }
     void *rasterData = CVPixelBufferGetBaseAddress(buffer);
     size_t bytesPerRow = CVPixelBufferGetBytesPerRow(buffer);
 	
     // context to draw in, set to pixel buffer's address
+    CGColorSpaceRef cs = CGColorSpaceCreateWithName(kCGColorSpaceGenericRGB);
     CGContextRef ctxt = CGBitmapContextCreate(rasterData, width, height, bitsPerComponent, bytesPerRow, cs, bi);
 	CGColorSpaceRelease(cs);
     if(ctxt == NULL){
         NSLog(@"could not create context");
+        CVPixelBufferUnlockBaseAddress(buffer, 0);
+        CVPixelBufferRelease(buffer);
         return NULL;
     }
 	
@@ -77,54 +95,51 @@ CVPixelBufferRef FastImageFromNSImage(const NSImage *image, const NSRect cropRec
 
 JMovieBuilder::JMovieBuilder(NSString *destPath, const BoundsRect &inBounds, double inFrameRate, OSStatus *outErr, double compressionFactor, int channelCount)
 {
-    DoInit(PathToURL(destPath), inBounds, inFrameRate, outErr, compressionFactor, channelCount);
+    const OSStatus status = destPath.length == 0 ? paramErr :
+        DoInit(PathToURL(destPath), inBounds, inFrameRate, compressionFactor, channelCount);
+    if (outErr != nullptr)
+        *outErr = status;
+    else
+        ALWAYS_ASSERT_NOERR(status);
 }
 
 JMovieBuilder::JMovieBuilder(const char *destPath, const BoundsRect &inBounds, double inFrameRate, OSStatus *outErr, double compressionFactor, int channelCount)
+    : JMovieBuilder([SWF:@"%s", destPath], inBounds, inFrameRate, outErr, compressionFactor, channelCount)
 {
-    DoInit(PathToURL([SWF:@"%s", destPath]), inBounds, inFrameRate, outErr, compressionFactor, channelCount);
 }
 
-void JMovieBuilder::DoInit(NSURL *destURL, const BoundsRect &bounds, double frameRate, OSStatus *outErr, double compressionFactor, int channelCount)
+OSStatus JMovieBuilder::DoInit(NSURL *destURL, const BoundsRect &bounds, double frameRate, double compressionFactor, int channelCount)
 {
     width = bounds.w;
     height = bounds.h;
     desiredFramesPerSecond = frameRate;
     frameCounter = 0;
+    const double bitrate = double(width) * height * channelCount * 8/*bits/byte*/ * frameRate / compressionFactor;
+    if (width <= 0 || height <= 0 || channelCount <= 0 || compressionFactor <= 0 ||
+        !((frameRate * 1000 >= 1) && (frameRate * 1000 <= INT_MAX)) ||
+        !((bitrate >= 1) && (bitrate <= INT_MAX)))
+    {
+        return paramErr;
+    }
     
     /*  Create a new movie file.
         Somewhat to my surprise, AVAssetWriter refuses to overwrite existing files (error comes when we write first frame to file),
         so we have to delete any existing file manually.    */
     if ([[NSFileManager defaultManager] fileExistsAtPath:destURL.path])
     {
-        NSError *err;
+        NSError *err = nil;
         BOOL success = [[NSFileManager defaultManager] removeItemAtPath:destURL.path error:&err];
-        CHECK(success);
-        if (!success)
-        {
-            *outErr = (int)err.code;
-            return;
-        }
+        if (!CHECK(success))
+            return MovieWriterError(err);
     }
     NSError *error = nil;
     videoWriter = [[AVAssetWriter alloc] initWithURL:destURL
                                             fileType:AVFileTypeQuickTimeMovie
                                                error:&error];
-    if (error != nil)
-    {
-        if (outErr != nil)
-        {
-            *outErr = (OSStatus)error.code;
-            return;
-        }
-        else
-            ALWAYS_ASSERT_NOERR(error.code);
-    }
-    else
-        *outErr = noErr;
-    ALWAYS_ASSERT(videoWriter != nil);
+    if (videoWriter == nil)
+        return MovieWriterError(error);
     
-    int desiredBitrate = int(width * height * channelCount * 8/*bits/byte*/ * frameRate / compressionFactor);
+    int desiredBitrate = int(bitrate);
     printf("Specifying bitrate %.3fMbps\n", desiredBitrate/1e6);
     NSDictionary *compression = [NSDictionary dictionaryWithObjectsAndKeys:
                                  [NSNumber numberWithInt:desiredBitrate], AVVideoAverageBitRateKey,
@@ -135,10 +150,13 @@ void JMovieBuilder::DoInit(NSURL *destURL, const BoundsRect &bounds, double fram
                                    [NSNumber numberWithInt:width], AVVideoWidthKey,
                                    [NSNumber numberWithInt:height], AVVideoHeightKey,
                                    nil];
+    if (![videoWriter canApplyOutputSettings:videoSettings forMediaType:AVMediaTypeVideo])
+        return paramErr;
     writerInput = [[AVAssetWriterInput assetWriterInputWithMediaType:AVMediaTypeVideo
                                                       outputSettings:videoSettings] retain];
     
-    ALWAYS_ASSERT(writerInput != nil);
+    if (writerInput == nil || ![videoWriter canAddInput:writerInput])
+        return MovieWriterError(videoWriter.error);
     // I don't know what the realtime flag actually does, but it seems to make it less likely not to be ready
     // to accept more data (especially when I am streaming brightfield live). Maybe the compressor runs at higher priority,
     // or does less demanding compression...?
@@ -149,37 +167,59 @@ void JMovieBuilder::DoInit(NSURL *destURL, const BoundsRect &bounds, double fram
                                       [NSNumber numberWithInt:kCVPixelFormatType_32ARGB], kCVPixelBufferPixelFormatTypeKey, nil];
     avAdaptor = [[AVAssetWriterInputPixelBufferAdaptor assetWriterInputPixelBufferAdaptorWithAssetWriterInput:writerInput
                                                                                   sourcePixelBufferAttributes:bufferAttributes] retain];
-    ALWAYS_ASSERT([videoWriter canAddInput:writerInput]);
     [videoWriter addInput:writerInput];
     
-    [videoWriter startWriting];
+    if (![videoWriter startWriting])
+        return MovieWriterError(videoWriter.error);
     [videoWriter startSessionAtSourceTime:kCMTimeZero];
+    return noErr;
 }
 
 JMovieBuilder::~JMovieBuilder()
 {
-    // TODO: test this with zero frames and see what happens
+    if (videoWriter.status == AVAssetWriterStatusWriting)
+        Finish();
+    [avAdaptor release];
+    [writerInput release];
+    [videoWriter release];
+}
+
+OSStatus JMovieBuilder::Finish()
+{
+    if (videoWriter.status == AVAssetWriterStatusCompleted)
+        return noErr;
+    if (videoWriter.status != AVAssetWriterStatusWriting)
+        return MovieWriterError(videoWriter.error);
+    if (frameCounter == 0)
+    {
+        // Cancel an empty export instead of asking the writer to finalize it.
+        [videoWriter cancelWriting];
+        return noErr;
+    }
     [writerInput markAsFinished];
-    
+
     // TODO: This next call is deprecated - "may take a long time", and should be replaced with a completion handler if we care about when the file is finished.
     // However, in practice it doesn't seem to be causing my any problems (at present...) to call this.
-    [videoWriter finishWriting];
-
-    if (videoWriter != nil)
-        [videoWriter release];
-    if (writerInput != nil)
-        [writerInput release];
+    if ([videoWriter finishWriting])
+        return noErr;
+    const OSStatus error = MovieWriterError(videoWriter.error);
+    if (videoWriter.status == AVAssetWriterStatusWriting)
+        [videoWriter cancelWriting];
+    return error;
 }
 
-void JMovieBuilder::AddFrame(const NSImage *frameImage, const NSRect *cropRect)
+OSStatus JMovieBuilder::AddFrame(const NSImage *frameImage, const NSRect *cropRect)
 {
-    AddFrame(FastImageFromNSImage(frameImage, *cropRect));
+    if (frameImage == nil || cropRect == nullptr)
+        return paramErr;
+    return AddFrame(FastImageFromNSImage(frameImage, *cropRect));
 }
 
-void JMovieBuilder::AddFrame(const CVPixelBufferRef pixelBuffer)
+OSStatus JMovieBuilder::AddFrame(const CVPixelBufferRef pixelBuffer)
 {
-    CVPixelBufferLockBaseAddress(pixelBuffer, 0);
-    
+    if (pixelBuffer == NULL)
+        return paramErr;
+
     /*  Although the header docs imply it should be possible to continue when readyForMoreMediaData==false,
         in practice it leads to an exception. So, we have to cope with it.
         (Note the header comment "When using a push-style buffer source..." - I think that's pretty much
@@ -187,22 +227,19 @@ void JMovieBuilder::AddFrame(const CVPixelBufferRef pixelBuffer)
         TODO: the headers indicate a better solution involving block callbacks, which I could consider.
         That said, I don't think there's any harm in blocking this thread for a while until things
         have sorted themselves out. */
-    while (!writerInput.readyForMoreMediaData)
+    while (videoWriter.status == AVAssetWriterStatusWriting && !writerInput.readyForMoreMediaData)
         [NSThread sleepForTimeInterval:0.05];
+
     // Note that CMTimeMake requires an integer timescale.
     // The *1000 multipliers mean we end up with a very close approximation to whatever fps we were asked to run at
-    bool ok = [avAdaptor appendPixelBuffer:pixelBuffer withPresentationTime:CMTimeMake(frameCounter*1000, int(desiredFramesPerSecond*1000))];
-    if (!ok)
-    {
-        NSLog(@"Error from appendPixelBuffer: %d %d %@\n", (int)videoWriter.status, (int)videoWriter.error.code, videoWriter.error.description);
-        NSDictionary *userInfo = videoWriter.error.userInfo;
-        NSError *underlyingError = [userInfo objectForKey:NSUnderlyingErrorKey];
-        NSLog(@"Underlying error from appendPixelBuffer: %d %@\n", (int)underlyingError.code, underlyingError.description);
-    }
-    ALWAYS_ASSERT(ok);
-    CVPixelBufferUnlockBaseAddress(pixelBuffer, 0);
+    const CMTime time = CMTimeMake(int64_t(frameCounter) * 1000, int(desiredFramesPerSecond * 1000));
+    const bool ok = videoWriter.status == AVAssetWriterStatusWriting &&
+        [avAdaptor appendPixelBuffer:pixelBuffer withPresentationTime:time];
     CVPixelBufferRelease(pixelBuffer);
+    if (!ok)
+        return MovieWriterError(videoWriter.error);
     frameCounter++;
+    return noErr;
 }
 
 // TODO: do I actually use these for anything? I don't in Spim GUI, but I might in other projects...?
