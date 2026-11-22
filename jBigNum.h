@@ -64,15 +64,24 @@ class jBigNum
 	jBigNum& operator += (const jBigNum &n)
 	{
 		if (_exponent == n.exponent()) { _detail += n.detail(); }
+		else if (n.detail() == jreal(0))
+			return *this;
+		else if (_detail == jreal(0))
+			*this = n;
 		else if (_exponent < n.exponent())
 		{
-			if (n.exponent() - _exponent < kBigNumMaxExponentInTable)
-				_detail = invExpTable[n.exponent() - _exponent] * _detail + n.detail(); _exponent = n.exponent();
+			const unsigned long gap = static_cast<unsigned long>(n.exponent()) - _exponent;
+			if (gap <= kBigNumMaxExponentInTable)
+				_detail = invExpTable[gap] * _detail + n.detail();
+			else
+				_detail = n.detail();
+			_exponent = n.exponent();
 		}
 		else
 		{
-			if (_exponent - n.exponent() < kBigNumMaxExponentInTable)
-				_detail += invExpTable[_exponent - n.exponent()] * n.detail();
+			const unsigned long gap = static_cast<unsigned long>(_exponent) - n.exponent();
+			if (gap <= kBigNumMaxExponentInTable)
+				_detail += invExpTable[gap] * n.detail();
 		}
 		return *this;
 	}
@@ -92,15 +101,27 @@ class jBigNum
 	jBigNum& operator -= (const jBigNum &n)
 	{
 		if (_exponent == n.exponent()) { _detail -= n.detail(); }
+		else if (n.detail() == jreal(0))
+			return *this;
+		else if (_detail == jreal(0))
+		{
+			_detail = -n.detail();
+			_exponent = n.exponent();
+		}
 		else if (_exponent < n.exponent())
 		{
-			if (n.exponent() - _exponent < kBigNumMaxExponentInTable)
-				_detail = invExpTable[n.exponent() - _exponent] * _detail - n.detail(); _exponent = n.exponent();
+			const unsigned long gap = static_cast<unsigned long>(n.exponent()) - _exponent;
+			if (gap <= kBigNumMaxExponentInTable)
+				_detail = invExpTable[gap] * _detail - n.detail();
+			else
+				_detail = -n.detail();
+			_exponent = n.exponent();
 		}
 		else
 		{
-			if (_exponent - n.exponent() < kBigNumMaxExponentInTable)
-				_detail -= invExpTable[_exponent - n.exponent()] * n.detail();
+			const unsigned long gap = static_cast<unsigned long>(_exponent) - n.exponent();
+			if (gap <= kBigNumMaxExponentInTable)
+				_detail -= invExpTable[gap] * n.detail();
 		}
 		return *this;
 	}
