@@ -15,6 +15,7 @@
 #include "tiffio.h"  // Which can be found in my driver-installs submodule, if not installed by some other means
 #include "MetadataParser.h"
 #include "ProgressBar.h"
+#include <vector>
 
 int gFrameCounter = 0;
 
@@ -87,64 +88,58 @@ NSImage *NSImageFromTiffFile(NSString *tiffPath)
 	return result;
 }
 
-bool SaveTiffFromSpool(NSString *spoolPath, NSString *destPath, int numImages, NSDictionary *metadataMapping, int firstPlistIndex, int w, int h, int stride, int bytesPerImage)
+enum class SpoolConversionResult { Complete, OutOfPlists, Failed };
+
+static SpoolConversionResult SaveTiffFromSpool(NSString *spoolPath, NSString *destPath, int numImages, NSDictionary *metadataMapping, int firstPlistIndex, int w, int h, int stride, int bytesPerImage)
 {
     // The information passed to this function can be found in the file 'acquisitionmetadata.ini' which should accompany the Solis spool files.
     // I haven't found a way to tell how many images there actually are - except for the fact that any excess "slots" are all-black.
     // It should be possible to parse acquisitionmetadata.ini, but for now I just inspect it manually.
     // The TIFF-writing code in this function is just ripped off from TIFFFileSaver - hence the shoehorning of our parameters into the variables it expects.
     // This code could probably be updated to just call that code directly, but since it works I'm not going to modify it just for the sake of tidiness - let's wait until (if) I am editing this function anyway.
-    FILE *spoolFile = fopen(spoolPath.UTF8String, "r");
-    ALWAYS_ASSERT(spoolFile != NULL);
-    unsigned short *data = new unsigned short[bytesPerImage/2];
+    const size_t pixelRowBytes = size_t(w) * 2;
+    if (w <= 0 || h <= 0 || stride <= 0 || bytesPerImage <= 0 ||
+        pixelRowBytes > size_t(stride) || pixelRowBytes > size_t(bytesPerImage) ||
+        size_t(h - 1) > (size_t(bytesPerImage) - pixelRowBytes) / size_t(stride))
+    {
+        NSLog(@"Invalid spool image dimensions for %@", spoolPath);
+        return SpoolConversionResult::Failed;
+    }
+    std::vector<unsigned char> data(bytesPerImage);
+    FILE *spoolFile = fopen(spoolPath.UTF8String, "rb");
+    if (spoolFile == NULL)
+    {
+        NSLog(@"Could not open spool file %@", spoolPath);
+        return SpoolConversionResult::Failed;
+    }
     
-    TIFF *tif = TIFFOpen(destPath.UTF8String, "w");
-    ALWAYS_ASSERT(tif != NULL);
-    
-    NSMutableDictionary *plist = [NSMutableDictionary dictionary];
+    TIFF *tif = NULL;
     int plistIndex = firstPlistIndex;
     NSMutableArray *frameArray = [NSMutableArray array];
     
-    bool outOfPlists = false;
+    SpoolConversionResult result = SpoolConversionResult::Complete;
     for (int n = 0; n < numImages; n++, plistIndex++)
     {
-        if (!CHECK(fread(data, bytesPerImage, 1, spoolFile) == 1))
-            break;
-
-        size_t width = w, height = h;
-        NSInteger samplesPerPixel = 1, bytesPerSample = 2;
-        TIFFSetField(tif, TIFFTAG_IMAGEWIDTH, width);
-        TIFFSetField(tif, TIFFTAG_IMAGELENGTH, height);
-        TIFFSetField(tif, TIFFTAG_SAMPLESPERPIXEL, samplesPerPixel);
-        TIFFSetField(tif, TIFFTAG_BITSPERSAMPLE, bytesPerSample*8);
-        TIFFSetField(tif, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);
-        TIFFSetField(tif, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
-        TIFFSetField(tif, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_MINISBLACK);
-        size_t rowBytes = stride;
-        CHECK(TIFFScanlineSize(tif) <= (tmsize_t)rowBytes);
-        
-        // We set the strip size of the file to be the default that libtiff suggests.
-        // Note that Apple seems to do larger blocks, of about 130k for MB-scale images
-        // TODO: consider making this larger - does it matter much?
-        TIFFSetField(tif, TIFFTAG_ROWSPERSTRIP, TIFFDefaultStripSize(tif, (uint32)rowBytes));
-        
-        // Now write image to the file one strip at a time
-        unsigned char *baseAddr = (unsigned char *)data;
-        size_t sourceRowBytes = stride;
-        for (size_t row = 0; row < height; row++)
+        const size_t bytesRead = fread(data.data(), 1, data.size(), spoolFile);
+        if (bytesRead != data.size())
         {
-            unsigned char *sourcePtr = baseAddr + row * sourceRowBytes;
-            if (TIFFWriteScanline(tif, sourcePtr, (uint32)row, 0) < 0)
-                break;
+            if (ferror(spoolFile))
+            {
+                NSLog(@"Could not read frame %d from %@", plistIndex, spoolPath);
+                result = SpoolConversionResult::Failed;
+            }
+            else if (bytesRead != 0)
+                NSLog(@"Skipping incomplete final frame %d in %@", plistIndex, spoolPath);
+            break;
         }
-        TIFFWriteDirectory(tif);
-        
+
+        // Resolve the metadata before writing its TIFF page so the frame counts stay in sync.
         NSMutableDictionary *framePlist;
         if (metadataMapping == nil)
         {
             // Create a dummy plist file to accompany the tiff file (so that MovieBuilder can parse them in a reasonable amount of time!)
             framePlist = [NSMutableDictionary dictionary];
-            [framePlist setObject:[NSNumber numberWithDouble:gFrameCounter++] forKey:@"time_processing_started"];
+            [framePlist setObject:[NSNumber numberWithDouble:gFrameCounter] forKey:@"time_processing_started"];
         }
         else
         {
@@ -155,25 +150,70 @@ bool SaveTiffFromSpool(NSString *spoolPath, NSString *destPath, int numImages, N
             if (framePlist == nil)
             {
                 printf("Frame %d not found in plist\n", plistIndex);
-                outOfPlists = true;
+                result = SpoolConversionResult::OutOfPlists;
                 break;
             }
         }
+
+        if (tif == NULL)
+        {
+            tif = TIFFOpen(destPath.UTF8String, "w");
+            if (tif == NULL)
+            {
+                NSLog(@"Could not open TIFF output %@", destPath);
+                result = SpoolConversionResult::Failed;
+                break;
+            }
+        }
+        bool ok = TIFFSetField(tif, TIFFTAG_IMAGEWIDTH, uint32_t(w)) &&
+            TIFFSetField(tif, TIFFTAG_IMAGELENGTH, uint32_t(h)) &&
+            TIFFSetField(tif, TIFFTAG_SAMPLESPERPIXEL, 1) &&
+            TIFFSetField(tif, TIFFTAG_BITSPERSAMPLE, 16) &&
+            TIFFSetField(tif, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT) &&
+            TIFFSetField(tif, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG) &&
+            TIFFSetField(tif, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_MINISBLACK) &&
+            TIFFSetField(tif, TIFFTAG_ROWSPERSTRIP, TIFFDefaultStripSize(tif, uint32_t(stride)));
+        for (int row = 0; ok && row < h; row++)
+            ok = TIFFWriteScanline(tif, data.data() + size_t(row) * stride, uint32_t(row), 0) >= 0;
+        if (!ok || !TIFFWriteDirectory(tif))
+        {
+            NSLog(@"Could not write frame %d to %@", plistIndex, destPath);
+            result = SpoolConversionResult::Failed;
+            break;
+        }
+
         [frameArray addObject:framePlist];
+        if (metadataMapping == nil)
+            gFrameCounter++;
     }
-    
-    [plist setObject:frameArray forKey:@"frames"];
-    if (metadataMapping == nil)
-        [plist setObject:[NSNumber numberWithInt:3] forKey:@"metadata_version"];
-    else
-        [plist setObject:[NSNumber numberWithInt:2] forKey:@"metadata_version"];
-    NSString *destPlistPath = [destPath.stringByDeletingPathExtension stringByAppendingPathExtension:@"plist"];
-    [plist writeToFile:destPlistPath atomically:NO];
-    
+
     fclose(spoolFile);
-	delete[] data;
+    if (tif == NULL)
+        return result;
+
+    if (result != SpoolConversionResult::Failed && !TIFFFlush(tif))
+    {
+        NSLog(@"Could not flush TIFF output %@", destPath);
+        result = SpoolConversionResult::Failed;
+    }
     TIFFClose(tif);
-    return outOfPlists;
+    if (result != SpoolConversionResult::Failed)
+    {
+        NSDictionary *plist = @{@"frames": frameArray, @"metadata_version": @(metadataMapping == nil ? 3 : 2)};
+        NSString *destPlistPath = [destPath.stringByDeletingPathExtension stringByAppendingPathExtension:@"plist"];
+        if (![plist writeToFile:destPlistPath atomically:YES])
+        {
+            NSLog(@"Could not write TIFF metadata to %@", destPlistPath);
+            result = SpoolConversionResult::Failed;
+        }
+    }
+    if (result == SpoolConversionResult::Failed)
+    {
+        NSError *error = nil;
+        if (![[NSFileManager defaultManager] removeItemAtPath:destPath error:&error])
+            NSLog(@"Could not remove incomplete TIFF %@: %@", destPath, error);
+    }
+    return result;
 }
 
 NSInteger crazySpoolSortOrder(id string1, id string2, void *)
@@ -257,13 +297,15 @@ void ProcessSpoolFilesFromDirectory(NSString *spoolDir, NSString *iniPath, NSStr
         //        printf("%s\n", theFilename.UTF8String);
         NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
         NSString *spoolPath = [SWF:@"%@/%@", spoolDir, theFilename];
-        bool outOfPlists = SaveTiffFromSpool(spoolPath, [SWF:@"%@/%06d.tif", destTiffDir, plistIndex], imagesPerFile,
-                                             metadataMapping, plistIndex,
-                                             w, h, stride, bytesPerImage);
+        SpoolConversionResult result = SaveTiffFromSpool(spoolPath, [SWF:@"%@/%06d.tif", destTiffDir, plistIndex],
+                                                        imagesPerFile, metadataMapping, plistIndex,
+                                                        w, h, stride, bytesPerImage);
         plistIndex += imagesPerFile;
         progress.DeltaProgress(1);
         [pool drain];
-        if (outOfPlists)
+        if (result == SpoolConversionResult::Failed)
+            break;
+        if (result == SpoolConversionResult::OutOfPlists)
         {
             // We might well run out of plists due to the "filler" frames in the final spool file,
             // but it should only be the final file.
