@@ -74,10 +74,19 @@ void QueueNotificationOnMainThread2(NSNotification *myNotification, bool coalesc
 void SendImmediateNotificationOnMainThread(NSNotification *myNotification)
 {
 	// Trigger notification callbacks immediately, running on the main thread.
-	dispatch_sync(dispatch_get_main_queue(), 
-	^{
+    // This is intended to be called from non-main threads only.
+	if ([NSThread isMainThread])
+	{
+		CHECK(0);       // This isn't intended to be called when already on the main thread,
+                        // but at this point it would be churlish to ASSERT
 		[[NSNotificationCenter defaultCenter] postNotification:myNotification];
-	});
+	}
+	else
+	{
+		dispatch_sync(dispatch_get_main_queue(), ^{
+			[[NSNotificationCenter defaultCenter] postNotification:myNotification];
+		});
+	}
 }
 
 int IntFromNotification(NSNotification *note, NSString *key)
