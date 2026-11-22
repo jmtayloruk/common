@@ -96,13 +96,21 @@
 	@synchronized(self)
 	{
 //		printf("About to add key %s cost %zd\n", key.UTF8String, cost);
-		if (totalCost > self.totalCostLimit)
+		const NSUInteger costLimit = self.totalCostLimit;
+		if (cost > costLimit)
+        {
+            // Don't cache an object that is itself bigger than our entire cache allocation.
+            // That would potentially involve keeping a very large object around against the wishes
+            // of whoever set up the cache cost limit.
+			return;
+        }
+		if (totalCost > costLimit)
         {
 //            printf("Removing all objects (%ld exceeds limit of %ld)\n", totalCost, self.totalCostLimit);
 			[self removeAllObjects];
         }
-		else if (totalCost + cost > self.totalCostLimit)
-			[self purgeToSize:self.totalCostLimit-cost];
+		else if (totalCost > costLimit - cost)
+			[self purgeToSize:costLimit - cost];
 		if (CHECK([cachedObjects objectForKey:key] == nil))
 		{
 			[cachedObjects setObject:[ObjectAndCost ocForObject:obj cost:cost] forKey:key];
