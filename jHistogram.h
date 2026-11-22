@@ -11,6 +11,7 @@
 #ifndef __J_HISTOGRAM_H__
 #define __J_HISTOGRAM_H__ 1
 
+#include <cmath>
 #include <vector>
 
 class jHistogram
@@ -54,7 +55,7 @@ class jHistogram
 	int MissedVal(void) const { return missedVal; }
 	size_t NumBins(void) const { return histogram.size(); }
 	double BinStartVal(size_t binNumber) const { /* Value at the lower boundary of this bin */ return firstBinStart + binNumber * binWidth; }
-	int BinForVal(double val) const { /* Bin into which this value falls (no bounds checking) */return int((val - firstBinStart) / binWidth); }
+	int BinForVal(double val) const { /* Bin into which this value falls (no bounds checking) */return int(std::floor((val - firstBinStart) / binWidth)); }
 	double MaxVal(void) const;
 	void Print(void);
 };

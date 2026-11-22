@@ -26,22 +26,25 @@ void jHistogram::SetHistogramParams(double fbs/*first bin starts at*/, double bw
 		
 	if (!reset)
 	{
-		// In some circumstances we can retain the existing data while extending the histogram range
-		double newFirstBinDouble = (fbs - firstBinStart) / bw;
-		int newFirstBin = int(newFirstBinDouble);
-		if ((bw == binWidth) &&
-			(newFirstBinDouble - newFirstBin == 0.0))
+		// In some circumstances (unchanged bin width, shift by integer number of bins)
+        // we can retain the existing data while extending the histogram range
+		const double shift = (fbs - firstBinStart) / bw;
+		if (bw == binWidth && std::isfinite(shift) && shift == std::trunc(shift))
 		{
-			if (newFirstBin < 0)
-				histogram.insert(histogram.begin(), -newFirstBin, 0);
-			else if (newFirstBin > 0)
-				histogram.erase(histogram.begin(), histogram.begin() + newFirstBin);
-			if (numBins < int(histogram.size()))
-				histogram.erase(histogram.begin() + numBins);
-			else
-				histogram.insert(histogram.end(), numBins - histogram.size(), 0);
+			std::vector<int> resized(numBins);
+			const int oldBinCount = int(histogram.size());
+			// In old-bin coordinates, the new range starts at shift and spans numBins bins.
+			if (shift > -numBins && shift < oldBinCount)
+			{
+				// A rightward shift skips old bins. A leftward shift leaves new bins empty at the front.
+				const int firstOldBin = std::max(int(shift), 0);
+				const int firstNewBin = std::max(-int(shift), 0);
+				const int binsToKeep = std::min(oldBinCount - firstOldBin, numBins - firstNewBin);
+				std::copy_n(histogram.begin() + firstOldBin, binsToKeep, resized.begin() + firstNewBin);
+			}
+			histogram.swap(resized);
 			firstBinStart = fbs;
-			binWidth = bw;
+			fbsInt = fbs;
 			return;
 		}
 		else
