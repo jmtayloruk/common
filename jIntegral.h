@@ -200,7 +200,7 @@ namespace jIntegralPrivate
 				std::vector<ResultType> results;
 				for (int i = 0; i <= xIntervals; i++)
 				{
-					double x = i * dx;
+					double x = x_0 + i * dx;
 					results.push_back(Integral<ResultType, InnerEval, KernelY, moreAccuracy>::EvaluateInnerIntegralUnthreaded(eval, outerVal, x) * KernelX::Evaluate(x) * SimpsonsMultiplier(i, xIntervals) * dx);
 				}
 				sum = SumResultList(results);
@@ -208,7 +208,7 @@ namespace jIntegralPrivate
 			else
 				for (int i = 0; i <= xIntervals; i++)
 				{
-					double x = i * dx;
+					double x = x_0 + i * dx;
 					sum += Integral<ResultType, InnerEval, KernelY, moreAccuracy>::EvaluateInnerIntegralUnthreaded(eval, outerVal, x) * KernelX::Evaluate(x) * SimpsonsMultiplier(i, xIntervals) * dx;
 				}
 
