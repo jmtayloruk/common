@@ -369,17 +369,17 @@ NSArray *ListFilesInDirectory(NSString *dir, bool (*FilterFilenames)(NSString *f
 bool /*sizes matched*/ PopulateArrayFromBitmap(const NSBitmapImageRep *bitmap, double *destArray, int destWidth, int destHeight, int downsampleFactor, bool assertOnSizeMismatch)
 {
     // Handle potential difference in bitmap and array dimensions
-    bool sizeMismatch = false;
+    bool sizesMatch = true;
     if (bitmap.pixelsWide != destWidth * downsampleFactor)
-        sizeMismatch = true;
+        sizesMatch = false;
     if (bitmap.pixelsHigh != destHeight * downsampleFactor)
-        sizeMismatch = true;
+        sizesMatch = false;
     if (assertOnSizeMismatch)
-        ALWAYS_ASSERT(!sizeMismatch);
+        ALWAYS_ASSERT(sizesMatch);
     int width = MIN(destWidth, (int)bitmap.pixelsWide/downsampleFactor);
     int height = MIN(destHeight, (int)bitmap.pixelsHigh/downsampleFactor);
     int x0 = 0, y0 = 0;
-    if (sizeMismatch)
+    if (!sizesMatch)
     {
         if (bitmap.pixelsWide / downsampleFactor < destWidth)
             x0 = (destWidth - (int)bitmap.pixelsWide / downsampleFactor) / 2;
@@ -422,7 +422,7 @@ bool /*sizes matched*/ PopulateArrayFromBitmap(const NSBitmapImageRep *bitmap, d
         }
     }
     
-    return sizeMismatch;
+    return sizesMatch;
 }
 
 bool /*sizes matched*/ PopulateArrayFromBitmap(const char *bitmapPath, double *destArray, int destWidth, int destHeight, int downsampleFactor, bool assertOnSizeMismatch)
