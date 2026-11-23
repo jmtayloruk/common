@@ -499,20 +499,25 @@ JCache *imageCache = [JCache new];
 		Instead, for now, I just have a special-case implementation
 		for the one use-case that I currently have (camera.camera_properties.pixels_per_um)
 	 
-		TODO: most of the time we shouldn't care what the array index is,
-		and I find it rather unsatisfactory to be passing it in. In principle we may not even 
+		Note: most of the time we shouldn't care what the array index is,
+		and I find it rather unsatisfactory to be passing it in. In principle we may not even
 		be processing any particular frame at the point when we make this call.
 		However, we need to know it if the plist format is kArrayAggregatedMetadataVersion.	*/
     NSArray *components = [keyPath componentsSeparatedByString:@"."];
     NSString *firstComponent = components.firstObject, *lastComponent = components.lastObject;
+    if (metadataVersion == kArrayAggregatedMetadataVersion)
+    {
+        // In this historical file format we don't have a common metadata section.
+        // The best we can do is update the value for the current frame
+        // (which should be the *only* frame, in this historical metadata format)
+        [self setNewObject:obj forFrameKey:lastComponent arrayIndex:arrayIndex];
+        return;
+    }
+
     NSMutableDictionary *result = [NSMutableDictionary dictionaryWithDictionary:self.dict];
     if (metadataVersion == kSingleFileMetadataVersion)
     {
         [result setObject:obj forKey:lastComponent];
-    }
-    else if (metadataVersion == kArrayAggregatedMetadataVersion)
-    {
-        [self setNewObject:obj forFrameKey:lastComponent arrayIndex:arrayIndex];
     }
     else
     {
