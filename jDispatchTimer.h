@@ -16,12 +16,13 @@
     double             _oneoffTimeDue;  // I have not implemented this for repeating timers just because it would be a little more complicated, and I haven't needed that feature
 }
 
+// The convenience function oneShotTimerOnQueue returns an autoreleased timer. Both "newXXX" factories return owned timers.
 +(id)oneShotTimerOnQueue:(dispatch_queue_t)queue afterInterval:(double)dt flex:(double)flexibility critical:(bool)critical withHandler:(dispatch_block_t)handler;
 +(id)newOneShotTimerOnQueue:(dispatch_queue_t)queue afterInterval:(double)dt flex:(double)flexibility critical:(bool)critical withHandler:(dispatch_block_t)handler;
-+(id)allocRepeatingTimerOnQueue:(dispatch_queue_t)queue atInterval:(double)dt flex:(double)flexibility critical:(bool)critical withHandler:(dispatch_block_t)handler;
++(id)newRepeatingTimerOnQueue:(dispatch_queue_t)queue atInterval:(double)dt flex:(double)flexibility critical:(bool)critical withHandler:(dispatch_block_t)handler;
 -(void)suspend;
 -(void)restart;
--(void)cancel;
+-(void)cancelAndRelease; // Cancels the timer and consumes one reference owned by the caller.
 -(void)restartOneShotTimer;
 -(void)restartOneShotTimerWithIntervalInSecsFromNow:(double)newIntervalFromNow;
 -(void)fireOneShotTimerNow;

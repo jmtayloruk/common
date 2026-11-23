@@ -79,13 +79,7 @@
 	}
 	else
 	{
-		dispatch_block_t handlerCopy = Block_copy(handler);		// Take a copy of the block to be sure it doesn't go out of scope before we use it
-//		printf("Init timer %p with handler copy %p of original %p\n", self, (void*)handlerCopy, (void*)handler);
-
-		dispatch_source_set_cancel_handler(timerSource, ^{
-//			printf("Dispatch source cancellation handler called for %p, source %p\n", self, timerSource);
-			Block_release(handlerCopy);
-		});
+		// The source copies this block, keeping both the one-shot timer and the caller's handler alive until cancellation.
 		dispatch_source_set_event_handler(timerSource, ^{
  			if (firedOneShot)
 			{
@@ -97,18 +91,14 @@
 			}
 			else
 			{
+                // If we get here then the caller/creator must consider the timer as "dead" and the timer will go away of its own accord.
+                // This JDispatchTimer objectis retained via the use of firedOneShot and timerSource.
+                // When dispatch_source_cancel releases its block, self will end up being released.
 //				printf("One shot timer %p fired - should be on queue %p\n", self, queue);
-				handlerCopy();
-				// We do not release handlerCopy here - we do that in the cancel handler
+				handler();
 				firedOneShot = true;
-				/*	If we get here then the user must consider the timer as "dead" and the timer should go away of its own accord
-					Unfortunately there is an implicit 'retain' of self due to the handler block which will have been retained
-					during the call to dispatch_source_set_event_handler. We must explicitly cancel the dispatch source in order
-					for our own 'release' calls to take the retain count down to zero	*/
-//				printf("%p cancel %p\n", self, timerSource);
+				// Cancel after firing so the source releases its event block and the block releases the timer.
 				dispatch_source_cancel(timerSource);
-                dispatch_release(timerSource);
-				[self release];
 			}
 		});
 	}
@@ -124,20 +114,21 @@
 
 +(id)newOneShotTimerOnQueue:(dispatch_queue_t)queue afterInterval:(double)dt flex:(double)flexibility critical:(bool)critical withHandler:(dispatch_block_t)handler
 {
-	// Caller gets a retained object that they must release from their one shot callback.
-	// Note that we do an *extra* retain here to balance the release that we do from our own event hander above.
-	return [[[JDispatchTimer alloc] initForQueue:queue withInterval:dt flex:(double)flexibility repeat:false timeCritical:critical withHandler:handler] retain];
+	// Caller gets a retained object and must release it, typically from their one-shot callback.
+	// If cancelling before it fires, use cancelAndRelease.
+	return [[JDispatchTimer alloc] initForQueue:queue withInterval:dt flex:flexibility repeat:false timeCritical:critical withHandler:handler];
 }
 
 +(id)oneShotTimerOnQueue:(dispatch_queue_t)queue afterInterval:(double)dt flex:(double)flexibility critical:(bool)critical withHandler:(dispatch_block_t)handler
 {
-	// Will release itself after firing
-	return [[JDispatchTimer alloc] initForQueue:queue withInterval:dt flex:(double)flexibility repeat:false timeCritical:critical withHandler:handler];
+    // Will self-release and clean up after firing
+    // Caller should not call cancelAndRelease on this (if that's required, use newOneShotTimerOnQueue to get retained ownership on creation)
+	return [[self newOneShotTimerOnQueue:queue afterInterval:dt flex:flexibility critical:critical withHandler:handler] autorelease];
 }
 
-+(id)allocRepeatingTimerOnQueue:(dispatch_queue_t)queue atInterval:(double)dt flex:(double)flexibility critical:(bool)critical withHandler:(dispatch_block_t)handler
++(id)newRepeatingTimerOnQueue:(dispatch_queue_t)queue atInterval:(double)dt flex:(double)flexibility critical:(bool)critical withHandler:(dispatch_block_t)handler
 {
-    return [[JDispatchTimer alloc] initForQueue:queue withInterval:dt flex:(double)flexibility repeat:true timeCritical:critical withHandler:handler];
+    return [[JDispatchTimer alloc] initForQueue:queue withInterval:dt flex:flexibility repeat:true timeCritical:critical withHandler:handler];
 }
 
 -(void)suspend
@@ -192,30 +183,25 @@
 		ALWAYS_ASSERT(0);
 }
 
--(void)cancel
+-(void)cancelAndRelease
 {
 //	printf("Cancel timer %p (source %p)\n", self, timerSource);
-	if (!dispatch_source_testcancel(timerSource))
-	{
-		dispatch_source_cancel(timerSource);
-		dispatch_release(timerSource);
-		[self release];
-	}
+	if (timerSource != NULL)
+		dispatch_source_cancel(timerSource); // n.b. safe to call this more than once.
+	[self release];
 }
 
 -(void)dealloc
 {
 //	printf("Dealloc timer %p (source %p)\n", self, timerSource);
 	
-	if (!dispatch_source_testcancel(timerSource))
+	if (timerSource != NULL)
 	{
-		/*	I'm pretty sure we shouldn't ever get here - we self-retain and release when
-			the callback is called or when it is cancelled. Just to be safe I have included
-			this code though. Note however that since I am not sure why we would ever get here,
-			I am relucant to call dispatch_release as well...	*/
-		printf("%p dealloc apparently without cancelling %p\n", self, timerSource);
-		CHECK(0);
-		dispatch_source_cancel(timerSource);
+		dispatch_source_cancel(timerSource); // n.b. safe to call this more than once.
+		// Cancellation could have happened earlier.
+        // We only release the source reference at this point here,
+        // so later calls to dispatch_source_cancel still have a valid source.
+		dispatch_release(timerSource);
 	}
 	
 	[super dealloc];
