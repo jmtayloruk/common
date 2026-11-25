@@ -15,6 +15,13 @@ static bool selectorAvailable = [NSURL respondsToSelector:@selector(fileURLWithF
 const double kWeakTiffCompressionFactor = 0.8;
 const double kLikelyTiffCompressionFactor = 0.4;
 
+NSColor *ColourNameWithFallback(NSString *getterName, NSColor *fallback)
+{
+	// Look up newer colours at runtime so this also builds with SDKs that lack their declarations.
+	SEL getter = NSSelectorFromString(getterName);
+	return [NSColor respondsToSelector:getter] ? [NSColor performSelector:getter] : fallback;
+}
+
 NSURL *PathToURL(NSString *path, NSURL *relativeTo)
 {
 	/*  Convert a path into an NSURL object, relative to another specified URL
